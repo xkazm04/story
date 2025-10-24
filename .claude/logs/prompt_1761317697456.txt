@@ -1,0 +1,53 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# build-relationship-map-feature-with-react-flow
+
+## Description
+
+Create a comprehensive visual relationship mapping feature using react-flow that renders characters and factions as interactive nodes and their relationships as edges. Implement drag-and-drop node reordering, edge editing capabilities, relationship type filtering, and real-time synchronization with the API. This provides users with an intuitive way to understand and manage complex character and faction networks in their projects.
+
+## Implementation Steps
+
+1. Create `src/app/features/relationships/types/index.ts` with TypeScript interfaces: `RelationshipNode` (id, label, type: 'character'|'faction', data), `RelationshipEdge` (id, source, target, relationshipType, data), and `RelationshipType` enum (e.g., ALLY, ENEMY, FAMILY, BUSINESS)
+2. Create `src/app/features/relationships/lib/relationshipApi.ts` with functions: `fetchRelationships(projectId)`, `updateNodePosition(projectId, nodeId, position)`, `updateEdge(projectId, edgeId, relationshipType)`, `deleteEdge(projectId, edgeId)` using the rate-limited `apiFetch`
+3. Create `src/app/features/relationships/components/RelationshipMapCanvas.tsx` as the main react-flow container: initialize with fetched nodes/edges, configure node types (Character, Faction), edge types (relationship lines), and handle node/edge change events
+4. Implement `src/app/features/relationships/components/CharacterNode.tsx` and `FactionNode.tsx` custom node components with: display name/image, visual indicators for node type, hover states, and connection handles for edges using react-flow's Handle component
+5. Create `src/app/features/relationships/components/RelationshipEdge.tsx` custom edge component with: edge label showing relationship type, edit button, delete button, and color coding based on relationship type (green for ally, red for enemy, etc.)
+6. Implement `src/app/features/relationships/components/RelationshipTypeFilter.tsx` with checkboxes for each relationship type to toggle edge visibility, using local state to filter displayed edges without API calls
+7. Create `src/app/features/relationships/RelationshipMap.tsx` as the main feature wrapper that: fetches initial data, manages global state for nodes/edges, handles position updates via debounced API calls, provides error handling using `useApiErrorHandler`, and displays loading/error states
+8. Add UI innovation: implement smooth animated transitions when nodes are dragged, use glassmorphism for the filter panel with a blur effect, add particle effects on edge hover, and implement a mini-map using react-flow's MiniMap component
+9. Test functionality: verify nodes can be dragged and positions persist after refresh, edges can be edited and deleted, relationship type filtering works correctly, and API errors are handled gracefully with user-friendly messages
+
+## Files to Modify
+
+- src/app/features/relationships/types/index.ts
+- src/app/features/relationships/lib/relationshipApi.ts
+- src/app/features/relationships/components/RelationshipMapCanvas.tsx
+- src/app/features/relationships/components/CharacterNode.tsx
+- src/app/features/relationships/components/FactionNode.tsx
+- src/app/features/relationships/components/RelationshipEdge.tsx
+- src/app/features/relationships/components/RelationshipTypeFilter.tsx
+- src/app/features/relationships/RelationshipMap.tsx
+
+## UI/UX Innovation Experiment
+
+Implement an animated relationship map with glassmorphic filter controls, particle effects on edge interactions, smooth node drag animations with shadow depth, and a minimap for large networks. Add a 'force-directed' layout toggle that uses physics-based node positioning for automatic organization.
+
+## Recommended Next Goal
+
+Integrate the relationship map into the main application layout by adding it as a new tab or panel in the center/right panel components, and create a settings panel to configure relationship types and visualization preferences
+
+
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the requirement thoroughly
+- Identify all files that need to be modified or created
+- Implement all changes specified in the requirement
+- Follow the implementation steps precisely
+- Create/modify files as needed
+- Run any tests if specified
+- Ensure all changes are complete before finishing
+
+Begin implementation now.

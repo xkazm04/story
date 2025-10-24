@@ -1,0 +1,40 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# implement-client-side-api-rate-limiting
+
+## Description
+
+Create a rate limiting layer that wraps `apiFetch` in `src/app/utils/api.ts` to throttle API calls to a configurable maximum requests per second (default 10 req/s). Implement a queue-based system that buffers excess requests and executes them as capacity becomes available, preventing accidental API overuse. Provide configuration options through environment variables or a settings object, and emit warnings when the queue reaches capacity.
+
+## Implementation Steps
+
+1. Create `src/app/utils/rateLimiter.ts` with a `RateLimiter` class that manages request queuing: initialize with `maxRequestsPerSecond` (default 10), track request timestamps in a sliding window, and maintain a queue of pending requests
+2. Implement the core throttling logic: track when the last request was made, calculate if the next request can proceed immediately or must be queued, and use `setTimeout` to schedule queued requests at appropriate intervals to maintain the rate limit
+3. Create a `createRateLimitedApiFetch` function in `src/app/utils/rateLimiter.ts` that wraps the original `apiFetch` and applies rate limiting before executing the request, returning a promise that resolves when the request completes
+4. Update `src/app/utils/api.ts` to instantiate a `RateLimiter` and replace direct `apiFetch` calls with the rate-limited version throughout the file (in `useApiGet`, `useApiPost`, etc.)
+5. Add configuration support: allow `maxRequestsPerSecond` to be set via environment variable `NEXT_PUBLIC_API_RATE_LIMIT` and provide a hook `useRateLimiterConfig` to dynamically adjust settings
+6. Implement queue monitoring: add a `getQueueLength()` method to `RateLimiter` and emit console warnings when queue length exceeds a threshold (e.g., 20 pending requests), and test with rapid successive API calls to verify queuing behavior
+
+## Files to Modify
+
+- src/app/utils/rateLimiter.ts
+- src/app/utils/api.ts
+
+## Recommended Next Goal
+
+Implement the graphical relationship map with react-flow (Goal 2) to visualize character and faction relationships, which will benefit from the robust API infrastructure established in Goals 1, 3, and 4
+
+
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the requirement thoroughly
+- Identify all files that need to be modified or created
+- Implement all changes specified in the requirement
+- Follow the implementation steps precisely
+- Create/modify files as needed
+- Run any tests if specified
+- Ensure all changes are complete before finishing
+
+Begin implementation now.

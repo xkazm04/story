@@ -1,0 +1,41 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# create-typed-api-error-handling-system
+
+## Description
+
+Introduce a robust, typed error handling system for API calls by creating an `ApiError` class in `src/app/types/` with `status`, `message`, and optional `details` fields. Modify `apiFetch` in `src/app/utils/api.ts` to throw typed `ApiError` instances on non-2xx responses with appropriate status codes and messages. Create a `useApiErrorHandler` hook that translates technical errors into user-friendly messages and provides a standardized way to handle errors across the application.
+
+## Implementation Steps
+
+1. Create `src/app/types/ApiError.ts` with an `ApiError` class extending Error, including properties: `status: number`, `message: string`, `details?: Record<string, any>`, and a constructor that properly initializes the Error prototype chain
+2. Update `src/app/utils/api.ts` to import and use `ApiError`: modify the error handling in `apiFetch` to parse error response bodies and throw `ApiError` instances with appropriate status codes and messages instead of generic Error objects
+3. Create `src/app/hooks/useApiErrorHandler.ts` that exports a hook accepting an `ApiError` and returning a user-friendly message object with: `title: string`, `message: string`, `severity: 'error' | 'warning' | 'info'`. Map common HTTP status codes (400, 401, 403, 404, 429, 500, 503) to appropriate user messages
+4. Add error type guards in `src/app/utils/api.ts` to distinguish between `ApiError`, `TimeoutError`, and network errors, ensuring each is handled appropriately
+5. Update existing `useApiGet` and mutation hooks in `src/app/utils/api.ts` to properly propagate typed `ApiError` instances to React Query, which will then be available in component error states
+6. Create comprehensive error handling tests verifying: (1) various HTTP status codes throw correctly typed errors, (2) `useApiErrorHandler` produces appropriate user messages, (3) error details are preserved through the error chain
+
+## Files to Modify
+
+- src/app/types/ApiError.ts
+- src/app/utils/api.ts
+- src/app/hooks/useApiErrorHandler.ts
+
+## Recommended Next Goal
+
+Implement client-side API rate limiting (Goal 3) to prevent errors from accidental API overuse, building on the error handling foundation to provide clear feedback when rate limits are exceeded
+
+
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the requirement thoroughly
+- Identify all files that need to be modified or created
+- Implement all changes specified in the requirement
+- Follow the implementation steps precisely
+- Create/modify files as needed
+- Run any tests if specified
+- Ensure all changes are complete before finishing
+
+Begin implementation now.

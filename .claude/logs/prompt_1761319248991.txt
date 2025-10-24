@@ -1,0 +1,39 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# implement-timeout-support-in-apifetch
+
+## Description
+
+Extend the `apiFetch` function in `src/app/utils/api.ts` to support an optional `timeout` parameter that aborts the fetch request if no response is received within the specified milliseconds. Create a custom `TimeoutError` class that extends Error with status and message properties, and throw this error when the timeout is exceeded. This prevents hanging requests and improves user experience by providing clear feedback on slow or unresponsive API endpoints.
+
+## Implementation Steps
+
+1. Create a custom `TimeoutError` class in `src/app/utils/api.ts` that extends Error and includes `status` (number) and `message` (string) properties for consistency with other API errors
+2. Update the `ApiRequest` interface in `src/app/utils/api.ts` to include an optional `timeout?: number` field (in milliseconds, default 30000)
+3. Implement timeout logic in `apiFetch` using `AbortController`: create an abort controller, set a timeout that calls `abort()` after the specified duration, and pass the abort signal to the fetch options
+4. Catch `AbortError` specifically in the try-catch block and throw a `TimeoutError` with appropriate status (408 Request Timeout) and message
+5. Update the error handling in `apiFetch` to properly handle both `TimeoutError` and other `ApiError` instances, maintaining the existing console.error logging
+6. Test timeout functionality by creating a test file that verifies: (1) requests complete successfully before timeout, (2) requests abort and throw TimeoutError after timeout, (3) timeout can be customized per request
+
+## Files to Modify
+
+- src/app/utils/api.ts
+
+## Recommended Next Goal
+
+Implement typed API error handling (Goal 4) to ensure TimeoutError is properly typed and handled consistently across the application, allowing for better error reporting to users
+
+
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the requirement thoroughly
+- Identify all files that need to be modified or created
+- Implement all changes specified in the requirement
+- Follow the implementation steps precisely
+- Create/modify files as needed
+- Run any tests if specified
+- Ensure all changes are complete before finishing
+
+Begin implementation now.
