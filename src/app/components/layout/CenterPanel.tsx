@@ -46,13 +46,12 @@ const CenterPanel: React.FC = () => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
                     activeTab === tab.id
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                      ? 'bg-blue-900 text-white shadow-lg shadow-blue-500/30'
                       : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
                   }`}
                   title={tab.label}
                 >
                   <Icon className="w-5 h-5" />
-                  <span className="font-medium text-sm">{tab.label}</span>
                 </button>
               );
             })}

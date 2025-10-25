@@ -119,3 +119,4 @@ const BeatsTableAdd = ({ refetch }: Props) => {
 
 export default BeatsTableAdd;
 
+

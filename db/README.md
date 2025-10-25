@@ -343,3 +343,4 @@ Before deploying to production:
 
 Your app is now ready to use Supabase as the backend database.
 
+

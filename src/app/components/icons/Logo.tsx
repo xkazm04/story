@@ -15,3 +15,4 @@ export const LogoSvg = ({size, color}: {size: number, color: string}) => {
     </svg>
 }
 
+

@@ -3,20 +3,20 @@ import { apiFetch, useApiGet, API_BASE_URL } from '../utils/api';
 
 const BEATS_URL = `${API_BASE_URL}/beats`;
 
-export const beatsApi = {
+export const beatApi = {
   // Get all beats for a project
   useGetBeats: (projectId: string | undefined, enabled: boolean = true) => {
     if (!projectId) {
       throw new Error('Project ID is required to fetch beats.');
     }
-    const url = `${BEATS_URL}/project/${projectId}`;
+    const url = `${BEATS_URL}?projectId=${projectId}`;
     return useApiGet<Beat[]>(url, enabled && !!projectId);
   },
 
   // Get beats for a specific act
   useGetActBeats: (actId: string | undefined, enabled: boolean = true) => {
     if (!actId) return useApiGet<Beat[]>('', false);
-    const url = `${BEATS_URL}/act/${actId}`;
+    const url = `${BEATS_URL}?actId=${actId}`;
     return useApiGet<Beat[]>(url, enabled && !!actId);
   },
 
@@ -72,5 +72,4 @@ export const beatsApi = {
     });
   },
 };
-
 
