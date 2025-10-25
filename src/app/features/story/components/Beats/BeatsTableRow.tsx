@@ -138,3 +138,4 @@ const BeatsTableRow = ({ beat, index, setBeats }: Props) => {
 
 export default BeatsTableRow;
 
+

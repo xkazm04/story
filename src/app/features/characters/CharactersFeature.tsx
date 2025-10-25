@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useProjectStore } from '@/app/store/projectStore';
 import { useCharacterStore } from '@/app/store/characterStore';
-import { characterApi } from '@/app/api/characters';
+import { characterApi } from '@/app/hooks/useCharacters';
 import TabMenu from '@/app/components/UI/TabMenu';
 import CharactersList from './components/CharactersList';
 import CharacterDetails from './components/CharacterDetails';

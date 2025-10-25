@@ -118,3 +118,4 @@ const LandingStats = ({project}: Props) => {
 
 export default LandingStats;
 
+

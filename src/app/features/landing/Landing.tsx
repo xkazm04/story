@@ -10,7 +10,7 @@ import { LogoSvg } from '@/app/components/icons/Logo';
 import StepperLayout from './components/FirstProject/StepperLayout';
 import LandingProjectCreate from './components/LandingProjectCreate';
 import { MOCK_USER_ID } from '@/app/config/mockUser';
-import { projectApi } from '@/app/api/projects';
+import { projectApi } from '@/app/hooks/useProjects';
 import LandingCard from './components/LandingCard';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -76,18 +76,6 @@ const Landing: React.FC<Props> = ({
         </div>
       </header>
       <div className="px-8 py-1 max-w-7xl mx-auto z-10">
-        {projects && projects.length < 8 && (
-        <div className="flex flex-col sm:flex-row sm:justify-between gap-4 mb-12">
-          {!showGuide && <button
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-700 to-blue-800 text-white px-5 py-3 rounded-lg font-medium transition 
-            hover:brightness-110 hover:shadow-lg active:scale-95 cursor-pointer"
-            onClick={() => setShowGuide(true)}
-          >
-            <PlusIcon />
-            New Project
-          </button>}
-        </div>
-      )}
       {showGuide && <StepperLayout setShowGuide={setShowGuide} userId={userId} />}
         {/* Projects grid */}
         {!showGuide && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -98,11 +86,17 @@ const Landing: React.FC<Props> = ({
             </div>
           }>
             {projects && projects.length > 0 ? (
-              projects.map((project, index) => (
-                <LandingCard key={`project-${index}`} project={project} index={index} onUpdate={refetch} />
-              ))
+              <>
+                {projects.map((project, index) => (
+                  <LandingCard key={`project-${index}`} project={project} index={index} onUpdate={refetch} />
+                ))}
+                {/* Add create card after existing projects */}
+                {projects.length < 8 && (
+                  <LandingProjectCreate onShowStepper={() => setShowGuide(true)} variant="card" />
+                )}
+              </>
             ) : (
-              <LandingProjectCreate userId={userId} onProjectCreated={refetch} />
+              <LandingProjectCreate onShowStepper={() => setShowGuide(true)} variant="large" />
             )}
           </Suspense>
         </div>}

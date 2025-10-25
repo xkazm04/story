@@ -164,13 +164,6 @@ const StepperLayout = ({ setShowGuide, userId = MOCK_USER_ID }: Props) => {
                 </button>
               </div>
             )}
-
-            <button
-              className="ml-auto text-sm font-semibold cursor-pointer text-blue-400 hover:text-blue-300 z-10 transition-all duration-300"
-              onClick={() => setShowGuide(false)}
-            >
-              Landing Page
-            </button>
           </div>
 
           {/* Conditional Rendering: Grid layout for steps 1-3, Form layout for step 4 */}

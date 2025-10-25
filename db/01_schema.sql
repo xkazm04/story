@@ -439,3 +439,4 @@ CREATE POLICY "Users can manage beats in own projects" ON beats
 -- Schema creation complete!
 -- Next: Run 02_seed_data.sql to populate with initial data
 
+

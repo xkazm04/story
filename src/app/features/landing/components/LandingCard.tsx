@@ -115,3 +115,4 @@ const LandingCard: React.FC<LandingCardProps> = ({
 
 export default LandingCard;
 
+

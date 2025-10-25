@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Folder, Plus } from 'lucide-react';
 import { useProjectStore } from '@/app/store/projectStore';
-import { projectApi } from '@/app/api/projects';
+import { projectApi } from '@/app/hooks/useProjects';
 import { MOCK_USER_ID } from '@/app/config/mockUser';
 
 interface ProjectsFeatureProps {

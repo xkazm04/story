@@ -17,3 +17,4 @@ export const getCharacterTypeColor = (type: "protagonist" | "antagonist" | "neut
     }
 };
 
+

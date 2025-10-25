@@ -92,3 +92,4 @@ const BeatsTimeline = ({ beats, toggleBeatCompletion }: Props) => {
 
 export default BeatsTimeline;
 
+
