@@ -7,11 +7,17 @@ import LandingMenu from './components/LandingMenu';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
 import { PlusIcon } from 'lucide-react';
 import { LogoSvg } from '@/app/components/icons/Logo';
-import StepperLayout from './components/FirstProject/StepperLayout';
 import LandingProjectCreate from './components/LandingProjectCreate';
 import { MOCK_USER_ID } from '@/app/config/mockUser';
-import { projectApi } from '@/app/hooks/useProjects';
-import LandingCard from './components/LandingCard';
+import { projectApi } from '@/app/hooks/integration/useProjects';
+import DynamicComponentLoader from '@/app/components/UI/DynamicComponentLoader';
+import SkeletonLoader from '@/app/components/UI/SkeletonLoader';
+
+/**
+ * Dynamic imports to reduce initial bundle size:
+ * - StepperLayout: Only loaded when creating a new project
+ * - LandingCard: Conditionally loaded when projects exist
+ */
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -76,7 +82,22 @@ const Landing: React.FC<Props> = ({
         </div>
       </header>
       <div className="px-8 py-1 max-w-7xl mx-auto z-10">
-      {showGuide && <StepperLayout setShowGuide={setShowGuide} userId={userId} />}
+      {/* Dynamically load StepperLayout only when needed */}
+      {showGuide && (
+        <DynamicComponentLoader
+          importFn={() => import('./components/FirstProject/StepperLayout')}
+          componentProps={{ setShowGuide, userId }}
+          moduleName="StepperLayout"
+          loadingComponent={
+            <div className="flex items-center justify-center py-16">
+              <div className="text-center space-y-4">
+                <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
+                <p className="text-white/70">Loading project setup...</p>
+              </div>
+            </div>
+          }
+        />
+      )}
         {/* Projects grid */}
         {!showGuide && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <Suspense fallback={
@@ -88,7 +109,14 @@ const Landing: React.FC<Props> = ({
             {projects && projects.length > 0 ? (
               <>
                 {projects.map((project, index) => (
-                  <LandingCard key={`project-${index}`} project={project} index={index} onUpdate={refetch} />
+                  <DynamicComponentLoader
+                    key={`project-${index}`}
+                    importFn={() => import('./components/LandingCard')}
+                    componentProps={{ project, index, onUpdate: refetch }}
+                    moduleName="LandingCard"
+                    preloadOnVisible
+                    loadingComponent={<SkeletonLoader variant="card" color="blue" />}
+                  />
                 ))}
                 {/* Add create card after existing projects */}
                 {projects.length < 8 && (

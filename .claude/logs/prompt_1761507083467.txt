@@ -1,0 +1,61 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# create-faction-branding-customization-panel
+
+## Description
+
+Build a faction branding customization panel that enables faction leaders to define and customize their faction's visual identity including color schemes, emblem styles, and banner templates. This feature creates a new dedicated component for branding management, integrates with the existing faction system, and provides preset templates alongside custom color pickers. Store branding preferences in the faction record and apply them across faction cards, member profiles, and related UI elements.
+
+## Implementation Steps
+
+1. Extend Faction interface in src/app/types/Faction.ts to include branding properties: add `branding?: FactionBranding` interface with fields: primary_color, secondary_color, accent_color, emblem_style (shield|crest|sigil|custom), banner_template (standard|ornate|minimal|custom), custom_logo_url, theme_tier (free|premium)
+2. Create src/app/features/characters/sub_CharFactions/FactionBrandingPanel.tsx component with tabbed interface: Color Customizer (color pickers for primary/secondary/accent), Emblem Designer (preset styles with preview), Banner Templates (template gallery with live preview), and Theme Tier indicator
+3. Create src/app/features/characters/sub_CharFactions/ColorCustomizer.tsx sub-component with color picker input, preset color palette from CreateFactionForm.tsx PRESET_COLORS, live preview of faction card with selected colors, and save/reset functionality
+4. Create src/app/features/characters/sub_CharFactions/EmblemDesigner.tsx sub-component that displays emblem style presets (shield, crest, sigil) with visual previews, allows selection and preview updates, includes option to upload custom emblem image with size validation
+5. Add branding API hooks to src/app/api/factions.ts: `updateFactionBranding(factionId, branding)` to persist branding changes with proper error handling and cache invalidation, `getFactionBrandingPresets()` to return available templates and presets
+6. Integrate FactionBrandingPanel into FactionDetails.tsx as a new 'Branding' tab accessible only to faction leaders, positioned after Media Gallery tab with smooth transitions
+7. Update FactionCard.tsx to apply faction branding colors and emblem styling from the branding object, with fallback to default styling if branding not set
+
+## Files to Modify
+
+- src/app/types/Faction.ts
+- src/app/features/characters/sub_CharFactions/FactionBrandingPanel.tsx
+- src/app/features/characters/sub_CharFactions/ColorCustomizer.tsx
+- src/app/features/characters/sub_CharFactions/EmblemDesigner.tsx
+- src/app/features/characters/sub_CharFactions/FactionDetails.tsx
+- src/app/features/characters/sub_CharFactions/FactionCard.tsx
+- src/app/api/factions.ts
+
+## UI/UX Innovation Experiment
+
+Create an interactive emblem preview that updates in real-time as users select colors and styles, using SVG-based emblem rendering with animated transitions between styles. Add a 'theme gallery' showing how the selected branding looks across different contexts (card, profile header, banner). Include a 'preview mode' toggle that shows a full faction page preview with applied branding in a split-screen view.
+
+## Update FILE_STRUCTURE.MD
+
+IMPORTANT: After implementing the changes, update the FILE_STRUCTURE.MD file in the context directory to reflect the latest changes.
+
+Include:
+1. New files created or modified
+2. Updated component relationships
+3. New patterns or architectural decisions
+
+At the end of FILE_STRUCTURE.MD, add a "## Next Steps" section with your recommendation for the next goal or feature to implement based on the current progress.
+
+## Recommended Next Goal
+
+Implement faction theme monetization by creating a premium tier system where users can unlock exclusive emblem styles, animated emblems, and advanced color gradients. Add a 'theme marketplace' component showcasing available premium themes with purchase functionality integrated into the branding panel.
+
+
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the requirement thoroughly
+- Identify all files that need to be modified or created
+- Implement all changes specified in the requirement
+- Follow the implementation steps precisely
+- Create/modify files as needed
+- Run any tests if specified
+- Ensure all changes are complete before finishing
+
+Begin implementation now.

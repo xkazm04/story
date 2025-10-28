@@ -1,0 +1,60 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# implement-faction-media-gallery-system
+
+## Description
+
+Create a comprehensive faction media gallery system that allows faction leaders to upload and manage faction-specific media including logos, emblems, banners, and screenshots. This feature extends the existing Faction type to include media metadata and creates a new gallery component that displays media in a grid layout with filtering by media type. Implement file upload handling using the existing project patterns and integrate with the faction detail view to showcase faction branding assets.
+
+## Implementation Steps
+
+1. Extend the Faction interface in src/app/types/Faction.ts to include media array: add `media?: FactionMedia[]` field and create new FactionMedia interface with fields: id, faction_id, type (logo|banner|emblem|screenshot|lore), url, uploaded_at, uploader_id, description
+2. Create src/app/features/characters/sub_CharFactions/FactionMediaGallery.tsx component that displays media in a responsive grid using Framer Motion with staggered animations, includes filter tabs for media types, and shows upload button for faction leaders
+3. Create src/app/features/characters/sub_CharFactions/MediaUploadForm.tsx modal component that handles file uploads with drag-and-drop support, file type validation (images, documents), size limits, and progress indication using existing UI patterns
+4. Add faction media API hooks to src/app/api/factions.ts: `useFactionMedia(factionId)` to fetch media, `uploadFactionMedia(factionId, file, type)` for uploads, and `deleteFactionMedia(mediaId)` for removal with proper error handling
+5. Integrate FactionMediaGallery into FactionDetails.tsx component in a new tab section alongside existing faction information, positioned after the members list with smooth tab transitions
+6. Update mock data in db/mockData.ts to include sample faction media for testing gallery display and filtering functionality
+7. Add media management permissions check in FactionDetails.tsx to show upload button only for faction leaders, using existing permission patterns from the codebase
+
+## Files to Modify
+
+- src/app/types/Faction.ts
+- src/app/features/characters/sub_CharFactions/FactionMediaGallery.tsx
+- src/app/features/characters/sub_CharFactions/MediaUploadForm.tsx
+- src/app/features/characters/sub_CharFactions/FactionDetails.tsx
+- src/app/api/factions.ts
+- db/mockData.ts
+
+## UI/UX Innovation Experiment
+
+Implement an animated media grid with glass-morphism effect on hover, showing media details (type, uploader, upload date) in a translucent overlay. Add a 'featured media' spotlight section at the top that showcases the faction logo with a subtle parallax effect when scrolling. Include smooth fade-in animations as media loads and a skeleton loader matching the grid layout.
+
+## Update FILE_STRUCTURE.MD
+
+IMPORTANT: After implementing the changes, update the FILE_STRUCTURE.MD file in the context directory to reflect the latest changes.
+
+Include:
+1. New files created or modified
+2. Updated component relationships
+3. New patterns or architectural decisions
+
+At the end of FILE_STRUCTURE.MD, add a "## Next Steps" section with your recommendation for the next goal or feature to implement based on the current progress.
+
+## Recommended Next Goal
+
+After completing the media gallery, implement faction color scheme customization where leaders can define primary and secondary colors that automatically apply to faction cards, member profiles, and emblem backgrounds. This creates visual cohesion and prepares for the premium theming monetization feature.
+
+
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the requirement thoroughly
+- Identify all files that need to be modified or created
+- Implement all changes specified in the requirement
+- Follow the implementation steps precisely
+- Create/modify files as needed
+- Run any tests if specified
+- Ensure all changes are complete before finishing
+
+Begin implementation now.

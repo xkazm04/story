@@ -3,22 +3,29 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus } from 'lucide-react';
-import { useProjectStore } from '@/app/store/projectStore';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { factionApi } from '@/app/api/factions';
 import { Faction } from '@/app/types/Faction';
 import FactionCard from '../sub_CharFactions/FactionCard';
-import FactionDetails from '../sub_CharFactions/FactionDetails';
-import CreateFactionForm from './CreateFactionForm';
+import DynamicComponentLoader from '@/app/components/UI/DynamicComponentLoader';
+import SkeletonLoader from '@/app/components/UI/SkeletonLoader';
+
+/**
+ * Dynamic imports for heavy faction components:
+ * - FactionDetails: Contains heavy media galleries and branding panels
+ * - CreateFactionForm: Only loaded when user clicks "Create Faction"
+ */
 
 const FactionsList: React.FC = () => {
   const { selectedProject } = useProjectStore();
-  const { data: factions = [], isLoading, refetch } = factionApi.useFactions(
+  const { data: factions = [], isLoading } = factionApi.useFactions(
     selectedProject?.id || '',
     !!selectedProject
   );
 
   const [selectedFaction, setSelectedFaction] = useState<Faction | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newFactionId, setNewFactionId] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -28,18 +35,23 @@ const FactionsList: React.FC = () => {
     );
   }
 
-  // Show faction details view
+  // Show faction details view with dynamic loading
   if (selectedFaction) {
     return (
-      <FactionDetails
-        faction={selectedFaction}
-        onBack={() => setSelectedFaction(null)}
-        onUpdate={() => {
-          refetch();
-          // Update selected faction with fresh data
-          const updated = factions.find(f => f.id === selectedFaction.id);
-          if (updated) setSelectedFaction(updated);
+      <DynamicComponentLoader
+        importFn={() => import('../sub_CharFactions/FactionDetails')}
+        componentProps={{
+          faction: selectedFaction,
+          onBack: () => setSelectedFaction(null),
+          onUpdate: () => {
+            // Update selected faction with fresh data from optimistic mutation
+            const updated = factions.find(f => f.id === selectedFaction.id);
+            if (updated) setSelectedFaction(updated);
+          },
         }}
+        moduleName="FactionDetails"
+        preloadOnVisible
+        loadingComponent={<SkeletonLoader variant="details" color="purple" />}
       />
     );
   }
@@ -88,18 +100,35 @@ const FactionsList: React.FC = () => {
                 key={faction.id}
                 faction={faction}
                 onSelect={setSelectedFaction}
+                isNew={faction.id === newFactionId}
               />
             ))}
           </AnimatePresence>
         </div>
       )}
 
-      {/* Create Faction Form Modal */}
+      {/* Create Faction Form Modal - Dynamically loaded */}
       <AnimatePresence>
         {showCreateForm && (
-          <CreateFactionForm
-            onClose={() => setShowCreateForm(false)}
-            onSuccess={refetch}
+          <DynamicComponentLoader
+            importFn={() => import('./CreateFactionForm')}
+            componentProps={{
+              onClose: () => setShowCreateForm(false),
+              onSuccess: () => {
+                // Optimistic mutation will handle query invalidation automatically
+                setShowCreateForm(false);
+
+                // Set the newly created faction ID for animation highlighting
+                const latestFaction = factions[factions.length - 1];
+                if (latestFaction) {
+                  setNewFactionId(latestFaction.id);
+                  // Clear the highlight after animation completes
+                  setTimeout(() => setNewFactionId(null), 1500);
+                }
+              },
+            }}
+            moduleName="CreateFactionForm"
+            loadingComponent={<SkeletonLoader variant="form" color="blue" />}
           />
         )}
       </AnimatePresence>

@@ -1,0 +1,43 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# integrate-optimistic-mutations-faction-feature
+
+## Description
+
+Integrate `useOptimisticMutation` into the faction creation workflow by updating CreateFactionForm.tsx and FactionsList.tsx to use the new hook instead of manual `refetch()` calls. This will provide instant UI feedback when creating factions and automatically invalidate related queries (factions list, characters with faction data).
+
+## Implementation Steps
+
+1. Update `src/app/features/characters/components/CreateFactionForm.tsx` to replace the manual mutation with `useOptimisticMutation`, passing `affectedQueryKeys: [['factions', selectedProject?.id], ['characters', selectedProject?.id]]` to invalidate both queries
+2. Remove the manual `refetch()` call after successful faction creation and replace with the hook's automatic invalidation
+3. Update `src/app/features/characters/components/FactionsList.tsx` to remove the `refetch` dependency from the `useFactions` hook since the optimistic mutation will handle invalidation
+4. Add error handling UI in CreateFactionForm that displays rollback notifications when faction creation fails, giving users visibility into the optimistic update failure
+5. Test the mutation flow by creating a faction and verifying: (1) optimistic update appears immediately in the UI, (2) related character lists update automatically, (3) rollback occurs gracefully on error
+
+## Files to Modify
+
+- src/app/features/characters/components/CreateFactionForm.tsx
+- src/app/features/characters/components/FactionsList.tsx
+
+## UI/UX Innovation Experiment
+
+Implement a smooth card entrance animation for the newly created faction card that uses a spring physics animation, combined with a brief highlight effect (glow) that fades out over 1 second to draw attention to the new item
+
+## Recommended Next Goal
+
+Apply the optimistic mutation pattern to character creation (CharacterCreateForm.tsx) and character deletion operations to provide consistent instant feedback across all create/update/delete operations in the characters feature
+
+
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the requirement thoroughly
+- Identify all files that need to be modified or created
+- Implement all changes specified in the requirement
+- Follow the implementation steps precisely
+- Create/modify files as needed
+- Run any tests if specified
+- Ensure all changes are complete before finishing
+
+Begin implementation now.

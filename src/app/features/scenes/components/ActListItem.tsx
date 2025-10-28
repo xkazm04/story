@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Trash2, Edit2, Check, X } from 'lucide-react';
 import { Act } from '@/app/types/Act';
 import { actApi } from '@/app/api/acts';
-import { useProjectStore } from '@/app/store/projectStore';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
 
 interface ActListItemProps {
   act: Act;

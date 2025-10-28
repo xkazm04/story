@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus } from 'lucide-react';
-import { useProjectStore } from '@/app/store/projectStore';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { factionApi } from '@/app/api/factions';
 import { Faction } from '@/app/types/Faction';
 import FactionCard from './FactionCard';

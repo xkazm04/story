@@ -1,0 +1,53 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# Add AbortController to apiFetch for request cancellation
+
+## Metadata
+- **Category**: code_quality
+- **Effort**: Unknown (N/A/3)
+- **Impact**: Unknown (N/A/3)
+- **Scan Type**: bug_hunter
+- **Generated**: 10/24/2025, 3:31:27 PM
+
+## Description
+Extend the apiFetch helper to accept an AbortSignal and automatically cancel in-flight requests when the component unmounts or a new request supersedes the previous one. This prevents race conditions and reduces memory usage for long-running fetches.
+
+## Reasoning
+Without cancellation, aborted requests can still resolve and attempt to update state, leading to "state update on unmounted component" warnings and stale data. Introducing AbortController ensures that only the latest response is processed, improving performance and reliability.
+
+## Implementation Guidelines
+
+Please implement this feature following these guidelines:
+
+1. **Code Quality**: Follow existing code patterns and conventions in the project
+2. **Testing**: Add appropriate tests if applicable
+3. **Documentation**: Update relevant documentation
+4. **Error Handling**: Include proper error handling and edge cases
+5. **User Experience**: Consider the user experience and accessibility
+
+## Acceptance Criteria
+
+The implementation should:
+- Fulfill the description and reasoning outlined above
+- Maintain or improve code quality
+- Be well-tested and documented
+- Follow project conventions and patterns
+
+## Notes
+
+This requirement was automatically generated from an AI-evaluated project idea.
+Original idea ID: bc6df8c6-fefa-41fc-8f6a-61d23c28e756
+
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the requirement thoroughly
+- Identify all files that need to be modified or created
+- Implement all changes specified in the requirement
+- Follow the implementation steps precisely
+- Create/modify files as needed
+- Run any tests if specified
+- Ensure all changes are complete before finishing
+
+Begin implementation now.

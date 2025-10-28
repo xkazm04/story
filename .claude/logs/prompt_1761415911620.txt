@@ -1,0 +1,53 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# create-zustand-store-slices-architecture
+
+## Description
+
+Establish the foundational architecture for splitting Zustand stores into domain slices. Create a modular store structure with separate slice files for character and project domains, each using `zustand`'s `create` function independently. This enables better separation of concerns, easier testing, and cleaner store composition. Follow the pattern of creating individual slice stores that can be composed into a root store, similar to Redux Toolkit's slice pattern but with Zustand's simpler API.
+
+## Implementation Steps
+
+1. Create `src/app/store/slices/projectSlice.ts` containing the project-related state and actions (selectedProject, setSelectedProject, setShowLanding) extracted from the current projectStore, using zustand's create() function with a typed store interface
+2. Create `src/app/store/slices/characterSlice.ts` containing character-related state and actions (selectedCharacter, setSelectedCharacter) extracted from characterStore, using zustand's create() function with proper TypeScript interfaces matching usage in CharactersList.tsx and CharactersFeature.tsx
+3. Create `src/app/store/index.ts` as the root store that composes both slices, re-exporting individual slice stores and providing a combined store interface for components that need both domains
+4. Update all existing imports in component files (FactionsList.tsx, CharactersList.tsx, CharactersFeature.tsx, LandingCard.tsx, Landing.tsx, CreateFactionForm.tsx) to use the new slice paths: `import { useProjectStore } from '@/app/store/slices/projectSlice'` and `import { useCharacterStore } from '@/app/store/slices/characterSlice'`
+5. Verify that all store usage patterns remain consistent by checking that getters, setters, and subscriptions work identically to the original implementation
+6. Add TypeScript strict mode validation to ensure all slice exports are properly typed and prevent accidental store mutations
+
+## Files to Modify
+
+- src/app/store/slices/projectSlice.ts
+- src/app/store/slices/characterSlice.ts
+- src/app/store/index.ts
+- src/app/store/projectStore.ts
+- src/app/store/characterStore.ts
+- src/app/features/characters/components/FactionsList.tsx
+- src/app/features/characters/components/CreateFactionForm.tsx
+- src/app/features/characters/CharactersFeature.tsx
+- src/app/features/characters/components/CharactersList.tsx
+- src/app/features/landing/Landing.tsx
+- src/app/features/landing/components/LandingCard.tsx
+
+## UI/UX Innovation Experiment
+
+Implement a visual store state debugger component (`app/components/ui/StoreDevtools.tsx`) that displays real-time store state changes with animated transitions, helping developers visualize store mutations during development without external tools
+
+## Recommended Next Goal
+
+After slices are created, implement custom hooks (useProject, useCharacter) that combine related state and actions to reduce boilerplate in components and provide a cleaner API surface
+
+
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the requirement thoroughly
+- Identify all files that need to be modified or created
+- Implement all changes specified in the requirement
+- Follow the implementation steps precisely
+- Create/modify files as needed
+- Run any tests if specified
+- Ensure all changes are complete before finishing
+
+Begin implementation now.

@@ -1,0 +1,49 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# migrate-project-store-to-slices
+
+## Description
+
+Migrate the existing `projectStore.ts` into a dedicated slice file with all project-domain state and actions properly typed and organized. Extract selectedProject, setSelectedProject, and setShowLanding state/actions into `projectSlice.ts`, ensuring backward compatibility with all consuming components (LandingCard.tsx, Landing.tsx, FactionsList.tsx, CharactersList.tsx, CreateFactionForm.tsx, CharactersFeature.tsx). Maintain the exact same API surface so consumers don't need immediate refactoring.
+
+## Implementation Steps
+
+1. Analyze current `src/app/store/projectStore.ts` to identify all state properties, actions, and computed values used across the codebase
+2. Create `src/app/store/slices/projectSlice.ts` with a ProjectStore interface defining selectedProject: Project | null, setSelectedProject: (project: Project | null) => void, and setShowLanding: (show: boolean) => void, plus any derived state like showLanding
+3. Implement the slice using zustand's create() with proper TypeScript typing, ensuring the store is frozen in production and includes proper error handling for null/undefined project selections
+4. Create a temporary re-export in `src/app/store/projectStore.ts` that imports and exports from projectSlice.ts to maintain backward compatibility during migration
+5. Update all store subscriptions and selectors in components to use the new slice structure, verifying that selectedProject updates trigger proper re-renders in LandingCard and CharactersList
+6. Add unit tests for projectSlice.ts covering state mutations, selector functions, and edge cases like selecting a null project
+
+## Files to Modify
+
+- src/app/store/slices/projectSlice.ts
+- src/app/store/projectStore.ts
+- src/app/store/index.ts
+- src/app/features/landing/components/LandingCard.tsx
+- src/app/features/landing/Landing.tsx
+- src/app/features/characters/components/FactionsList.tsx
+- src/app/features/characters/components/CreateFactionForm.tsx
+
+## UI/UX Innovation Experiment
+
+Add a breadcrumb navigation component that displays the current selected project with a smooth fade-in animation, allowing quick project context switching from anywhere in the app
+
+## Recommended Next Goal
+
+Migrate characterStore to slices following the same pattern, then implement a root store that composes both slices for unified state management
+
+
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the requirement thoroughly
+- Identify all files that need to be modified or created
+- Implement all changes specified in the requirement
+- Follow the implementation steps precisely
+- Create/modify files as needed
+- Run any tests if specified
+- Ensure all changes are complete before finishing
+
+Begin implementation now.

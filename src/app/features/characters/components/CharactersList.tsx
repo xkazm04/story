@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Character } from '@/app/types/Character';
-import { useCharacterStore } from '@/app/store/characterStore';
-import { useProjectStore } from '@/app/store/projectStore';
+import { useCharacterStore } from '@/app/store/slices/characterSlice';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { factionApi } from '@/app/api/factions';
 import CharacterCard from './CharacterCard';
 import CharacterCreateForm from './CharacterCreateForm';
@@ -108,11 +108,30 @@ const CharactersList: React.FC<CharactersListProps> = ({ characters }) => {
         )}
       </AnimatePresence>
 
-      {/* Characters Grid */}
+      {/* Characters Grid with staggered animations */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <AnimatePresence mode="popLayout">
-          {displayedCharacters.map((character) => (
-            <CharacterCard key={character.id} character={character} />
+          {displayedCharacters.map((character, index) => (
+            <motion.div
+              key={character.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{
+                duration: 0.4,
+                delay: index * 0.05, // Staggered animation
+                ease: [0.4, 0, 0.2, 1],
+              }}
+              whileHover={{
+                y: -4,
+                transition: { duration: 0.2 },
+              }}
+              style={{
+                transformStyle: 'preserve-3d',
+              }}
+            >
+              <CharacterCard character={character} />
+            </motion.div>
           ))}
         </AnimatePresence>
       </div>

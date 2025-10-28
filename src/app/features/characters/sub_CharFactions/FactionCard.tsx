@@ -5,14 +5,15 @@ import { motion } from 'framer-motion';
 import { Users, Eye } from 'lucide-react';
 import { Faction } from '@/app/types/Faction';
 import { characterApi } from '@/app/api/characters';
-import { useProjectStore } from '@/app/store/projectStore';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
 
 interface FactionCardProps {
   faction: Faction;
   onSelect: (faction: Faction) => void;
+  isNew?: boolean;
 }
 
-const FactionCard: React.FC<FactionCardProps> = ({ faction, onSelect }) => {
+const FactionCard: React.FC<FactionCardProps> = ({ faction, onSelect, isNew = false }) => {
   const { selectedProject } = useProjectStore();
   const { data: characters = [] } = characterApi.useProjectCharacters(
     selectedProject?.id || '',
@@ -22,20 +23,61 @@ const FactionCard: React.FC<FactionCardProps> = ({ faction, onSelect }) => {
   // Count characters in this faction
   const memberCount = characters.filter((char) => char.faction_id === faction.id).length;
 
+  // Spring animation variants for new factions
+  const springVariants = {
+    hidden: { opacity: 0, scale: 0.8, y: 20 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      transition: {
+        type: 'spring' as const,
+        stiffness: 300,
+        damping: 20,
+        mass: 0.8,
+      },
+    },
+    exit: { opacity: 0, scale: 0.95 },
+  };
+
+  // Get branding colors with fallback
+  const primaryColor = faction.branding?.primary_color || faction.color;
+  const secondaryColor = faction.branding?.secondary_color;
+  const accentColor = faction.branding?.accent_color;
+
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
+      initial={isNew ? 'hidden' : { opacity: 0, scale: 0.95 }}
+      animate={isNew ? 'visible' : { opacity: 1, scale: 1 }}
+      exit="exit"
+      variants={isNew ? springVariants : undefined}
       onClick={() => onSelect(faction)}
-      className="relative group cursor-pointer bg-gray-900 rounded-lg border border-gray-800 overflow-hidden hover:border-gray-700 transition-all"
+      className={`relative group cursor-pointer bg-gray-900 rounded-lg border overflow-hidden hover:border-gray-700 transition-all ${
+        isNew ? 'border-blue-500/50 shadow-lg shadow-blue-500/20' : 'border-gray-800'
+      }`}
+      style={{
+        borderColor: primaryColor ? `${primaryColor}30` : undefined,
+      }}
     >
-      {/* Faction Color Accent */}
-      {faction.color && (
+      {/* Glow effect for new factions */}
+      {isNew && (
+        <motion.div
+          className="absolute inset-0 bg-blue-500/10 pointer-events-none"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 1, ease: 'easeOut' }}
+        />
+      )}
+      {/* Faction Color Accent - with gradient if branding exists */}
+      {primaryColor && (
         <div
           className="absolute top-0 left-0 right-0 h-1"
-          style={{ backgroundColor: faction.color }}
+          style={{
+            background: secondaryColor
+              ? `linear-gradient(90deg, ${primaryColor} 0%, ${secondaryColor} 50%, ${accentColor || primaryColor} 100%)`
+              : primaryColor,
+          }}
         />
       )}
 
@@ -51,13 +93,21 @@ const FactionCard: React.FC<FactionCardProps> = ({ faction, onSelect }) => {
           </div>
         ) : (
           <div
-            className="w-16 h-16 rounded-lg mb-4 flex items-center justify-center text-2xl font-bold"
+            className="w-16 h-16 rounded-lg mb-4 flex items-center justify-center text-2xl font-bold relative overflow-hidden"
             style={{
-              backgroundColor: faction.color ? `${faction.color}20` : '#1f2937',
-              color: faction.color || '#9ca3af',
+              backgroundColor: primaryColor ? `${primaryColor}20` : '#1f2937',
+              color: primaryColor || '#9ca3af',
+              border: secondaryColor ? `2px solid ${secondaryColor}40` : undefined,
             }}
           >
             {faction.name.charAt(0).toUpperCase()}
+            {/* Add accent color corner decoration if available */}
+            {accentColor && (
+              <div
+                className="absolute bottom-0 right-0 w-4 h-4 rounded-tl-lg"
+                style={{ backgroundColor: `${accentColor}60` }}
+              />
+            )}
           </div>
         )}
 

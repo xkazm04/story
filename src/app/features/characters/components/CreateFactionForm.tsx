@@ -2,10 +2,11 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save } from 'lucide-react';
+import { X, Save, AlertCircle } from 'lucide-react';
 import { factionApi } from '@/app/api/factions';
-import { useProjectStore } from '@/app/store/projectStore';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
+import { useOptimisticMutation } from '@/app/hooks/useOptimisticMutation';
 
 interface CreateFactionFormProps {
   onClose: () => void;
@@ -27,36 +28,46 @@ const CreateFactionForm: React.FC<CreateFactionFormProps> = ({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState(PRESET_COLORS[0]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
+
+  // Use optimistic mutation hook with automatic query invalidation
+  const { mutate, isLoading, isError, error, rollbackError } = useOptimisticMutation({
+    mutationFn: async (data: { name: string; description?: string; project_id: string; color: string }) => {
+      const newFaction = await factionApi.createFaction({
+        name: data.name,
+        description: data.description,
+        project_id: data.project_id,
+      });
+
+      // Update with color if provided
+      if (data.color && newFaction.id) {
+        await factionApi.updateFaction(newFaction.id, { color: data.color });
+      }
+
+      return newFaction;
+    },
+    affectedQueryKeys: [
+      ['factions', 'project', selectedProject?.id],
+      ['characters', selectedProject?.id],
+    ],
+    onSuccess: () => {
+      onSuccess();
+      onClose();
+    },
+    onError: (err) => {
+      console.error('Error creating faction:', err);
+    },
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !selectedProject) return;
 
-    setIsSubmitting(true);
-    setError('');
-
-    try {
-      const newFaction = await factionApi.createFaction({
-        name: name.trim(),
-        description: description.trim() || undefined,
-        project_id: selectedProject.id,
-      });
-
-      // Update with color if provided
-      if (color && newFaction.id) {
-        await factionApi.updateFaction(newFaction.id, { color });
-      }
-
-      onSuccess();
-      onClose();
-    } catch (err) {
-      setError('Failed to create faction');
-      console.error('Error creating faction:', err);
-    } finally {
-      setIsSubmitting(false);
-    }
+    await mutate({
+      name: name.trim(),
+      description: description.trim() || undefined,
+      project_id: selectedProject.id,
+      color,
+    });
   };
 
   return (
@@ -87,10 +98,35 @@ const CreateFactionForm: React.FC<CreateFactionFormProps> = ({
           </button>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-900/30 border border-red-500/50 rounded-lg text-red-400 text-sm">
-            {error}
-          </div>
+        {/* Error notifications with rollback info */}
+        {isError && error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-3 bg-red-900/30 border border-red-500/50 rounded-lg text-red-400 text-sm flex items-start gap-2"
+          >
+            <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+            <div>
+              <div className="font-medium">Failed to create faction</div>
+              <div className="text-xs text-red-300 mt-1">
+                {error instanceof Error ? error.message : 'An unknown error occurred'}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {rollbackError && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-3 bg-orange-900/30 border border-orange-500/50 rounded-lg text-orange-400 text-sm flex items-start gap-2"
+          >
+            <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+            <div>
+              <div className="font-medium">Rollback Notice</div>
+              <div className="text-xs text-orange-300 mt-1">{rollbackError}</div>
+            </div>
+          </motion.div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -174,11 +210,11 @@ const CreateFactionForm: React.FC<CreateFactionFormProps> = ({
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
-              disabled={isSubmitting || !name.trim()}
+              disabled={isLoading || !name.trim()}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg font-medium transition-colors"
             >
               <Save size={16} />
-              {isSubmitting ? 'Creating...' : 'Create Faction'}
+              {isLoading ? 'Creating...' : 'Create Faction'}
             </button>
             <button
               type="button"

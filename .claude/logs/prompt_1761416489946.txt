@@ -1,0 +1,48 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# migrate-character-store-to-slices
+
+## Description
+
+Migrate the existing `characterStore.ts` into a dedicated slice file with all character-domain state and actions properly typed and organized. Extract selectedCharacter and setSelectedCharacter into `characterSlice.ts`, ensuring all components using character state (CharactersList.tsx, CharactersFeature.tsx, CharacterDetails.tsx) continue to work seamlessly. This completes the store refactoring and enables composition into a root store.
+
+## Implementation Steps
+
+1. Analyze current `src/app/store/characterStore.ts` to identify all state properties (selectedCharacter), actions (setSelectedCharacter), and any computed values or side effects
+2. Create `src/app/store/slices/characterSlice.ts` with a CharacterStore interface defining selectedCharacter: Character | null, setSelectedCharacter: (character: Character | null) => void, using zustand's create() with proper TypeScript typing
+3. Implement the slice with proper state immutability patterns, ensuring character selection doesn't cause unnecessary re-renders in sibling components through proper selector usage
+4. Create a temporary re-export in `src/app/store/characterStore.ts` that imports and exports from characterSlice.ts to maintain backward compatibility
+5. Update CharactersList.tsx and CharactersFeature.tsx to use the new slice, verifying that character selection updates the UI correctly and CharacterDetails displays the selected character
+6. Add integration tests verifying that character selection updates persist across component unmounts and remounts, and that selectedCharacter properly resets when a project changes
+
+## Files to Modify
+
+- src/app/store/slices/characterSlice.ts
+- src/app/store/characterStore.ts
+- src/app/store/index.ts
+- src/app/features/characters/CharactersFeature.tsx
+- src/app/features/characters/components/CharactersList.tsx
+- src/app/features/characters/components/CharacterDetails.tsx
+
+## UI/UX Innovation Experiment
+
+Implement a character selection indicator badge that appears in the app header showing the currently selected character with their faction color, with smooth transitions when selection changes
+
+## Recommended Next Goal
+
+Compose both slices into a root store at `src/app/store/index.ts` that provides unified state management, then refactor components to use custom hooks for cleaner API consumption
+
+
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the requirement thoroughly
+- Identify all files that need to be modified or created
+- Implement all changes specified in the requirement
+- Follow the implementation steps precisely
+- Create/modify files as needed
+- Run any tests if specified
+- Ensure all changes are complete before finishing
+
+Begin implementation now.

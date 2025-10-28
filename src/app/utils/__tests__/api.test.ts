@@ -365,4 +365,154 @@ describe('apiFetch', () => {
       }
     });
   });
+
+  describe('external AbortSignal handling', () => {
+    it('should respect external AbortSignal when aborted before request starts', async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      global.fetch = jest.fn(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ data: 'test' }),
+        } as Response)
+      );
+
+      await expect(apiFetch({ url: '/api/test', signal: controller.signal })).rejects.toThrow();
+    });
+
+    it('should abort request when external signal is aborted during fetch', async () => {
+      const controller = new AbortController();
+      let fetchResolve: any;
+
+      global.fetch = jest.fn((url, options) => {
+        // Simulate external signal aborting during fetch
+        setTimeout(() => controller.abort(), 10);
+
+        return new Promise((resolve) => {
+          fetchResolve = resolve;
+          // Listen for abort on the signal passed to fetch
+          if (options?.signal) {
+            options.signal.addEventListener('abort', () => {
+              resolve({
+                ok: false,
+                status: 0,
+              } as Response);
+            });
+          }
+        });
+      });
+
+      await expect(apiFetch({ url: '/api/test', signal: controller.signal })).rejects.toThrow();
+    });
+
+    it('should work with external signal and timeout together', async () => {
+      jest.useFakeTimers();
+      const controller = new AbortController();
+
+      global.fetch = jest.fn(
+        () =>
+          new Promise((resolve) => {
+            setTimeout(() => {
+              resolve({
+                ok: true,
+                json: () => Promise.resolve({ data: 'test' }),
+              } as Response);
+            }, 10000);
+          })
+      );
+
+      const fetchPromise = apiFetch({
+        url: '/api/slow',
+        timeout: 1000,
+        signal: controller.signal
+      });
+
+      jest.advanceTimersByTime(1000);
+
+      await expect(fetchPromise).rejects.toThrow(TimeoutError);
+
+      jest.useRealTimers();
+    });
+
+    it('should prioritize external abort over timeout', async () => {
+      jest.useFakeTimers();
+      const controller = new AbortController();
+
+      global.fetch = jest.fn((url, options) => {
+        return new Promise((resolve, reject) => {
+          if (options?.signal) {
+            options.signal.addEventListener('abort', () => {
+              reject(new DOMException('Aborted', 'AbortError'));
+            });
+          }
+          setTimeout(() => {
+            resolve({
+              ok: true,
+              json: () => Promise.resolve({ data: 'test' }),
+            } as Response);
+          }, 10000);
+        });
+      });
+
+      const fetchPromise = apiFetch({
+        url: '/api/test',
+        timeout: 5000,
+        signal: controller.signal
+      });
+
+      // Abort externally before timeout
+      jest.advanceTimersByTime(100);
+      controller.abort();
+      jest.advanceTimersByTime(100);
+
+      await expect(fetchPromise).rejects.toThrow();
+
+      jest.useRealTimers();
+    });
+
+    it('should successfully complete request when external signal is not aborted', async () => {
+      const controller = new AbortController();
+      const mockData = { id: 1, name: 'Test' };
+
+      global.fetch = jest.fn(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockData),
+        } as Response)
+      );
+
+      const result = await apiFetch({ url: '/api/test', signal: controller.signal });
+
+      expect(result).toEqual(mockData);
+      expect(global.fetch).toHaveBeenCalledWith('/api/test', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        body: undefined,
+        signal: expect.any(AbortSignal),
+      });
+    });
+
+    it('should handle external signal abort during response parsing', async () => {
+      const controller = new AbortController();
+
+      global.fetch = jest.fn(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => {
+            // Abort during JSON parsing
+            controller.abort();
+            return new Promise((resolve) => {
+              setTimeout(() => resolve({ data: 'test' }), 100);
+            });
+          },
+        } as Response)
+      );
+
+      // The request should not throw immediately since abort happens during parsing
+      // This tests that cleanup happens properly even if abort occurs late
+      const result = await apiFetch({ url: '/api/test', signal: controller.signal });
+      expect(result).toEqual({ data: 'test' });
+    });
+  });
 });

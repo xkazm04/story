@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import LandingStats from './LandingStats';
 import LandingCardHeader from './LandingCardHeader';
-import { useProjectStore } from '@/app/store/projectStore';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { Project } from '@/app/types/Project';
 
 interface LandingCardProps {

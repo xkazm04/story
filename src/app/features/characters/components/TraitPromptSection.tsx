@@ -6,6 +6,17 @@ import { Save, Check } from 'lucide-react';
 import { PromptSection } from '@/app/constants/promptSections';
 import { traitApi } from '@/app/api/traits';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
+import { SmartGenerateButton } from '@/app/components/UI/SmartGenerateButton';
+import { useLLM } from '@/app/hooks/useLLM';
+import {
+  smartCharacterCreationPrompt,
+  gatherProjectContext,
+  gatherStoryContext,
+  gatherVisualStyleContext,
+  gatherCharacterContext
+} from '@/prompts';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
+import { useCharacters } from '@/app/hooks/useCharacters';
 
 interface TraitPromptSectionProps {
   section: PromptSection;
@@ -25,6 +36,10 @@ const TraitPromptSection: React.FC<TraitPromptSectionProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+
+  const { selectedProject } = useProjectStore();
+  const { data: allCharacters = [] } = useCharacters(selectedProject?.id || '');
+  const { generateFromTemplate, isLoading: isGenerating } = useLLM();
 
   const hasChanges = value !== originalValue;
   const maxLength = 2500;
@@ -63,6 +78,98 @@ const TraitPromptSection: React.FC<TraitPromptSectionProps> = ({
     }
   };
 
+  const handleSmartGenerate = async () => {
+    if (!selectedProject) {
+      setError('No active project');
+      return;
+    }
+
+    setError('');
+
+    try {
+      // Gather rich context
+      const [projectCtx, storyCtx, visualCtx, characterCtx] = await Promise.all([
+        gatherProjectContext(selectedProject.id),
+        gatherStoryContext(selectedProject.id),
+        gatherVisualStyleContext(selectedProject.id),
+        gatherCharacterContext(characterId),
+      ]);
+
+      // Get current character's name
+      const currentCharacter = allCharacters.find(c => c.id === characterId);
+      if (!currentCharacter) {
+        setError('Character not found');
+        return;
+      }
+
+      // Get other characters for context
+      const otherCharacters = allCharacters.filter(c => c.id !== characterId);
+
+      // Create focused prompt for this specific section
+      const sectionPrompts: Record<string, string> = {
+        background: `Create a detailed background for ${currentCharacter.name}. Focus on their history, origins, upbringing, and formative experiences that shaped who they are today.`,
+        personality: `Describe ${currentCharacter.name}'s personality traits, behaviors, mannerisms, speech patterns, and how they typically interact with others.`,
+        motivations: `What drives ${currentCharacter.name}? Describe their goals, desires, ambitions, fears, and what motivates them to act.`,
+        strengths: `List and describe ${currentCharacter.name}'s strengths, abilities, skills, talents, and positive attributes in detail.`,
+        weaknesses: `Describe ${currentCharacter.name}'s weaknesses, flaws, limitations, vulnerabilities, and struggles in detail.`,
+        relationships: `Describe ${currentCharacter.name}'s important relationships and social connections. How do they relate to other characters in the story?`,
+      };
+
+      // Generate using smart character creation prompt
+      const response = await generateFromTemplate(smartCharacterCreationPrompt, {
+        characterName: currentCharacter.name,
+        characterRole: currentCharacter.type,
+        projectContext: projectCtx,
+        storyContext: storyCtx,
+        existingCharacters: otherCharacters,
+        visualStyle: visualCtx,
+        focusArea: section.id,
+        specificRequest: sectionPrompts[section.id] || section.description,
+      });
+
+      if (response?.content) {
+        // Extract the relevant section from the response
+        // The LLM will return structured content, we need to parse it
+        const content = response.content;
+
+        // Try to find the specific section in the response
+        const sectionKeywords: Record<string, string[]> = {
+          background: ['background', 'history', 'origins', 'upbringing'],
+          personality: ['personality', 'traits', 'behavior', 'mannerisms'],
+          motivations: ['motivations', 'goals', 'desires', 'drives'],
+          strengths: ['strengths', 'abilities', 'skills', 'talents'],
+          weaknesses: ['weaknesses', 'flaws', 'limitations', 'vulnerabilities'],
+          relationships: ['relationships', 'connections', 'social'],
+        };
+
+        // Simple extraction - in production you might want more sophisticated parsing
+        let extractedContent = content;
+
+        // If response has clear section markers, extract just that section
+        const keywords = sectionKeywords[section.id] || [];
+        for (const keyword of keywords) {
+          const regex = new RegExp(`\\*\\*${keyword}[^\\*]*\\*\\*[:\\s]*([^\\n]+(?:\\n(?!\\*\\*)[^\\n]+)*)`, 'i');
+          const match = content.match(regex);
+          if (match && match[1]) {
+            extractedContent = match[1].trim();
+            break;
+          }
+        }
+
+        // Clean up markdown formatting
+        extractedContent = extractedContent
+          .replace(/\*\*/g, '')
+          .replace(/^#+\s/gm, '')
+          .trim();
+
+        setValue(extractedContent);
+      }
+    } catch (err) {
+      setError('Failed to generate content');
+      console.error('Error generating trait:', err);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -72,11 +179,25 @@ const TraitPromptSection: React.FC<TraitPromptSectionProps> = ({
     >
       {/* Section Header */}
       <div>
-        <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-1">
-          {section.icon}
-          {section.title}
-        </h3>
-        <p className="text-sm text-gray-400">{section.description}</p>
+        <div className="flex items-start justify-between mb-2">
+          <div>
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-1">
+              {section.icon}
+              {section.title}
+            </h3>
+            <p className="text-sm text-gray-400">{section.description}</p>
+          </div>
+
+          {/* Smart Generate Button */}
+          <SmartGenerateButton
+            onClick={handleSmartGenerate}
+            isLoading={isGenerating}
+            disabled={isGenerating}
+            label="Auto-fill"
+            size="sm"
+            variant="ghost"
+          />
+        </div>
       </div>
 
       {/* Text Area */}

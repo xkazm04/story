@@ -3,14 +3,40 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, ChevronDown } from 'lucide-react';
-import { useProjectStore } from '@/app/store/projectStore';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { actApi } from '@/app/api/acts';
 import { sceneApi } from '@/app/api/scenes';
 import { Act } from '@/app/types/Act';
 import ActList from './ActList';
 import ActTabButton from './ActTabButton';
+import { useEventListenerGuard } from '@/app/hooks/useEventListenerGuard';
+import EventListenerDebugPanel from '@/app/components/dev/EventListenerDebugPanel';
 
 const ActManager: React.FC = () => {
+  /**
+   * Event Listener Guard Integration Pattern
+   *
+   * This hook tracks all event listeners added by this component and its children,
+   * helping detect memory leaks during development.
+   *
+   * Integration checklist:
+   * 1. Import useEventListenerGuard at the top of your component
+   * 2. Call the hook early in component body with a descriptive component name
+   * 3. Ensure all addEventListener calls have matching removeEventListener in cleanup
+   * 4. Test by mounting/unmounting component and checking console for warnings
+   *
+   * Features:
+   * - Automatic tracking of window/document event listeners
+   * - Detailed console warnings when listeners aren't cleaned up
+   * - Development-only (zero production overhead)
+   * - Summary report on unmount showing cleanup percentage and suggestions
+   */
+  const listenerGuard = useEventListenerGuard('ActManager', {
+    enabled: process.env.NODE_ENV !== 'production',
+    warnOnUnmount: true,
+    trackGlobalListeners: true,
+  });
+
   const { selectedProject, selectedAct, setSelectedAct } = useProjectStore();
   const { data: acts = [], refetch, isLoading } = actApi.useProjectActs(
     selectedProject?.id || '',
@@ -115,55 +141,65 @@ const ActManager: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col py-2">
-      <div className="flex justify-center items-center relative">
-        <AnimatePresence mode="popLayout">
-          <motion.div
-            className="flex items-center justify-center gap-1.5 min-h-[40px] w-full"
-            layout
-          >
-            {visibleActs.map((act: Act) => (
-              <div key={act.id} className="flex items-center gap-2">
-                <ActTabButton act={act} onSelect={handleActChange} />
-                <div className="w-[1px] h-4 bg-gray-700" />
-              </div>
-            ))}
-            
-            {hasMoreActs && (
-              <motion.div
-                ref={moreButtonRef}
-                className="inline-flex cursor-pointer px-3 py-2 rounded-md text-sm font-medium items-center gap-1 border border-transparent hover:bg-gray-800 text-gray-400 hover:text-gray-300 transition-colors"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                layout
-                onClick={() => setShowActsList(!showActsList)}
-              >
-                +{acts.length - visibleActs.length}
-                <ChevronDown
-                  size={14}
-                  className={`transition-transform ${showActsList ? 'rotate-180' : ''}`}
-                />
-              </motion.div>
-            )}
-          </motion.div>
-        </AnimatePresence>
+    <>
+      <div className="flex flex-col py-2">
+        <div className="flex justify-center items-center relative">
+          <AnimatePresence mode="popLayout">
+            <motion.div
+              className="flex items-center justify-center gap-1.5 min-h-[40px] w-full"
+              layout
+            >
+              {visibleActs.map((act: Act) => (
+                <div key={act.id} className="flex items-center gap-2">
+                  <ActTabButton act={act} onSelect={handleActChange} />
+                  <div className="w-[1px] h-4 bg-gray-700" />
+                </div>
+              ))}
+
+              {hasMoreActs && (
+                <motion.div
+                  ref={moreButtonRef}
+                  className="inline-flex cursor-pointer px-3 py-2 rounded-md text-sm font-medium items-center gap-1 border border-transparent hover:bg-gray-800 text-gray-400 hover:text-gray-300 transition-colors"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  layout
+                  onClick={() => setShowActsList(!showActsList)}
+                >
+                  +{acts.length - visibleActs.length}
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform ${showActsList ? 'rotate-180' : ''}`}
+                  />
+                </motion.div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {error && (
+          <p className="text-xs text-red-500 mt-2 text-center">{error}</p>
+        )}
+
+        {/* Acts List Dropdown */}
+        <ActList
+          showActsList={showActsList}
+          setShowActsList={setShowActsList}
+          moreButtonRef={moreButtonRef}
+          acts={acts}
+          actsListRef={actsListRef}
+          onActChange={handleActChange}
+          onRefetch={refetch}
+        />
       </div>
 
-      {error && (
-        <p className="text-xs text-red-500 mt-2 text-center">{error}</p>
+      {/* Debug Panel - Development Only */}
+      {process.env.NODE_ENV !== 'production' && (
+        <EventListenerDebugPanel
+          guardResult={listenerGuard}
+          componentName="ActManager"
+        />
       )}
-
-      {/* Acts List Dropdown */}
-      <ActList
-        showActsList={showActsList}
-        setShowActsList={setShowActsList}
-        moreButtonRef={moreButtonRef}
-        acts={acts}
-        actsListRef={actsListRef}
-        onActChange={handleActChange}
-        onRefetch={refetch}
-      />
-    </div>
+    </>
   );
 };
 

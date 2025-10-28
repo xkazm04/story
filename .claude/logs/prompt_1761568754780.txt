@@ -1,0 +1,178 @@
+You are an expert software engineer. Execute the following requirement immediately. Do not ask questions, do not wait for confirmation. Read the requirement carefully and implement all changes to the codebase as specified.
+
+REQUIREMENT TO EXECUTE NOW:
+
+# create-dynamic-import-utility-helpers
+
+## Description
+
+Create reusable utility functions and custom hooks to standardize the dynamic import pattern across the application. This ensures consistent loading states, error handling, and performance monitoring across all dynamically imported modules. Extract the loading skeleton pattern into a configurable wrapper component that can be reused for any dynamic import.
+
+## Implementation Steps
+
+1. Create src/app/lib/dynamicImportHelpers.ts with a withDynamicImport() wrapper function that accepts a component path and returns a dynamically imported component with standardized error boundaries and loading states
+2. Create src/app/hooks/useDynamicComponent.ts custom hook that handles lazy loading of components with loading, error, and success states, allowing components to optionally preload on hover or visibility
+3. Create src/app/components/UI/DynamicComponentLoader.tsx wrapper component that accepts a dynamic component and renders it with consistent SkeletonLoader, error fallback, and Suspense boundary
+4. Update CharactersFeature.tsx, FactionsList.tsx, and Landing.tsx to use the new DynamicComponentLoader wrapper instead of inline dynamic() calls
+5. Add optional preload functionality to DynamicComponentLoader that triggers component loading on route prefetch or user hover, improving perceived performance
+6. Document the pattern in code comments showing how to add new dynamic imports following this standardized approach
+
+## Files to Modify
+
+- src/app/lib/dynamicImportHelpers.ts
+- src/app/hooks/useDynamicComponent.ts
+- src/app/components/UI/DynamicComponentLoader.tsx
+- src/app/features/characters/CharactersFeature.tsx
+- src/app/features/characters/components/FactionsList.tsx
+- src/app/features/landing/Landing.tsx
+
+## UI/UX Innovation Experiment
+
+Implement a smart preload system where components begin loading on hover or route prefetch, displaying a subtle progress indicator. Add a fade-in transition when dynamic content loads, and implement a retry mechanism with exponential backoff for failed loads with a user-friendly error message.
+
+## Recommended Next Goal
+
+Implement performance monitoring and analytics to track dynamic import load times and bundle sizes. This data will help identify which modules should be preloaded by default vs lazy-loaded, and inform future code splitting strategies.
+
+
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the requirement thoroughly
+- Identify all files that need to be modified or created
+- Implement all changes specified in the requirement
+- Follow the implementation steps precisely
+- Create/modify files as needed
+- Run any tests if specified
+- Ensure all changes are complete before finishing
+
+## Context Reference Updates
+
+After implementing changes, if the requirement references a specific CONTEXT (feature group), update the context documentation:
+
+1. Look for `.context` files in the project that match the feature being implemented
+2. Update the context file with:
+   - New files created
+   - Modified components
+   - Updated functionality
+   - New patterns introduced
+
+Example: If working on "authentication" feature, update `contexts/authentication/.context` with the changes.
+
+## File Structure Guidelines (Next.js/React Projects)
+
+When creating new files in Next.js/React projects, follow this structure:
+
+**Feature-Specific Files** (use `app/features/<feature>` structure):
+- `app/features/<feature>/components/` - Feature-specific components and UI sections
+- `app/features/<feature>/lib/` - Feature-specific functions, utilities, and logical helpers
+- `app/features/<feature>/` - Main wrapper, index, or page file for the feature
+
+**Reusable UI Components** (use `app/components/ui` structure):
+- `app/components/ui/` - Shared, reusable UI elements used across multiple features
+
+**Theming and Styling**:
+- Before creating new UI components, examine existing components in the project
+- Match the color scheme, spacing, and visual patterns of existing components
+- Use consistent className patterns (Tailwind CSS classes)
+- Follow the app's design language (glassmorphism, gradients, shadows, etc.)
+- Pay attention to dark mode support if the app uses it
+
+Examples:
+- Feature component: `app/features/tasks/components/TaskCard.tsx`
+- Feature helper: `app/features/tasks/lib/taskValidation.ts`
+- Reusable UI: `app/components/ui/Button.tsx`
+
+## Implementation Logging
+
+**CRITICAL**: After completing the implementation, create a log entry in the SQLite database to track what was implemented.
+
+Database Path: `C:\Users\kazda\kiro\story\database\goals.db`
+Table: `implementation_log`
+Project ID: `dd11e61e-f267-4e52-95c5-421b1ed9567b`
+
+Execute this SQL command after implementation (replace placeholders with actual values):
+
+```sql
+INSERT INTO implementation_log (
+  id,
+  project_id,
+  requirement_name,
+  title,
+  overview,
+  tested,
+  created_at
+) VALUES (
+  '<generate-unique-uuid>',
+  'dd11e61e-f267-4e52-95c5-421b1ed9567b',
+  '<requirement-name>',
+  '<short-descriptive-title>',
+  '<detailed-overview-of-changes>',
+  0,
+  datetime('now')
+);
+```
+
+**Log Entry Guidelines**:
+- `id`: Generate a unique UUID (e.g., using `crypto.randomUUID()` or similar)
+- `project_id`: The project identifier (use: "dd11e61e-f267-4e52-95c5-421b1ed9567b")
+- `requirement_name`: Name of the requirement file being executed
+- `title`: Short, descriptive title (2-6 words, e.g., "Add User Authentication")
+- `overview`: Detailed paragraph describing:
+  - What was implemented
+  - Key files created or modified
+  - Major functionality added
+  - Any important patterns or decisions made
+- `tested`: Always set to 0 (false) initially
+- `created_at`: Use `datetime('now')` for current timestamp
+
+**Example Log Entry**:
+
+```sql
+INSERT INTO implementation_log (
+  id,
+  project_id,
+  requirement_name,
+  title,
+  overview,
+  tested,
+  created_at
+) VALUES (
+  '550e8400-e29b-41d4-a716-446655440000',
+  'project-abc-123',
+  'implement-user-login',
+  'User Login System',
+  'Implemented complete user authentication system with login form, JWT token management, and session persistence. Created LoginForm.tsx component, authService.ts for API calls, and useAuth hook for state management. Added protected route wrapper and login/logout functionality. Integrated with existing theme using glassmorphism design.',
+  0,
+  datetime('now')
+);
+```
+
+**How to Execute the SQL**:
+Use the sqlite3 command-line tool or Node.js better-sqlite3 library:
+
+```bash
+sqlite3 "C:\Users\kazda\kiro\story\database\goals.db" "INSERT INTO implementation_log (...) VALUES (...);"
+```
+
+Or in Node.js/TypeScript:
+```typescript
+import Database from 'better-sqlite3';
+const db = new Database('C:\Users\kazda\kiro\story\database\goals.db');
+db.prepare(`
+  INSERT INTO implementation_log (id, project_id, requirement_name, title, overview, tested, created_at)
+  VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+`).run(id, projectId, requirementName, title, overview, 0);
+db.close();
+```
+
+## Final Checklist
+
+Before finishing:
+- [ ] All code changes implemented
+- [ ] Context documentation updated (if applicable)
+- [ ] File structure follows guidelines
+- [ ] UI components match existing theme
+- [ ] Implementation log entry created in database
+- [ ] Tests run successfully (if specified)
+
+Begin implementation now.
