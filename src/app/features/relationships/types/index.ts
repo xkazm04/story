@@ -89,3 +89,7 @@ export interface EdgeUpdate {
   relationshipType: RelationshipType;
   description?: string;
 }
+
+// Export validation utilities for convenience
+export { ValidationError } from './validators';
+export type { ValidationResult, TypeGuardResult } from './validators';

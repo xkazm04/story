@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useProjectStore } from "@/app/store/projectStore";
-import { sceneApi } from "@/app/hooks/useScenes";
+import { sceneApi } from "@/app/hooks/integration/useScenes";
 
 const ActOverview = () => {
     const { selectedProject, selectedAct } = useProjectStore();

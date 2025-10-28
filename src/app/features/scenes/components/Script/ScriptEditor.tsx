@@ -1,15 +1,84 @@
 'use client';
 
 import { useState } from 'react';
-import { useProjectStore } from '@/app/store/projectStore';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
+import { SmartGenerateButton } from '@/app/components/UI/SmartGenerateButton';
+import { useLLM } from '@/app/hooks/useLLM';
+import {
+  smartSceneGenerationPrompt,
+  gatherProjectContext,
+  gatherStoryContext,
+  gatherSceneContext,
+  gatherSceneCharacters
+} from '@/prompts';
 
 const ScriptEditor = () => {
-    const { selectedScene } = useProjectStore();
+    const { selectedScene, selectedProject, scenes } = useProjectStore();
     const [script, setScript] = useState(selectedScene?.script || '');
+    const [error, setError] = useState('');
+
+    const { generateFromTemplate, isLoading: isGenerating } = useLLM();
 
     const handleSave = () => {
         // TODO: Implement save functionality
         console.log('Saving script:', script);
+    };
+
+    const handleSmartGenerate = async () => {
+        if (!selectedScene || !selectedProject) {
+            setError('No scene or project selected');
+            return;
+        }
+
+        setError('');
+
+        try {
+            // Gather rich context
+            const [projectCtx, storyCtx, sceneCtx, characters] = await Promise.all([
+                gatherProjectContext(selectedProject.id),
+                gatherStoryContext(selectedProject.id),
+                gatherSceneContext(selectedScene.id),
+                gatherSceneCharacters(selectedScene.id)
+            ]);
+
+            // Find previous scene for continuity
+            const currentSceneIndex = scenes.findIndex(s => s.id === selectedScene.id);
+            const previousScene = currentSceneIndex > 0 ? scenes[currentSceneIndex - 1] : undefined;
+            const nextScene = currentSceneIndex < scenes.length - 1 ? scenes[currentSceneIndex + 1] : undefined;
+
+            // Generate scene script
+            const response = await generateFromTemplate(smartSceneGenerationPrompt, {
+                sceneTitle: selectedScene.name || 'Untitled Scene',
+                sceneLocation: selectedScene.location,
+                projectContext: projectCtx,
+                storyContext: storyCtx,
+                sceneContext: {
+                    ...sceneCtx,
+                    previousScene: previousScene ? {
+                        title: previousScene.name,
+                        description: previousScene.description
+                    } : undefined,
+                    nextScene: nextScene ? {
+                        title: nextScene.name,
+                        description: nextScene.description
+                    } : undefined
+                },
+                characters: characters
+            });
+
+            if (response?.content) {
+                // Clean up the response
+                let generatedScript = response.content
+                    .replace(/\*\*/g, '')
+                    .replace(/^#+\s/gm, '')
+                    .trim();
+
+                setScript(generatedScript);
+            }
+        } catch (err) {
+            setError('Failed to generate scene script');
+            console.error('Error generating scene:', err);
+        }
     };
 
     if (!selectedScene) {
@@ -25,13 +94,29 @@ const ScriptEditor = () => {
             <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold text-white">Script Editor</h3>
-                    <button
-                        onClick={handleSave}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
-                    >
-                        Save Script
-                    </button>
+                    <div className="flex gap-2">
+                        <SmartGenerateButton
+                            onClick={handleSmartGenerate}
+                            isLoading={isGenerating}
+                            disabled={isGenerating}
+                            label="Generate Scene"
+                            size="sm"
+                            variant="secondary"
+                        />
+                        <button
+                            onClick={handleSave}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+                        >
+                            Save Script
+                        </button>
+                    </div>
                 </div>
+
+                {error && (
+                    <div className="mb-4 p-3 bg-red-900/20 border border-red-800 rounded-lg text-red-400 text-sm">
+                        {error}
+                    </div>
+                )}
 
                 <textarea
                     value={script}

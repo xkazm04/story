@@ -4,8 +4,10 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { characterApi } from '@/app/api/characters';
 import { factionApi } from '@/app/api/factions';
-import { useProjectStore } from '@/app/store/projectStore';
-import { CHARACTER_TYPES } from '@/app/store/characterStore';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
+import { CHARACTER_TYPES } from '@/app/store/slices/characterSlice';
+import { useOptimisticMutation } from '@/app/hooks/useOptimisticMutation';
+import { Character } from '@/app/types/Character';
 
 interface CharacterCreateFormProps {
   onClose: () => void;
@@ -16,33 +18,47 @@ const CharacterCreateForm: React.FC<CharacterCreateFormProps> = ({ onClose }) =>
   const [name, setName] = useState('');
   const [type, setType] = useState('');
   const [factionId, setFactionId] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: factions = [] } = factionApi.useFactions(
     selectedProject?.id || '',
     !!selectedProject
   );
-  const { refetch } = characterApi.useProjectCharacters(selectedProject?.id || '');
+
+  // Use optimistic mutation for character creation
+  const { mutate: createCharacter, isLoading, rollbackError } = useOptimisticMutation<
+    Character,
+    {
+      name: string;
+      project_id: string;
+      type?: string;
+      faction_id?: string;
+    }
+  >({
+    mutationFn: characterApi.createCharacter,
+    affectedQueryKeys: [
+      ['characters', 'project', selectedProject?.id],
+      ['relationships', selectedProject?.id],
+    ],
+    toastMessage: 'Creating character...',
+    enableUndo: true,
+    onSuccess: () => {
+      onClose();
+    },
+    onError: (error) => {
+      console.error('Failed to create character:', error);
+    },
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !selectedProject) return;
 
-    setIsSubmitting(true);
-    try {
-      await characterApi.createCharacter({
-        name: name.trim(),
-        project_id: selectedProject.id,
-        type: type || undefined,
-        faction_id: factionId || undefined,
-      });
-      refetch();
-      onClose();
-    } catch (error) {
-      console.error('Failed to create character:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    await createCharacter({
+      name: name.trim(),
+      project_id: selectedProject.id,
+      type: type || undefined,
+      faction_id: factionId || undefined,
+    });
   };
 
   return (
@@ -107,10 +123,10 @@ const CharacterCreateForm: React.FC<CharacterCreateFormProps> = ({ onClose }) =>
       <div className="flex gap-3 pt-4">
         <button
           type="submit"
-          disabled={isSubmitting || !name.trim()}
+          disabled={isLoading || !name.trim()}
           className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg font-medium transition-colors"
         >
-          {isSubmitting ? 'Creating...' : 'Create Character'}
+          {isLoading ? 'Creating...' : 'Create Character'}
         </button>
         <button
           type="button"
@@ -120,6 +136,13 @@ const CharacterCreateForm: React.FC<CharacterCreateFormProps> = ({ onClose }) =>
           Cancel
         </button>
       </div>
+
+      {/* Error display */}
+      {rollbackError && (
+        <div className="mt-2 p-3 bg-red-900/20 border border-red-800 rounded-lg text-red-400 text-sm">
+          {rollbackError}
+        </div>
+      )}
     </form>
   );
 };

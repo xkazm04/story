@@ -2,13 +2,19 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Edit, Trash2, Users, Save, X } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Users, Save, X, Image as ImageIcon, Trophy } from 'lucide-react';
 import { Faction } from '@/app/types/Faction';
 import { factionApi } from '@/app/api/factions';
 import { characterApi } from '@/app/api/characters';
-import { useProjectStore } from '@/app/store/projectStore';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
+import { MOCK_USER_ID } from '../../../../../db/mockData';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
 import CharacterCard from '../components/CharacterCard';
+import FactionMediaGallery from './FactionMediaGallery';
+import MediaUploadForm from './MediaUploadForm';
+import FactionBrandingPanel from './FactionBrandingPanel';
+import FactionLoreGallery from './FactionLoreGallery';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface FactionDetailsProps {
   faction: Faction;
@@ -23,26 +29,36 @@ const PRESET_COLORS = [
   '#ec4899', '#f43f5e', '#64748b', '#6b7280', '#71717a',
 ];
 
+type TabType = 'info' | 'members' | 'media' | 'branding' | 'history';
+
 const FactionDetails: React.FC<FactionDetailsProps> = ({
   faction,
   onBack,
   onUpdate,
 }) => {
+  const queryClient = useQueryClient();
   const { selectedProject } = useProjectStore();
   const { data: characters = [] } = characterApi.useProjectCharacters(
     selectedProject?.id || '',
     !!selectedProject
   );
+  const { data: factionMedia = [] } = factionApi.useFactionMedia(faction.id);
 
+  const [activeTab, setActiveTab] = useState<TabType>('info');
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(faction.name);
   const [description, setDescription] = useState(faction.description || '');
   const [color, setColor] = useState(faction.color || PRESET_COLORS[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showUploadForm, setShowUploadForm] = useState(false);
 
   // Get characters in this faction
   const factionMembers = characters.filter((char) => char.faction_id === faction.id);
+
+  // Check if current user is faction leader (for simplicity, the user who has the first character in the faction)
+  // In a real app, this would be based on user roles/permissions
+  const isLeader = true; // For now, always true for demo purposes
 
   const handleSave = async () => {
     setIsSubmitting(true);
@@ -81,6 +97,19 @@ const FactionDetails: React.FC<FactionDetailsProps> = ({
     setDescription(faction.description || '');
     setColor(faction.color || PRESET_COLORS[0]);
     setIsEditing(false);
+  };
+
+  const handleMediaUpload = async (file: File, type: string, description: string) => {
+    await factionApi.uploadFactionMedia(faction.id, file, type, description);
+    // Invalidate and refetch the media query
+    queryClient.invalidateQueries({ queryKey: ['faction-media', faction.id] });
+    setShowUploadForm(false);
+  };
+
+  const handleMediaDelete = async (mediaId: string) => {
+    await factionApi.deleteFactionMedia(mediaId);
+    // Invalidate and refetch the media query
+    queryClient.invalidateQueries({ queryKey: ['faction-media', faction.id] });
   };
 
   return (
@@ -230,26 +259,201 @@ const FactionDetails: React.FC<FactionDetailsProps> = ({
         </div>
       </div>
 
-      {/* Members Section */}
-      <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
-        <ColoredBorder color="purple" />
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+      {/* Tab Navigation */}
+      <div className="flex gap-2 border-b border-gray-800">
+        <button
+          onClick={() => setActiveTab('info')}
+          className={`px-6 py-3 font-medium transition-all ${
+            activeTab === 'info'
+              ? 'text-blue-400 border-b-2 border-blue-400'
+              : 'text-gray-400 hover:text-gray-300'
+          }`}
+        >
+          Information
+        </button>
+        <button
+          onClick={() => setActiveTab('members')}
+          className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${
+            activeTab === 'members'
+              ? 'text-purple-400 border-b-2 border-purple-400'
+              : 'text-gray-400 hover:text-gray-300'
+          }`}
+        >
           <Users size={18} />
-          Faction Members ({factionMembers.length})
-        </h3>
-
-        {factionMembers.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {factionMembers.map((character) => (
-              <CharacterCard key={character.id} character={character} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-400 text-center py-8">
-            No characters in this faction yet
-          </p>
+          Members ({factionMembers.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('media')}
+          className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${
+            activeTab === 'media'
+              ? 'text-purple-400 border-b-2 border-purple-400'
+              : 'text-gray-400 hover:text-gray-300'
+          }`}
+        >
+          <ImageIcon size={18} />
+          Media ({factionMedia.length})
+        </button>
+        {isLeader && (
+          <button
+            onClick={() => setActiveTab('branding')}
+            className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${
+              activeTab === 'branding'
+                ? 'text-orange-400 border-b-2 border-orange-400'
+                : 'text-gray-400 hover:text-gray-300'
+            }`}
+          >
+            <Edit size={18} />
+            Branding
+          </button>
         )}
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${
+            activeTab === 'history'
+              ? 'text-purple-400 border-b-2 border-purple-400'
+              : 'text-gray-400 hover:text-gray-300'
+          }`}
+        >
+          <Trophy size={18} />
+          History & Achievements
+        </button>
       </div>
+
+      {/* Tab Content */}
+      <AnimatePresence mode="wait">
+        {activeTab === 'info' && (
+          <motion.div
+            key="info"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
+              <ColoredBorder color="blue" />
+              <h3 className="text-lg font-semibold text-white mb-4">
+                Faction Information
+              </h3>
+              <div className="space-y-4 text-gray-300">
+                <div>
+                  <span className="font-medium text-gray-400">Name:</span> {faction.name}
+                </div>
+                {faction.description && (
+                  <div>
+                    <span className="font-medium text-gray-400">Description:</span>
+                    <p className="mt-1">{faction.description}</p>
+                  </div>
+                )}
+                <div>
+                  <span className="font-medium text-gray-400">Members:</span> {factionMembers.length}
+                </div>
+                <div>
+                  <span className="font-medium text-gray-400">Media:</span> {factionMedia.length} items
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'members' && (
+          <motion.div
+            key="members"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
+              <ColoredBorder color="purple" />
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Users size={18} />
+                Faction Members ({factionMembers.length})
+              </h3>
+
+              {factionMembers.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {factionMembers.map((character) => (
+                    <CharacterCard key={character.id} character={character} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-400 text-center py-8">
+                  No characters in this faction yet
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'media' && (
+          <motion.div
+            key="media"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
+              <ColoredBorder color="purple" />
+              <FactionMediaGallery
+                media={factionMedia}
+                factionId={faction.id}
+                isLeader={isLeader}
+                onUploadClick={() => setShowUploadForm(true)}
+                onDeleteMedia={handleMediaDelete}
+              />
+            </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'branding' && isLeader && (
+          <motion.div
+            key="branding"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
+              <ColoredBorder color="orange" />
+              <FactionBrandingPanel
+                faction={faction}
+                onUpdate={onUpdate}
+              />
+            </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'history' && (
+          <motion.div
+            key="history"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
+              <ColoredBorder color="purple" />
+              <FactionLoreGallery
+                faction={faction}
+                characters={factionMembers}
+                isLeader={isLeader}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Media Upload Modal */}
+      <AnimatePresence>
+        {showUploadForm && (
+          <MediaUploadForm
+            factionId={faction.id}
+            onClose={() => setShowUploadForm(false)}
+            onUpload={handleMediaUpload}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

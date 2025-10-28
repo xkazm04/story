@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Act } from '@/app/types/Act';
-import { useProjectStore } from '@/app/store/projectStore';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
 
 interface ActTabButtonProps {
   act: Act;

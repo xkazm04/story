@@ -1,26 +1,17 @@
-import { create } from 'zustand';
-import { Character } from '../types/Character';
+/**
+ * @deprecated This file is maintained for backward compatibility only.
+ * Please import from '@/app/store/slices/characterSlice' instead.
+ *
+ * This re-export ensures existing imports continue to work during migration.
+ * Will be removed in a future version.
+ */
 
-export const CHARACTER_TYPES = ["Key", "Major", "Minor", "Other"] as const;
-
-interface CharacterState {
-  selectedCharacter: string | null;
-  setSelectedCharacter: (id: string | null) => void;
-  projectCharacters: Character[];
-  setProjectCharacters: (characters: Character[]) => void;
-  activeType: string;
-  setActiveType: (type: string) => void;
-  factionId: string | undefined;
-  setFactionId: (id: string | undefined) => void;
-}
-
-export const useCharacterStore = create<CharacterState>((set) => ({
-  selectedCharacter: null,
-  setSelectedCharacter: (id) => set({ selectedCharacter: id }),
-  projectCharacters: [],
-  setProjectCharacters: (characters) => set({ projectCharacters: characters }),
-  activeType: "Main",
-  setActiveType: (type) => set({ activeType: type }),
-  factionId: undefined,
-  setFactionId: (id) => set({ factionId: id }),
-}));
+export {
+  useCharacterStore,
+  CHARACTER_TYPES,
+  selectSelectedCharacterId,
+  selectSetSelectedCharacter,
+  selectProjectCharacters,
+  selectFilters,
+  type CharacterState,
+} from './slices/characterSlice';

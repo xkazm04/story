@@ -6,7 +6,7 @@ import { Plus, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { Act } from '@/app/types/Act';
 import { actApi } from '@/app/api/acts';
-import { useProjectStore } from '@/app/store/projectStore';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
 import ActListItem from './ActListItem';
 
 interface ActListProps {

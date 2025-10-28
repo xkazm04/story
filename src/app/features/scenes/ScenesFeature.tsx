@@ -1,13 +1,39 @@
 'use client';
 
-import { useProjectStore } from "@/app/store/projectStore";
+import { useProjectStore } from "@/app/store/slices/projectSlice";
 import TabMenu from "@/app/components/UI/TabMenu";
 import { BannerProvider } from "@/app/components/UI/BannerContext";
 import SmartBanner from "@/app/components/UI/SmartBanner";
 import ScriptEditor from "./components/Script/ScriptEditor";
 import { ArrowLeft } from "lucide-react";
+import { useEventListenerGuard } from "@/app/hooks/useEventListenerGuard";
+import EventListenerDebugPanel from "@/app/components/dev/EventListenerDebugPanel";
 
 const ScenesFeature = () => {
+    /**
+     * Parent-Level Event Listener Guard
+     *
+     * This is a strategic placement of the guard at the parent component level to
+     * catch any listeners added by child components like ActManager and ScenesList.
+     *
+     * Parent-level monitoring benefits:
+     * - Provides holistic view of listener management across feature
+     * - Catches leaks from deeply nested children
+     * - Helps identify which child components need their own guards
+     * - Reduces need to instrument every single child component
+     *
+     * Best practice:
+     * 1. Add parent-level guard to major feature components
+     * 2. Add component-level guards to complex children with many listeners
+     * 3. Use debug panel in development to monitor real-time listener activity
+     * 4. Check console summary reports when components unmount
+     */
+    const listenerGuard = useEventListenerGuard('ScenesFeature', {
+        enabled: process.env.NODE_ENV !== 'production',
+        warnOnUnmount: true,
+        trackGlobalListeners: true,
+    });
+
     const { selectedSceneId, selectedScene } = useProjectStore();
 
     const tabs = [
@@ -60,6 +86,14 @@ const ScenesFeature = () => {
                         )}
                         <TabMenu tabs={tabs} />
                     </div>
+                )}
+
+                {/* Debug Panel - Development Only */}
+                {process.env.NODE_ENV !== 'production' && (
+                    <EventListenerDebugPanel
+                        guardResult={listenerGuard}
+                        componentName="ScenesFeature"
+                    />
                 )}
             </div>
         </BannerProvider>

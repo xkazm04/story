@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { motion } from 'framer-motion';
 import { Trash2 } from 'lucide-react';
-import { useProjectStore } from '@/app/store/projectStore';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { sceneApi } from '@/app/api/scenes';
 import { Scene } from '@/app/types/Scene';
 

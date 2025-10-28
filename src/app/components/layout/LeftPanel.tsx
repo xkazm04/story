@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MoveLeft } from 'lucide-react';
-import { useProjectStore } from '@/app/store/projectStore';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
 import ScenesFeature from '@/app/features/scenes/ScenesFeature';
 
 interface LeftPanelProps {

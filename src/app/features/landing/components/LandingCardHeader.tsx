@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { Project } from "@/app/types/Project";
-import { projectApi } from "@/app/hooks/useProjects";
+import { projectApi } from "@/app/hooks/integration/useProjects";
 import { Trash2 } from "lucide-react";
 
 type Props = {

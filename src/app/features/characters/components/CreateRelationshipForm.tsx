@@ -5,7 +5,7 @@ import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { relationshipApi } from '@/app/api/relationships';
 import { characterApi } from '@/app/api/characters';
-import { useProjectStore } from '@/app/store/projectStore';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
 
 interface CreateRelationshipFormProps {
   characterId: string;

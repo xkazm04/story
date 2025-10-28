@@ -19,6 +19,7 @@ interface ApiRequest {
   body?: any;
   headers?: HeadersInit;
   timeout?: number; // Optional timeout in milliseconds
+  signal?: AbortSignal; // Optional external abort signal for request cancellation
 }
 
 /**
@@ -27,6 +28,15 @@ interface ApiRequest {
  * Throws TimeoutError for request timeouts
  * Preserves network errors for proper handling
  * Note: This is the internal implementation; use apiFetch for rate-limited requests
+ *
+ * Memory Management & Event Listener Cleanup:
+ * - Uses AbortController to properly cancel in-flight requests
+ * - Supports external AbortSignal for component unmount cancellation
+ * - Clears timeout using clearTimeout to prevent memory leaks
+ * - AbortController signals are properly cleaned up by the browser
+ * - When components unmount, React Query automatically aborts ongoing queries
+ * - This ensures no lingering listeners or incomplete network requests
+ * - Prevents race conditions and "state update on unmounted component" warnings
  */
 const apiFetchInternal = async <T>({
   url,
@@ -34,13 +44,20 @@ const apiFetchInternal = async <T>({
   body,
   headers = {},
   timeout,
+  signal: externalSignal,
 }: ApiRequest): Promise<T> => {
   try {
-    // Setup timeout if specified
+    // Setup internal controller for timeout, or use external signal if no timeout
     const controller = new AbortController();
     const timeoutId = timeout
       ? setTimeout(() => controller.abort(), timeout)
       : undefined;
+
+    // Combine external signal with internal timeout controller
+    // If external signal is aborted, abort the internal controller
+    if (externalSignal) {
+      externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
+    }
 
     try {
       const response = await fetch(url, {
@@ -53,7 +70,7 @@ const apiFetchInternal = async <T>({
         signal: controller.signal,
       });
 
-      // Clear timeout if request completes
+      // Clear timeout if request completes - prevents memory leak
       if (timeoutId) clearTimeout(timeoutId);
 
       if (!response.ok) {
@@ -130,11 +147,12 @@ export const apiFetch = async <T>(params: ApiRequest): Promise<T> => {
 /**
  * React Query hook for GET requests with typed error handling
  * Errors are typed as ApiError and available in the error state
+ * Automatically cancels requests when component unmounts or query is disabled
  */
 export const useApiGet = <T>(url: string, enabled: boolean = true) => {
   return useQuery<T, ApiError>({
     queryKey: [url],
-    queryFn: async () => await apiFetch<T>({ url }),
+    queryFn: async ({ signal }) => await apiFetch<T>({ url, signal }),
     enabled,
     staleTime: 5 * 60 * 1000, // Cache data for 5 mins
     retry: (failureCount, error) => {

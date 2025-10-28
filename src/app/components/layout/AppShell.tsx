@@ -5,8 +5,10 @@ import dynamic from 'next/dynamic';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../UI/resizable';
 import { ImperativePanelHandle } from 'react-resizable-panels';
-import { useProjectStore } from '@/app/store/projectStore';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
 import Landing from '@/app/features/landing/Landing';
+import CharacterSelectionBadge from '../UI/CharacterSelectionBadge';
+import { useCharacterProjectSync } from '@/app/hooks/useCharacterProjectSync';
 
 // Dynamic imports for better performance
 const LeftPanel = dynamic(() => import('./LeftPanel'), {
@@ -44,6 +46,9 @@ const AppShellContent: React.FC = () => {
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
   const { selectedProject, showLanding } = useProjectStore();
 
+  // Sync character state with project changes
+  useCharacterProjectSync();
+
   // Show landing page if no project is selected or showLanding is true
   if (!selectedProject || showLanding) {
     return <Landing />;
@@ -51,6 +56,16 @@ const AppShellContent: React.FC = () => {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-gray-950">
+      {/* Header with Character Selection Badge */}
+      <div className="flex items-center justify-between px-4 py-2 bg-gray-900/50 border-b border-gray-800 backdrop-blur-sm">
+        <div className="flex items-center gap-4">
+          <h1 className="text-lg font-semibold text-white">
+            {selectedProject?.title || 'Project'}
+          </h1>
+          <CharacterSelectionBadge />
+        </div>
+      </div>
+
       <ResizablePanelGroup direction="horizontal">
           {/* Left Panel */}
           <ResizablePanel
