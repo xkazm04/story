@@ -80,7 +80,7 @@ const ScenesFeature = () => {
                     <div className="flex-1 overflow-auto p-4">
                         {selectedScene && (
                             <div className="mb-4">
-                                <h2 className="text-xl font-semibold text-white">{selectedScene.title || 'Untitled Scene'}</h2>
+                                <h2 className="text-xl font-semibold text-white">{selectedScene.name || 'Untitled Scene'}</h2>
                                 <p className="text-sm text-gray-400">{selectedScene.description || 'No description'}</p>
                             </div>
                         )}

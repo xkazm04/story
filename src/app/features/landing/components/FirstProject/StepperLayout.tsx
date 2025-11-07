@@ -6,7 +6,7 @@ import StepperNav from "./StepperNav";
 import { narratorMaleSelection, narratorFemaleSelection, projectTypes, templateSelection } from "@/app/constants/landingCards";
 import StepperOverview from "./StepperOverview";
 import StepperItem from "./StepperItem";
-import { projectApi } from "@/app/api/projects";
+import { projectApi } from "@/app/hooks/integration/useProjects";
 import { MOCK_USER_ID } from "@/app/config/mockUser";
 
 type Objective = {

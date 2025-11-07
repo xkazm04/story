@@ -8,10 +8,10 @@ import { FactionRelationship } from '@/app/types/Faction';
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
     const body = await request.json();
 
     const { data, error } = await supabaseServer
@@ -45,10 +45,10 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
 
     const { error } = await supabaseServer
       .from('faction_relationships')

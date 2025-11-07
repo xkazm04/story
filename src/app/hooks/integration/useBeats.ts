@@ -6,10 +6,7 @@ const BEATS_URL = `${API_BASE_URL}/beats`;
 export const beatApi = {
   // Get all beats for a project
   useGetBeats: (projectId: string | undefined, enabled: boolean = true) => {
-    if (!projectId) {
-      throw new Error('Project ID is required to fetch beats.');
-    }
-    const url = `${BEATS_URL}?projectId=${projectId}`;
+    const url = projectId ? `${BEATS_URL}?projectId=${projectId}` : '';
     return useApiGet<Beat[]>(url, enabled && !!projectId);
   },
 

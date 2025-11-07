@@ -1,10 +1,11 @@
+import React from 'react';
 import { BookOpen, Heart, Zap, Target, Shield, Brain } from 'lucide-react';
 
 export interface PromptSection {
   id: string;
   title: string;
   description: string;
-  icon: JSX.Element;
+  icon: React.JSX.Element;
   placeholder: string;
 }
 

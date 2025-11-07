@@ -343,6 +343,71 @@ export interface Database {
           updated_at?: string
         }
       }
+      char_appearance: {
+        Row: {
+          character_id: string
+          gender: string | null
+          age: string | null
+          skin_color: string | null
+          body_type: string | null
+          height: string | null
+          face_shape: string | null
+          eye_color: string | null
+          hair_color: string | null
+          hair_style: string | null
+          facial_hair: string | null
+          face_features: string | null
+          clothing_style: string | null
+          clothing_color: string | null
+          clothing_accessories: string | null
+          custom_features: string | null
+          prompt: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          character_id: string
+          gender?: string | null
+          age?: string | null
+          skin_color?: string | null
+          body_type?: string | null
+          height?: string | null
+          face_shape?: string | null
+          eye_color?: string | null
+          hair_color?: string | null
+          hair_style?: string | null
+          facial_hair?: string | null
+          face_features?: string | null
+          clothing_style?: string | null
+          clothing_color?: string | null
+          clothing_accessories?: string | null
+          custom_features?: string | null
+          prompt?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          character_id?: string
+          gender?: string | null
+          age?: string | null
+          skin_color?: string | null
+          body_type?: string | null
+          height?: string | null
+          face_shape?: string | null
+          eye_color?: string | null
+          hair_color?: string | null
+          hair_style?: string | null
+          facial_hair?: string | null
+          face_features?: string | null
+          clothing_style?: string | null
+          clothing_color?: string | null
+          clothing_accessories?: string | null
+          custom_features?: string | null
+          prompt?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

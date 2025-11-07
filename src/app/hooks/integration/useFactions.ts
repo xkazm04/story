@@ -244,5 +244,14 @@ export const factionApi = {
       method: 'DELETE',
     });
   },
+
+  // Update faction branding
+  updateFactionBranding: async (factionId: string, branding: Partial<Faction['branding']>) => {
+    return apiFetch<Faction>({
+      url: `${FACTIONS_URL}/${factionId}/branding`,
+      method: 'PUT',
+      body: branding,
+    });
+  },
 };
 

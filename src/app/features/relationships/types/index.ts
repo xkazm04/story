@@ -63,13 +63,13 @@ export interface RelationshipEdgeData {
 }
 
 // Relationship edge type
-export interface RelationshipEdge extends Edge {
+export type RelationshipEdge = Edge<RelationshipEdgeData> & {
   id: string;
   source: string;
   target: string;
   type: 'relationship';
   data: RelationshipEdgeData;
-}
+};
 
 // API response types
 export interface RelationshipMapData {

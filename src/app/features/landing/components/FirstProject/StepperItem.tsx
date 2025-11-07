@@ -8,6 +8,7 @@ type SelectionType = {
     projectType: string | null;
     narrator: string | null;
     template: string | null;
+    genre: string | null;
 };
 
 type Props = {

@@ -10,15 +10,30 @@ export { characterTraitPrompt } from './character/characterTrait';
 export { characterBackstoryPrompt } from './character/characterBackstory';
 export { characterDialoguePrompt } from './character/characterDialogue';
 export { personalityExtractionPrompt } from './character/personalityExtraction';
+export { characterNameSuggestionsPrompt } from './character/characterNameSuggestions';
+
+// Faction prompts
+export { factionDescriptionPrompt } from './faction/factionDescription';
+export { factionLorePrompt } from './faction/factionLore';
+export { factionRelationshipPrompt } from './faction/factionRelationship';
+export { smartFactionCreationPrompt } from './faction/smartFactionCreation';
+
+// Project prompts
+export { projectInspirationPrompt } from './project/projectInspiration';
 
 // Story prompts
 export { storyDescriptionPrompt } from './story/storyDescription';
 export { beatDescriptionPrompt } from './story/beatDescription';
+export { beatSummaryPrompt } from './story/beatSummary';
+export { beatNameSuggestionsPrompt } from './story/beatNameSuggestions';
+export { beatToSceneMappingPrompt } from './story/beatToSceneMapping';
 export { actSummaryPrompt } from './story/actSummary';
+export { actDescriptionRecommendationPrompt } from './story/actDescriptionRecommendation';
 
 // Scene prompts
 export { sceneDescriptionPrompt } from './scene/sceneDescription';
 export { dialogueImprovementPrompt } from './scene/dialogueImprovement';
+export { sceneNameSuggestionsPrompt } from './scene/sceneNameSuggestions';
 
 // Voice prompts
 export { voiceDescriptionPrompt } from './voice/voiceDescription';
@@ -47,6 +62,14 @@ export { smartCharacterCreationPrompt } from './character/smartCharacterCreation
 export { smartSceneGenerationPrompt } from './scene/smartSceneGeneration';
 export { smartImageGenerationPrompt } from './image/smartImageGeneration';
 export { smartVideoGenerationPrompt } from './video/smartVideoGeneration';
+
+// AI Assistant prompts
+export {
+  narrativeAssistantPrompt,
+  quickSceneHookPrompt,
+  quickDialoguePrompt,
+  quickBeatOutlinePrompt
+} from './assistant/narrativeAssistant';
 
 // Context gathering utilities (used by smart prompts)
 export {

@@ -15,7 +15,7 @@ import { characterApi } from '@/app/api/characters';
 
 function Example1_BasicUsage() {
   const { mutate, isLoading } = useOptimisticMutation({
-    mutationFn: async (data: { name: string }) => {
+    mutationFn: async (data: { name: string; project_id: string }) => {
       return await factionApi.createFaction(data);
     },
     affectedQueryKeys: [['factions', 'project-123']],
@@ -23,7 +23,7 @@ function Example1_BasicUsage() {
 
   return (
     <button
-      onClick={() => mutate({ name: 'New Faction' })}
+      onClick={() => mutate({ name: 'New Faction', project_id: 'project-123' })}
       disabled={isLoading}
     >
       Create Faction
@@ -37,7 +37,7 @@ function Example1_BasicUsage() {
 
 function Example2_CustomToastMessage() {
   const { mutate, isLoading, undoAvailable } = useOptimisticMutation({
-    mutationFn: async (data: { name: string; description: string }) => {
+    mutationFn: async (data: { name: string; project_id: string; description?: string }) => {
       return await factionApi.createFaction(data);
     },
     affectedQueryKeys: [
@@ -56,7 +56,7 @@ function Example2_CustomToastMessage() {
 
   return (
     <div>
-      <button onClick={() => mutate({ name: 'Heroes Guild', description: 'A guild of heroes' })}>
+      <button onClick={() => mutate({ name: 'Heroes Guild', project_id: 'project-123', description: 'A guild of heroes' })}>
         Create Faction
       </button>
       {undoAvailable && (
@@ -102,7 +102,7 @@ function Example3_NoToast() {
 
 function Example4_ManualUndo() {
   const { mutate, isLoading, undoAvailable, manualUndo } = useOptimisticMutation({
-    mutationFn: async (data: { name: string; age: number }) => {
+    mutationFn: async (data: { name: string; project_id: string; type?: string; faction_id?: string }) => {
       return await characterApi.createCharacter(data);
     },
     affectedQueryKeys: [['characters', 'project-123']],
@@ -111,7 +111,7 @@ function Example4_ManualUndo() {
   });
 
   const handleCreate = () => {
-    mutate({ name: 'Aragorn', age: 87 });
+    mutate({ name: 'Aragorn', project_id: 'project-123' });
   };
 
   return (
@@ -221,7 +221,7 @@ function Example6_NoOptimisticUpdate() {
 
 function Example7_FormIntegration() {
   const { mutate, isLoading, isError, error, undoAvailable, rollbackError } = useOptimisticMutation({
-    mutationFn: async (data: { name: string; description: string }) => {
+    mutationFn: async (data: { name: string; project_id: string; description?: string }) => {
       return await factionApi.createFaction(data);
     },
     affectedQueryKeys: [['factions', 'project-123']],
@@ -237,6 +237,7 @@ function Example7_FormIntegration() {
     const formData = new FormData(e.currentTarget);
     mutate({
       name: formData.get('name') as string,
+      project_id: 'project-123',
       description: formData.get('description') as string,
     });
   };
@@ -290,20 +291,20 @@ function Example7_FormIntegration() {
 
 async function Example8_AsyncAwait() {
   const { mutateAsync } = useOptimisticMutation({
-    mutationFn: async (data: { name: string }) => {
+    mutationFn: async (data: { name: string; project_id: string }) => {
       return await factionApi.createFaction(data);
     },
     affectedQueryKeys: [['factions', 'project-123']],
   });
 
   try {
-    const result = await mutateAsync({ name: 'New Faction' });
+    const result = await mutateAsync({ name: 'New Faction', project_id: 'project-123' });
     console.log('Created faction:', result);
 
     // Continue with dependent operations
-    const relatedData = await someOtherOperation(result.id);
+    // const relatedData = await someOtherOperation(result.id);
 
-    return { result, relatedData };
+    return { result };
   } catch (error) {
     console.error('Failed to create faction:', error);
     throw error;
@@ -316,7 +317,7 @@ async function Example8_AsyncAwait() {
 
 function Example9_SequentialMutations() {
   const createFaction = useOptimisticMutation({
-    mutationFn: async (data: { name: string }) => {
+    mutationFn: async (data: { name: string; project_id: string }) => {
       return await factionApi.createFaction(data);
     },
     affectedQueryKeys: [['factions', 'project-123']],
@@ -324,7 +325,7 @@ function Example9_SequentialMutations() {
   });
 
   const createCharacter = useOptimisticMutation({
-    mutationFn: async (data: { name: string; faction_id: string }) => {
+    mutationFn: async (data: { name: string; project_id: string; type?: string; faction_id?: string }) => {
       return await characterApi.createCharacter(data);
     },
     affectedQueryKeys: [['characters', 'project-123']],
@@ -334,11 +335,12 @@ function Example9_SequentialMutations() {
   const handleCreateBoth = async () => {
     try {
       // Create faction first
-      const faction = await createFaction.mutateAsync({ name: 'New Guild' });
+      const faction = await createFaction.mutateAsync({ name: 'New Guild', project_id: 'project-123' });
 
       // Then create character in that faction
       const character = await createCharacter.mutateAsync({
         name: 'Guild Leader',
+        project_id: 'project-123',
         faction_id: faction.id,
       });
 

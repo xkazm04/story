@@ -2,20 +2,22 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlusIcon, ChevronDown, ChevronUp, CheckCircle, Circle } from 'lucide-react';
+import { PlusIcon, ChevronDown, ChevronUp, CheckCircle, Circle, BookOpen, Sparkles } from 'lucide-react';
 import { useProjectStore } from '@/app/store/projectStore';
-import { useBeats } from '@/app/hooks/useBeats';
+import { beatApi } from '@/app/hooks/integration/useBeats';
+import { AIAssistantPanel } from '@/app/features/assistant/AIAssistantPanel';
 import type { Beat } from '@/app/types/Beat';
 
 const StoryRightPanel: React.FC = () => {
   const { activeProjectId } = useProjectStore();
-  const { data: beats, isLoading } = useBeats(activeProjectId || '');
+  const { data: beats, isLoading } = beatApi.useGetBeats(activeProjectId || '');
 
   const [showCompleted, setShowCompleted] = useState(true);
   const [completedBeats, setCompletedBeats] = useState<Record<string, boolean>>({});
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     act: true,
     story: true,
+    assistant: true,
   });
 
   const toggleBeatCompletion = (beatId: string) => {
@@ -292,12 +294,46 @@ const StoryRightPanel: React.FC = () => {
             </AnimatePresence>
           </div>
         )}
+
+        {/* AI Assistant Section */}
+        <div className="mb-3">
+          <button
+            className="w-full px-3 py-2 flex justify-between items-center text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
+            onClick={() => toggleSection('assistant')}
+          >
+            <span className="flex items-center gap-2">
+              <Sparkles className="w-3 h-3 text-purple-400" />
+              AI Assistant
+            </span>
+            {expandedSections.assistant ? (
+              <ChevronUp className="h-4 w-4 text-gray-400" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-gray-400" />
+            )}
+          </button>
+
+          <AnimatePresence initial={false}>
+            {expandedSections.assistant && (
+              <motion.div
+                initial="closed"
+                animate="open"
+                exit="closed"
+                variants={sectionVariants}
+                className="overflow-hidden"
+              >
+                <div className="mt-2">
+                  <AIAssistantPanel
+                    projectId={activeProjectId || undefined}
+                    contextType="beat"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );
 };
-
-// Missing import
-import { BookOpen } from 'lucide-react';
 
 export default StoryRightPanel;

@@ -11,8 +11,18 @@ import { useProjectStore } from '@/app/store/projectStore';
 import { useCreateImage } from '@/app/hooks/useImages';
 import type { PromptComponents } from '@/app/types/Image';
 
+interface GenerationParams {
+  width: number;
+  height: number;
+  steps: number;
+  cfg_scale: number;
+  num_images: number;
+  provider: 'leonardo' | 'stability' | 'midjourney' | 'dalle' | 'local';
+}
+
 const ImageGenerator: React.FC = () => {
-  const { activeProjectId } = useProjectStore();
+  const { selectedProject } = useProjectStore();
+  const activeProjectId = selectedProject?.id;
   const createImage = useCreateImage();
 
   const [promptComponents, setPromptComponents] = useState<PromptComponents>({
@@ -24,13 +34,13 @@ const ImageGenerator: React.FC = () => {
   });
 
   const [negativePrompt, setNegativePrompt] = useState('');
-  const [generationParams, setGenerationParams] = useState({
+  const [generationParams, setGenerationParams] = useState<GenerationParams>({
     width: 1024,
     height: 1024,
     steps: 30,
     cfg_scale: 7.5,
     num_images: 1,
-    provider: 'leonardo' as const,
+    provider: 'leonardo',
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -119,7 +129,7 @@ const ImageGenerator: React.FC = () => {
           <h3 className="text-lg font-semibold text-white mb-4">Generation Settings</h3>
           <GenerationControls
             params={generationParams}
-            onChange={setGenerationParams}
+            onChange={(params) => setGenerationParams(params)}
           />
         </div>
 

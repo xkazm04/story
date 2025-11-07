@@ -22,15 +22,18 @@ const ResizablePanel = ResizablePrimitive.Panel
 const ResizableHandle = ({
   withHandle,
   className,
+  onDragging,
   ...props
 }: React.ComponentProps<typeof ResizablePrimitive.PanelResizeHandle> & {
   withHandle?: boolean
+  onDragging?: (isDragging: boolean) => void
 }) => (
   <ResizablePrimitive.PanelResizeHandle
     className={cn(
       "relative flex w-px items-center justify-center bg-gray-700/50 hover:bg-gray-600 transition-colors after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-blue-500 data-[panel-group-direction=vertical]:h-px data-[panel-group-direction=vertical]:w-full",
       className
     )}
+    onDragging={onDragging}
     {...props}
   >
     {withHandle && (

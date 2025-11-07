@@ -1,8 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import { GeneratedVideo, GeneratedVideoInsert, GeneratedVideoUpdate, VideoStoryboard, StoryboardFrame } from '@/app/types/Video';
-
-const supabase = createClient();
 
 /**
  * Fetch all generated videos for a project

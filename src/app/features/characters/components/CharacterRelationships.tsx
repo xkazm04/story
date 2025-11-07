@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Heart, Filter } from 'lucide-react';
 import { relationshipApi } from '@/app/api/relationships';
 import { characterApi } from '@/app/api/characters';
+import { CharRelationship } from '@/app/types/Character';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import RelationshipCard from './RelationshipCard';
 import CreateRelationshipForm from './CreateRelationshipForm';
@@ -55,10 +56,10 @@ const CharacterRelationships: React.FC<CharacterRelationshipsProps> = ({
   const filteredRelationships =
     filter === 'all'
       ? relationships
-      : relationships.filter((rel) => rel.relationship_type === filter);
+      : relationships.filter((rel: CharRelationship) => rel.relationship_type === filter);
 
   // Get the other character in the relationship
-  const getOtherCharacter = (relationship: any) => {
+  const getOtherCharacter = (relationship: CharRelationship) => {
     const otherCharId =
       relationship.character_a_id === characterId
         ? relationship.character_b_id
@@ -121,7 +122,7 @@ const CharacterRelationships: React.FC<CharacterRelationshipsProps> = ({
         {filteredRelationships.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <AnimatePresence mode="popLayout">
-              {filteredRelationships.map((relationship) => (
+              {filteredRelationships.map((relationship: CharRelationship) => (
                 <RelationshipCard
                   key={relationship.id}
                   relationship={relationship}

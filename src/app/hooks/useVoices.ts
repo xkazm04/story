@@ -1,8 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import { Voice, VoiceInsert, VoiceUpdate, VoiceConfig } from '@/app/types/Voice';
-
-const supabase = createClient();
 
 /**
  * Fetch all voices for a project

@@ -53,11 +53,15 @@ const CenterPanel: React.FC = () => {
   };
 
   return (
-    <div className="h-full w-full bg-gray-950 flex flex-col">
+    <div className="h-full w-full bg-gray-950 flex flex-col relative">
+      {/* Paper-like background texture for storywriting */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(90deg,transparent_0%,transparent_calc(100%_-_1px),rgba(255,255,255,0.1)_calc(100%_-_1px)),linear-gradient(transparent_0%,transparent_calc(100%_-_1px),rgba(255,255,255,0.1)_calc(100%_-_1px))] bg-[length:20px_20px]"></div>
+      <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[radial-gradient(circle_at_50%_50%,rgba(139,92,46,0.1),transparent_50%)]"></div>
+
       {selectedProject ? (
         <>
           {/* Icon Navigation */}
-          <div className="flex items-center gap-1 px-4 py-3 bg-gray-900 border-b border-gray-800">
+          <div className="flex items-center gap-1 px-4 py-3 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 relative z-10">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -78,12 +82,12 @@ const CenterPanel: React.FC = () => {
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto relative z-0">
             {renderContent()}
           </div>
         </>
       ) : (
-        <div className="h-full flex items-center justify-center">
+        <div className="h-full flex items-center justify-center relative z-10">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-300 mb-2">Welcome to Story</h1>
             <p className="text-gray-500">Select or create a project to get started</p>

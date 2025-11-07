@@ -3,6 +3,7 @@
  * Verifies throttling, queuing, and configuration behavior
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { RateLimiter } from '../rateLimiter';
 
 describe('RateLimiter', () => {
@@ -11,17 +12,17 @@ describe('RateLimiter', () => {
   beforeEach(() => {
     // Create a new instance for each test
     rateLimiter = new RateLimiter(5, 10); // 5 req/s, warning at 10 queued
-    jest.clearAllMocks();
-    jest.spyOn(console, 'warn').mockImplementation();
+    vi.clearAllMocks();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Basic functionality', () => {
     it('should execute requests immediately when under the limit', async () => {
-      const mockFn = jest.fn().mockResolvedValue('success');
+      const mockFn = vi.fn().mockResolvedValue('success');
 
       const result = await rateLimiter.execute(mockFn);
 
@@ -31,7 +32,7 @@ describe('RateLimiter', () => {
     });
 
     it('should queue requests when over the limit', async () => {
-      const mockFn = jest.fn().mockResolvedValue('success');
+      const mockFn = vi.fn().mockResolvedValue('success');
 
       // Fire 10 requests rapidly (double the limit)
       const promises = Array(10).fill(null).map(() => rateLimiter.execute(mockFn));
@@ -50,7 +51,7 @@ describe('RateLimiter', () => {
 
     it('should handle errors in queued requests', async () => {
       const error = new Error('Request failed');
-      const mockFn = jest.fn().mockRejectedValue(error);
+      const mockFn = vi.fn().mockRejectedValue(error);
 
       await expect(rateLimiter.execute(mockFn)).rejects.toThrow('Request failed');
     });
@@ -58,7 +59,7 @@ describe('RateLimiter', () => {
 
   describe('Rate limiting behavior', () => {
     it('should throttle requests to respect the rate limit', async () => {
-      const mockFn = jest.fn().mockResolvedValue('success');
+      const mockFn = vi.fn().mockResolvedValue('success');
       const startTime = Date.now();
 
       // Execute 15 requests (3x the limit of 5 req/s)
@@ -77,7 +78,7 @@ describe('RateLimiter', () => {
   describe('Queue monitoring', () => {
     it('should return correct queue length', async () => {
       // Create a delay to keep requests queued
-      const slowMockFn = jest.fn().mockImplementation(() =>
+      const slowMockFn = vi.fn().mockImplementation(() =>
         new Promise(resolve => setTimeout(() => resolve('success'), 100))
       );
 
@@ -94,8 +95,8 @@ describe('RateLimiter', () => {
     });
 
     it('should emit warning when queue exceeds threshold', async () => {
-      const mockFn = jest.fn().mockResolvedValue('success');
-      const consoleSpy = jest.spyOn(console, 'warn');
+      const mockFn = vi.fn().mockResolvedValue('success');
+      const consoleSpy = vi.spyOn(console, 'warn');
 
       // Fire more than the warning threshold (10)
       const promises = Array(15).fill(null).map(() => rateLimiter.execute(mockFn));
@@ -130,7 +131,7 @@ describe('RateLimiter', () => {
     });
 
     it('should respect updated rate limit', async () => {
-      const mockFn = jest.fn().mockResolvedValue('success');
+      const mockFn = vi.fn().mockResolvedValue('success');
 
       // Increase rate limit
       rateLimiter.setMaxRequestsPerSecond(20);
@@ -148,8 +149,8 @@ describe('RateLimiter', () => {
 
   describe('Concurrent execution', () => {
     it('should handle multiple concurrent request batches', async () => {
-      const mockFn1 = jest.fn().mockResolvedValue('batch1');
-      const mockFn2 = jest.fn().mockResolvedValue('batch2');
+      const mockFn1 = vi.fn().mockResolvedValue('batch1');
+      const mockFn2 = vi.fn().mockResolvedValue('batch2');
 
       // Fire two batches concurrently
       const batch1 = Array(5).fill(null).map(() => rateLimiter.execute(mockFn1));
@@ -169,7 +170,7 @@ describe('RateLimiter', () => {
       // This is an edge case - rate limiter should still work but be very slow
       rateLimiter.setMaxRequestsPerSecond(1);
 
-      const mockFn = jest.fn().mockResolvedValue('success');
+      const mockFn = vi.fn().mockResolvedValue('success');
       const promises = Array(2).fill(null).map(() => rateLimiter.execute(mockFn));
 
       await Promise.all(promises);
@@ -178,7 +179,7 @@ describe('RateLimiter', () => {
     });
 
     it('should handle synchronous errors in request functions', async () => {
-      const mockFn = jest.fn().mockImplementation(() => {
+      const mockFn = vi.fn().mockImplementation(() => {
         throw new Error('Synchronous error');
       });
 

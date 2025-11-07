@@ -10,19 +10,15 @@ interface ProjectState {
   projects: Project[];
   setProjects: (projects: Project[]) => void;
 
-  // Acts
+  // Acts - UI state only (data is managed by React Query)
   selectedAct: Act | null;
   setSelectedAct: (act: Act | null) => void;
-  acts: Act[];
-  setActs: (acts: Act[]) => void;
 
-  // Scenes
+  // Scenes - UI state only (data is managed by React Query)
   selectedScene: Scene | null;
   selectedSceneId: string | null;
   setSelectedScene: (scene: Scene | null) => void;
   setSelectedSceneId: (id: string | null) => void;
-  scenes: Scene[];
-  setScenes: (scenes: Scene[]) => void;
 
   // UI State
   showLanding: boolean;
@@ -39,19 +35,15 @@ export const useProjectStore = create<ProjectState>((set) => ({
   projects: [],
   setProjects: (projects) => set({ projects: projects }),
 
-  // Acts
+  // Acts - UI state only (data is managed by React Query)
   selectedAct: null,
   setSelectedAct: (act) => set({ selectedAct: act }),
-  acts: [],
-  setActs: (acts) => set({ acts: acts }),
 
-  // Scenes
+  // Scenes - UI state only (data is managed by React Query)
   selectedScene: null,
   selectedSceneId: null,
   setSelectedScene: (scene) => set({ selectedScene: scene }),
   setSelectedSceneId: (id) => set({ selectedSceneId: id }),
-  scenes: [],
-  setScenes: (scenes) => set({ scenes: scenes }),
 
   // UI State
   showLanding: true, // Start with landing page visible

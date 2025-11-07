@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
+import { sceneApi } from '@/app/hooks/integration/useScenes';
 import { SmartGenerateButton } from '@/app/components/UI/SmartGenerateButton';
 import { useLLM } from '@/app/hooks/useLLM';
 import {
@@ -13,7 +14,12 @@ import {
 } from '@/prompts';
 
 const ScriptEditor = () => {
-    const { selectedScene, selectedProject, scenes } = useProjectStore();
+    const { selectedScene, selectedProject, selectedAct } = useProjectStore();
+    const { data: scenes = [] } = sceneApi.useScenesByProjectAndAct(
+        selectedProject?.id || '',
+        selectedAct?.id || '',
+        !!selectedProject && !!selectedAct
+    );
     const [script, setScript] = useState(selectedScene?.script || '');
     const [error, setError] = useState('');
 
@@ -127,7 +133,7 @@ const ScriptEditor = () => {
 
                 <div className="mt-4 flex justify-between items-center text-sm text-gray-400">
                     <div>
-                        Words: {script.split(/\s+/).filter(w => w).length}
+                        Words: {script.split(/\s+/).filter((w: string) => w).length}
                     </div>
                     <div>
                         Characters: {script.length}

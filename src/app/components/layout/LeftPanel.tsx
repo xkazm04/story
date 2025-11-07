@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { MoveLeft } from 'lucide-react';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
-import ScenesFeature from '@/app/features/scenes/ScenesFeature';
+import ProjectOverview from '@/app/features/projectOverview/ProjectOverview';
 
 interface LeftPanelProps {
   isHiding?: boolean;
@@ -34,19 +34,19 @@ const LeftPanel: React.FC<LeftPanelProps> = ({ isHiding = false }) => {
   };
 
   return (
-    <div className="bg-gradient-to-b from-gray-900/70 via-gray-800 to-gray-900/70 h-full w-full text-white flex flex-col pt-[5%] pb-[10%] relative overflow-hidden">
+    <div className="bg-gradient-to-b from-gray-900/70 via-gray-800 to-gray-900/70 h-full w-full text-white flex flex-col relative overflow-hidden">
       <motion.div
         className="w-full h-full flex flex-col"
         initial="visible"
         animate={isHiding ? 'hidden' : 'visible'}
         variants={contentVariants}
       >
-        {/* Scenes Feature */}
-        <div className="flex-1 overflow-y-auto">
-          <ScenesFeature />
+        {/* Project Overview */}
+        <div className="flex-1 overflow-hidden">
+          <ProjectOverview />
         </div>
 
-        {/* Project Info Footer */}
+        {/* Back to Projects Button */}
         {selectedProject && (
           <div className="absolute bottom-4 right-4 z-10">
             <button
@@ -54,7 +54,7 @@ const LeftPanel: React.FC<LeftPanelProps> = ({ isHiding = false }) => {
               className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700 rounded-lg transition-all cursor-pointer text-gray-300 hover:text-white"
             >
               <MoveLeft size={16} />
-              {selectedProject.name}
+              Back to Projects
             </button>
           </div>
         )}

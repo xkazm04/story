@@ -6,31 +6,40 @@ import { Image as ImageIcon, Download, Trash2, Copy, MoreVertical, X } from 'luc
 import { useProjectStore } from '@/app/store/projectStore';
 import { useImagesByProject, useDeleteImage } from '@/app/hooks/useImages';
 import type { GeneratedImage } from '@/app/types/Image';
+import { ConfirmationModal } from '@/app/components/UI/ConfirmationModal';
 
 const ImageGallery: React.FC = () => {
-  const { activeProjectId } = useProjectStore();
-  const { data: images, isLoading } = useImagesByProject(activeProjectId || '');
+  const { selectedProject } = useProjectStore();
+  const { data: images, isLoading } = useImagesByProject(selectedProject?.id || '');
   const deleteImage = useDeleteImage();
 
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
+  const [imageToDelete, setImageToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
-  const handleDelete = async (imageId: string) => {
-    if (!activeProjectId) return;
+  const handleDeleteClick = (imageId: string) => {
+    setImageToDelete(imageId);
+  };
 
-    const confirmed = confirm('Are you sure you want to delete this image?');
-    if (!confirmed) return;
+  const handleDelete = async () => {
+    if (!selectedProject?.id || !imageToDelete) return;
 
+    setIsDeleting(true);
     try {
-      await deleteImage.mutateAsync({ id: imageId, projectId: activeProjectId });
+      await deleteImage.mutateAsync({ id: imageToDelete, projectId: selectedProject.id });
+      setImageToDelete(null);
     } catch (error) {
       console.error('Delete error:', error);
-      alert('Failed to delete image');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const handleCopyPrompt = (prompt: string) => {
     navigator.clipboard.writeText(prompt);
-    alert('Prompt copied to clipboard!');
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2000);
   };
 
   if (isLoading) {
@@ -89,9 +98,11 @@ const ImageGallery: React.FC = () => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDelete(image.id);
+                  handleDeleteClick(image.id);
                 }}
                 className="p-2 bg-gray-800 rounded-lg hover:bg-red-600"
+                data-testid="image-delete-btn"
+                aria-label="Delete image"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -211,8 +222,10 @@ const ImageGallery: React.FC = () => {
                       Copy Prompt
                     </button>
                     <button
-                      onClick={() => handleDelete(selectedImage.id)}
+                      onClick={() => handleDeleteClick(selectedImage.id)}
                       className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white"
+                      data-testid="image-detail-delete-btn"
+                      aria-label="Delete image"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -223,6 +236,19 @@ const ImageGallery: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={!!imageToDelete}
+        onClose={() => setImageToDelete(null)}
+        onConfirm={handleDelete}
+        type="danger"
+        title="Delete Image"
+        message="Are you sure you want to delete this image? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        isLoading={isDeleting}
+      />
     </>
   );
 };

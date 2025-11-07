@@ -2,12 +2,12 @@
 
 import { compressImage } from "@/app/helpers/imageUpload";
 import { Asset } from "@/app/types/Asset";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import { ImagePlus, X } from "lucide-react";
 import NextImage from "next/image";
 import { useRef, useState, DragEvent, useEffect } from "react";
 
-const dropzoneVariants = {
+const dropzoneVariants: Variants = {
   initial: { opacity: 0 },
   animate: { opacity: 1, transition: { duration: 0.4, ease: "easeOut" } },
   exit: { opacity: 0, transition: { duration: 0.3, ease: "easeIn" } },

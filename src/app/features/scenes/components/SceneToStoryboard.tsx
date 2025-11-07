@@ -6,7 +6,7 @@ import { Clapperboard, Loader2 } from 'lucide-react';
 import { useLLM } from '@/app/hooks/useLLM';
 import { storyboardGenerationPrompt } from '@/prompts';
 import { useCreateStoryboard, useCreateStoryboardFrame } from '@/app/hooks/useVideos';
-import { useProjectStore } from '@/app/store/projectStore';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
 
 interface SceneToStoryboardProps {
   sceneId: string;
@@ -22,7 +22,7 @@ const SceneToStoryboard: React.FC<SceneToStoryboardProps> = ({
   onStoryboardCreated,
 }) => {
   const { generateFromTemplate, isLoading: llmLoading } = useLLM();
-  const { activeProjectId } = useProjectStore();
+  const { selectedProject } = useProjectStore();
   const createStoryboard = useCreateStoryboard();
   const createFrame = useCreateStoryboardFrame();
 
@@ -32,7 +32,7 @@ const SceneToStoryboard: React.FC<SceneToStoryboardProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerate = async () => {
-    if (!activeProjectId || !sceneDescription.trim()) {
+    if (!selectedProject?.id || !sceneDescription.trim()) {
       alert('Please provide a scene description');
       return;
     }
@@ -58,7 +58,7 @@ const SceneToStoryboard: React.FC<SceneToStoryboardProps> = ({
 
       // Create storyboard in database
       const storyboard = await createStoryboard.mutateAsync({
-        project_id: activeProjectId,
+        project_id: selectedProject.id,
         name: `Storyboard for Scene`,
         description: sceneDescription,
         total_duration: totalDuration,

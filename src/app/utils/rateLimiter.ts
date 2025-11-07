@@ -129,7 +129,7 @@ export class RateLimiter {
     return new Promise<T>((resolve, reject) => {
       this.queue.push({
         execute: requestFn,
-        resolve,
+        resolve: resolve as (value: unknown) => void,
         reject,
       });
 

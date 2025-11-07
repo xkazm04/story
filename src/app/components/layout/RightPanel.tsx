@@ -10,7 +10,7 @@ import CharRightPanel from '@/app/features/characters/sub_CharRightPanel/CharRig
 type RightPanelMode = 'story' | 'characters';
 
 const RightPanel: React.FC = () => {
-  const { activeProjectId } = useProjectStore();
+  const { selectedProject } = useProjectStore();
   const [mode, setMode] = useState<RightPanelMode>('story');
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -29,7 +29,7 @@ const RightPanel: React.FC = () => {
     }
   };
 
-  if (!activeProjectId) {
+  if (!selectedProject) {
     return (
       <div className="h-full w-full bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center border-l border-gray-800">
         <p className="text-gray-500 text-sm">Select a project to get started</p>

@@ -105,9 +105,14 @@ const apiFetchInternal = async <T>({
       // Clear timeout if error occurs
       if (timeoutId) clearTimeout(timeoutId);
 
-      // Check if this is an abort error (timeout)
+      // Check if this is an abort error (timeout or external abort)
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new TimeoutError(`Request timeout after ${timeout}ms`);
+        // Only throw timeout error if timeout was actually set
+        if (timeout) {
+          throw new TimeoutError(`Request timeout after ${timeout}ms`);
+        }
+        // Otherwise it was aborted externally (e.g., component unmount)
+        throw error;
       }
 
       // Re-throw if already an ApiError

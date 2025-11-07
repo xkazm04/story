@@ -1,8 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import { GeneratedImage, GeneratedImageInsert, GeneratedImageUpdate } from '@/app/types/Image';
-
-const supabase = createClient();
 
 /**
  * Fetch all generated images for a project

@@ -22,7 +22,7 @@ const BackgroundPattern: React.FC<BackgroundPatternProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const linesRef = useRef<Line[]>([]);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
   
   const getRandomColor = () => {
     switch (colorScheme) {
@@ -103,11 +103,13 @@ const BackgroundPattern: React.FC<BackgroundPatternProps> = ({
 
   useEffect(() => {
     initializeLines();
-    animateLines();
-    
+    drawLines();
+    animationRef.current = requestAnimationFrame(animateLines);
+
     return () => {
-      if (animationRef.current) {
+      if (animationRef.current !== undefined) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = undefined;
       }
     };
   }, [numLines, colorScheme]);

@@ -6,31 +6,41 @@ import { Video as VideoIcon, Download, Trash2, Copy, X, Play } from 'lucide-reac
 import { useProjectStore } from '@/app/store/projectStore';
 import { useVideosByProject, useDeleteVideo } from '@/app/hooks/useVideos';
 import type { GeneratedVideo } from '@/app/types/Video';
+import { ConfirmationModal } from '@/app/components/UI/ConfirmationModal';
 
 const VideoGallery: React.FC = () => {
-  const { activeProjectId } = useProjectStore();
+  const { selectedProject } = useProjectStore();
+  const activeProjectId = selectedProject?.id;
   const { data: videos, isLoading } = useVideosByProject(activeProjectId || '');
   const deleteVideo = useDeleteVideo();
 
   const [selectedVideo, setSelectedVideo] = useState<GeneratedVideo | null>(null);
+  const [videoToDelete, setVideoToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
-  const handleDelete = async (videoId: string) => {
-    if (!activeProjectId) return;
+  const handleDeleteClick = (videoId: string) => {
+    setVideoToDelete(videoId);
+  };
 
-    const confirmed = confirm('Are you sure you want to delete this video?');
-    if (!confirmed) return;
+  const handleDelete = async () => {
+    if (!activeProjectId || !videoToDelete) return;
 
+    setIsDeleting(true);
     try {
-      await deleteVideo.mutateAsync({ id: videoId, projectId: activeProjectId });
+      await deleteVideo.mutateAsync({ id: videoToDelete, projectId: activeProjectId });
+      setVideoToDelete(null);
     } catch (error) {
       console.error('Delete error:', error);
-      alert('Failed to delete video');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const handleCopyPrompt = (prompt: string) => {
     navigator.clipboard.writeText(prompt);
-    alert('Prompt copied to clipboard!');
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2000);
   };
 
   if (isLoading) {
@@ -94,9 +104,11 @@ const VideoGallery: React.FC = () => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDelete(video.id);
+                  handleDeleteClick(video.id);
                 }}
                 className="p-2 bg-gray-900 bg-opacity-80 rounded-lg hover:bg-red-600"
+                data-testid="video-delete-btn"
+                aria-label="Delete video"
               >
                 <Trash2 className="w-3 h-3" />
               </button>
@@ -213,8 +225,10 @@ const VideoGallery: React.FC = () => {
                       Copy Prompt
                     </button>
                     <button
-                      onClick={() => handleDelete(selectedVideo.id)}
+                      onClick={() => handleDeleteClick(selectedVideo.id)}
                       className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white"
+                      data-testid="video-detail-delete-btn"
+                      aria-label="Delete video"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -225,6 +239,19 @@ const VideoGallery: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={!!videoToDelete}
+        onClose={() => setVideoToDelete(null)}
+        onConfirm={handleDelete}
+        type="danger"
+        title="Delete Video"
+        message="Are you sure you want to delete this video? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        isLoading={isDeleting}
+      />
     </>
   );
 };

@@ -78,7 +78,7 @@ const VideoPromptBuilder: React.FC<VideoPromptBuilderProps> = ({
       });
 
       if (result && result.content) {
-        setPrompt((prev) => `${prev}\n\n${result.content}`);
+        setPrompt(`${prompt}\n\n${result.content}`);
       }
     } catch (error) {
       console.error('Motion generation error:', error);

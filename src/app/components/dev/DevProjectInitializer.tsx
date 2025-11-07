@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
-import { mockProjects } from '../../../db/mockData';
+import { mockProjects } from '../../../../db/mockData';
 import { USE_MOCK_DATA } from '@/app/config/api';
 
 /**

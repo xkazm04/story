@@ -4,14 +4,14 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, PlusIcon, Search } from 'lucide-react';
 import { useProjectStore } from '@/app/store/projectStore';
-import { useCharacters } from '@/app/hooks/useCharacters';
+import { characterApi } from '@/app/hooks/integration/useCharacters';
 import { useCharacterStore } from '@/app/store/characterStore';
 import type { Character } from '@/app/types/Character';
 
 const CharRightPanel: React.FC = () => {
-  const { activeProjectId } = useProjectStore();
-  const { data: characters, isLoading } = useCharacters(activeProjectId || '');
-  const { selectedCharacterId, setSelectedCharacterId } = useCharacterStore();
+  const { selectedProject } = useProjectStore();
+  const { data: characters, isLoading } = characterApi.useProjectCharacters(selectedProject?.id || '');
+  const { selectedCharacter, setSelectedCharacter } = useCharacterStore();
   const [searchTerm, setSearchTerm] = useState('');
 
   if (isLoading) {
@@ -33,12 +33,12 @@ const CharRightPanel: React.FC = () => {
   }
 
   // Filter characters by search term
-  const filteredCharacters = characters.filter((char) =>
+  const filteredCharacters = characters.filter((char: Character) =>
     char.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleCharacterClick = (characterId: string) => {
-    setSelectedCharacterId(characterId);
+    setSelectedCharacter(characterId);
   };
 
   return (
@@ -78,8 +78,8 @@ const CharRightPanel: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-1">
-            {filteredCharacters.map((character) => {
-              const isSelected = character.id === selectedCharacterId;
+            {filteredCharacters.map((character: Character) => {
+              const isSelected = character.id === selectedCharacter;
 
               return (
                 <motion.button
@@ -111,15 +111,6 @@ const CharRightPanel: React.FC = () => {
                       <div className="font-medium text-sm truncate">
                         {character.name}
                       </div>
-                      {character.role && (
-                        <div
-                          className={`text-xs truncate ${
-                            isSelected ? 'text-blue-200' : 'text-gray-500'
-                          }`}
-                        >
-                          {character.role}
-                        </div>
-                      )}
                     </div>
 
                     {/* Type Badge */}

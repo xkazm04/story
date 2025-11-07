@@ -3,12 +3,13 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { User, BookOpen, Palette, Heart } from 'lucide-react';
+import { User, BookOpen, Palette, Heart, Shield } from 'lucide-react';
 import { characterApi } from '@/app/api/characters';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
-import CharacterAbout from './CharacterAbout';
+import CharacterAbout from '../sub_CharacterTraits/CharacterAbout';
 import CharacterRelationships from './CharacterRelationships';
 import CharacterAppearance from './CharacterAppearance';
+import CharacterConsistencyPanel from './CharacterConsistencyPanel';
 
 interface CharacterDetailsProps {
   characterId: string;
@@ -16,7 +17,7 @@ interface CharacterDetailsProps {
 
 const CharacterDetails: React.FC<CharacterDetailsProps> = ({ characterId }) => {
   const { data: character, isLoading } = characterApi.useGetCharacter(characterId);
-  const [activeTab, setActiveTab] = useState<'info' | 'about' | 'appearance' | 'relationships'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'about' | 'appearance' | 'relationships' | 'consistency'>('info');
 
   if (isLoading) {
     return (
@@ -39,6 +40,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ characterId }) => {
     { id: 'about' as const, label: 'About', icon: <BookOpen size={16} /> },
     { id: 'appearance' as const, label: 'Appearance', icon: <Palette size={16} /> },
     { id: 'relationships' as const, label: 'Relationships', icon: <Heart size={16} /> },
+    { id: 'consistency' as const, label: 'Consistency', icon: <Shield size={16} /> },
   ];
 
   return (
@@ -163,6 +165,13 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ characterId }) => {
           <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
             <ColoredBorder color="pink" />
             <CharacterRelationships characterId={characterId} />
+          </div>
+        )}
+
+        {activeTab === 'consistency' && (
+          <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
+            <ColoredBorder color="blue" />
+            <CharacterConsistencyPanel characterId={characterId} characterName={character?.name || ''} />
           </div>
         )}
       </motion.div>

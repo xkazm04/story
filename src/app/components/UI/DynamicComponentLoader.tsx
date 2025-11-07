@@ -273,7 +273,7 @@ export function DynamicComponentLoader<P = {}>({
             transition={{ duration: 0.3, ease: 'easeOut' }}
           >
             <Suspense fallback={loadingComponent || <DefaultLoadingComponent height={loadingHeight} />}>
-              <Component {...(componentProps as P)} />
+              <Component {...(componentProps || {} as any)} />
             </Suspense>
           </motion.div>
         </AnimatePresence>

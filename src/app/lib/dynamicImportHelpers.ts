@@ -1,5 +1,5 @@
 import dynamic from 'next/dynamic';
-import { ComponentType } from 'react';
+import { ComponentType, ReactNode } from 'react';
 
 /**
  * Configuration options for dynamic imports
@@ -15,7 +15,7 @@ export interface DynamicImportOptions {
    * Custom loading component or message
    * @default null
    */
-  loading?: ComponentType<any> | (() => JSX.Element | null);
+  loading?: ComponentType<any> | (() => ReactNode);
 
   /**
    * Custom error boundary component
@@ -128,7 +128,7 @@ export function withDynamicImport<P = {}>(
   // Create the dynamic component with Next.js dynamic()
   const DynamicComponent = dynamic(importWithRetry, {
     ssr,
-    loading: loading || undefined,
+    loading: loading as any || undefined,
   });
 
   return DynamicComponent;

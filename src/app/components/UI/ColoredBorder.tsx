@@ -1,8 +1,12 @@
-const ColoredBorder = ({ color = "blue" }: { color?: "blue" | "green" | "purple" }) => {
+const ColoredBorder = ({ color = "blue" }: { color?: "blue" | "green" | "purple" | "yellow" | "pink" | "orange" | "gray" }) => {
   const colorClasses = {
     blue: "from-transparent via-blue-500/50 to-transparent",
     green: "from-transparent via-green-500/50 to-transparent",
     purple: "from-transparent via-purple-500/50 to-transparent",
+    yellow: "from-transparent via-yellow-500/50 to-transparent",
+    pink: "from-transparent via-pink-500/50 to-transparent",
+    orange: "from-transparent via-orange-500/50 to-transparent",
+    gray: "from-transparent via-gray-500/50 to-transparent",
   };
 
   const colorClass = colorClasses[color];

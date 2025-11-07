@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, Loader2, Wand2 } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { useLLM } from '@/app/hooks/useLLM';
 import {
   imagePromptEnhancementPrompt,
@@ -14,6 +13,7 @@ import {
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { useCharacterStore } from '@/app/store/slices/characterSlice';
 import { SmartGenerateButton } from '@/app/components/UI/SmartGenerateButton';
+import { Button } from '@/app/components/UI/Button';
 
 interface PromptEnhancerProps {
   currentPrompt: string;
@@ -28,7 +28,7 @@ const PromptEnhancer: React.FC<PromptEnhancerProps> = ({
 }) => {
   const { generateFromTemplate, isLoading } = useLLM();
   const { selectedProject } = useProjectStore();
-  const { selectedCharacterId } = useCharacterStore();
+  const { selectedCharacter } = useCharacterStore();
   const [error, setError] = useState('');
 
   const handleEnhance = async () => {
@@ -72,8 +72,8 @@ const PromptEnhancer: React.FC<PromptEnhancerProps> = ({
 
       // If a character is selected, get character context
       let characterCtx = null;
-      if (selectedCharacterId) {
-        characterCtx = await gatherCharacterContext(selectedCharacterId);
+      if (selectedCharacter) {
+        characterCtx = await gatherCharacterContext(selectedCharacter);
       }
 
       // Determine image type based on prompt type and context
@@ -114,32 +114,16 @@ const PromptEnhancer: React.FC<PromptEnhancerProps> = ({
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         {/* Basic Enhancement */}
-        <motion.button
+        <Button
+          size="sm"
+          variant="primary"
+          icon={<Sparkles />}
           onClick={handleEnhance}
           disabled={isLoading || !currentPrompt.trim()}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className={`
-            flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
-            transition-colors duration-200
-            ${isLoading || !currentPrompt.trim()
-              ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700 text-white'
-            }
-          `}
+          loading={isLoading}
         >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Enhancing...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4" />
-              Enhance
-            </>
-          )}
-        </motion.button>
+          {isLoading ? 'Enhancing...' : 'Enhance'}
+        </Button>
 
         {/* Smart Generation Button */}
         {selectedProject && (

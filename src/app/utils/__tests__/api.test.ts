@@ -1,13 +1,11 @@
 /**
  * Tests for API utility functions
  *
- * To run these tests, first install a test framework:
- * npm install --save-dev vitest @testing-library/react @testing-library/jest-dom
- *
- * Or for Jest:
- * npm install --save-dev jest @types/jest ts-jest @testing-library/react @testing-library/jest-dom
+ * To run these tests:
+ * npm run test
  */
 
+import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
 import { apiFetch, ApiError, TimeoutError, isApiError, isTimeoutError } from '../api';
 
 // Mock fetch globally
@@ -15,7 +13,7 @@ const originalFetch = global.fetch;
 
 describe('apiFetch', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterAll(() => {
@@ -25,7 +23,7 @@ describe('apiFetch', () => {
   describe('successful requests', () => {
     it('should successfully fetch data on 200 response', async () => {
       const mockData = { id: 1, name: 'Test' };
-      global.fetch = jest.fn(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           status: 200,
@@ -48,7 +46,7 @@ describe('apiFetch', () => {
       const mockData = { id: 1 };
       const requestBody = { name: 'New Item' };
 
-      global.fetch = jest.fn(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           status: 201,
@@ -73,7 +71,7 @@ describe('apiFetch', () => {
 
     it('should include custom headers', async () => {
       const mockData = { success: true };
-      global.fetch = jest.fn(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           status: 200,
@@ -100,7 +98,7 @@ describe('apiFetch', () => {
 
   describe('HTTP error responses', () => {
     it('should throw ApiError on 404 response', async () => {
-      global.fetch = jest.fn(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 404,
@@ -128,7 +126,7 @@ describe('apiFetch', () => {
         errors: [{ field: 'email', message: 'Invalid email format' }],
       };
 
-      global.fetch = jest.fn(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 400,
@@ -150,7 +148,7 @@ describe('apiFetch', () => {
     });
 
     it('should throw ApiError on 401 response', async () => {
-      global.fetch = jest.fn(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 401,
@@ -171,7 +169,7 @@ describe('apiFetch', () => {
     });
 
     it('should throw ApiError on 403 response', async () => {
-      global.fetch = jest.fn(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 403,
@@ -192,7 +190,7 @@ describe('apiFetch', () => {
     });
 
     it('should throw ApiError on 429 response', async () => {
-      global.fetch = jest.fn(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 429,
@@ -213,7 +211,7 @@ describe('apiFetch', () => {
     });
 
     it('should throw ApiError on 500 response', async () => {
-      global.fetch = jest.fn(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 500,
@@ -234,7 +232,7 @@ describe('apiFetch', () => {
     });
 
     it('should throw ApiError on 503 response', async () => {
-      global.fetch = jest.fn(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 503,
@@ -255,7 +253,7 @@ describe('apiFetch', () => {
     });
 
     it('should use statusText when error body is not JSON', async () => {
-      global.fetch = jest.fn(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 500,
@@ -279,9 +277,9 @@ describe('apiFetch', () => {
 
   describe('timeout handling', () => {
     it('should throw TimeoutError when request times out', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
 
-      global.fetch = jest.fn(
+      global.fetch = vi.fn(
         () =>
           new Promise((resolve) => {
             setTimeout(() => {
@@ -291,11 +289,11 @@ describe('apiFetch', () => {
               } as Response);
             }, 10000);
           })
-      );
+      ) as any;
 
       const fetchPromise = apiFetch({ url: '/api/slow', timeout: 1000 });
 
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
 
       await expect(fetchPromise).rejects.toThrow(TimeoutError);
 
@@ -308,14 +306,14 @@ describe('apiFetch', () => {
         }
       }
 
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it('should not timeout when request completes in time', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
 
       const mockData = { id: 1 };
-      global.fetch = jest.fn(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockData),
@@ -324,26 +322,26 @@ describe('apiFetch', () => {
 
       const fetchPromise = apiFetch({ url: '/api/fast', timeout: 5000 });
 
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       const result = await fetchPromise;
       expect(result).toEqual(mockData);
 
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
   });
 
   describe('network error handling', () => {
     it('should propagate network errors', async () => {
       const networkError = new Error('Failed to fetch');
-      global.fetch = jest.fn(() => Promise.reject(networkError));
+      global.fetch = vi.fn(() => Promise.reject(networkError));
 
       await expect(apiFetch({ url: '/api/test' })).rejects.toThrow('Failed to fetch');
     });
 
     it('should preserve error details through the error chain', async () => {
       const errorDetails = { field: 'email', issue: 'duplicate' };
-      global.fetch = jest.fn(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 409,
@@ -371,7 +369,7 @@ describe('apiFetch', () => {
       const controller = new AbortController();
       controller.abort();
 
-      global.fetch = jest.fn(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ data: 'test' }),
@@ -385,7 +383,7 @@ describe('apiFetch', () => {
       const controller = new AbortController();
       let fetchResolve: any;
 
-      global.fetch = jest.fn((url, options) => {
+      global.fetch = vi.fn((url: string, options?: any) => {
         // Simulate external signal aborting during fetch
         setTimeout(() => controller.abort(), 10);
 
@@ -401,16 +399,16 @@ describe('apiFetch', () => {
             });
           }
         });
-      });
+      }) as any;
 
       await expect(apiFetch({ url: '/api/test', signal: controller.signal })).rejects.toThrow();
     });
 
     it('should work with external signal and timeout together', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       const controller = new AbortController();
 
-      global.fetch = jest.fn(
+      global.fetch = vi.fn(
         () =>
           new Promise((resolve) => {
             setTimeout(() => {
@@ -420,7 +418,7 @@ describe('apiFetch', () => {
               } as Response);
             }, 10000);
           })
-      );
+      ) as any;
 
       const fetchPromise = apiFetch({
         url: '/api/slow',
@@ -428,18 +426,18 @@ describe('apiFetch', () => {
         signal: controller.signal
       });
 
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
 
       await expect(fetchPromise).rejects.toThrow(TimeoutError);
 
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it('should prioritize external abort over timeout', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       const controller = new AbortController();
 
-      global.fetch = jest.fn((url, options) => {
+      global.fetch = vi.fn((url: string, options?: any) => {
         return new Promise((resolve, reject) => {
           if (options?.signal) {
             options.signal.addEventListener('abort', () => {
@@ -453,7 +451,7 @@ describe('apiFetch', () => {
             } as Response);
           }, 10000);
         });
-      });
+      }) as any;
 
       const fetchPromise = apiFetch({
         url: '/api/test',
@@ -462,20 +460,20 @@ describe('apiFetch', () => {
       });
 
       // Abort externally before timeout
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
       controller.abort();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await expect(fetchPromise).rejects.toThrow();
 
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it('should successfully complete request when external signal is not aborted', async () => {
       const controller = new AbortController();
       const mockData = { id: 1, name: 'Test' };
 
-      global.fetch = jest.fn(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockData),
@@ -496,7 +494,7 @@ describe('apiFetch', () => {
     it('should handle external signal abort during response parsing', async () => {
       const controller = new AbortController();
 
-      global.fetch = jest.fn(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () => {

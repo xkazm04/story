@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Plus } from 'lucide-react';
 import { Character } from '@/app/types/Character';
 import { useCharacterStore } from '@/app/store/slices/characterSlice';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
@@ -9,6 +10,7 @@ import { factionApi } from '@/app/api/factions';
 import CharacterCard from './CharacterCard';
 import CharacterCreateForm from './CharacterCreateForm';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
+import { Button } from '@/app/components/UI/Button';
 
 interface CharactersListProps {
   characters: Character[];
@@ -47,50 +49,43 @@ const CharactersList: React.FC<CharactersListProps> = ({ characters }) => {
     : characters;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Header with Create Button */}
-      <div className="flex justify-between items-center">
-        <div className="flex gap-2 flex-wrap">
-          <button
+      <div className="flex justify-between items-center gap-3">
+        <div className="flex gap-1.5 flex-wrap">
+          <Button
+            size="sm"
+            variant={selectedFaction === null ? 'primary' : 'secondary'}
             onClick={() => setSelectedFaction(null)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              selectedFaction === null
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
           >
             All ({characters.length})
-          </button>
+          </Button>
           {factions.map((faction) => (
-            <button
+            <Button
               key={faction.id}
+              size="sm"
+              variant={selectedFaction === faction.id ? 'primary' : 'secondary'}
               onClick={() => setSelectedFaction(faction.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedFaction === faction.id
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-              }`}
             >
               {faction.name} ({organizedCharacters[faction.id]?.length || 0})
-            </button>
+            </Button>
           ))}
-          <button
+          <Button
+            size="sm"
+            variant={selectedFaction === 'independent' ? 'primary' : 'secondary'}
             onClick={() => setSelectedFaction('independent')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              selectedFaction === 'independent'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
           >
             Independent ({organizedCharacters.independent?.length || 0})
-          </button>
+          </Button>
         </div>
-        <button
+        <Button
+          size="sm"
+          variant="primary"
+          icon={<Plus />}
           onClick={() => setIsCreating(true)}
-          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
         >
-          + New Character
-        </button>
+          New Character
+        </Button>
       </div>
 
       {/* Create Character Form */}

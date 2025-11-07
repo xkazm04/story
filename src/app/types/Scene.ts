@@ -5,6 +5,8 @@ export interface Scene {
   act_id: string;
   order: number;
   description?: string;
+  script?: string;
+  location?: string;
   created_at?: string;
   updated_at?: string;
 }

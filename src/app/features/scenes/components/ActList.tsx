@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { Act } from '@/app/types/Act';
-import { actApi } from '@/app/api/acts';
+import { actApi } from '@/app/hooks/integration/useActs';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import ActListItem from './ActListItem';
 

@@ -24,7 +24,7 @@ const RelationshipEdge = memo(({
 }: EdgeProps<RelationshipEdgeData>) => {
   const { setEdges } = useReactFlow();
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedType, setSelectedType] = useState(data.relationshipType);
+  const [selectedType, setSelectedType] = useState(data?.relationshipType || RelationshipType.ALLY);
   const [showParticles, setShowParticles] = useState(false);
 
   const [edgePath, labelX, labelY] = getBezierPath({
@@ -36,7 +36,7 @@ const RelationshipEdge = memo(({
     targetPosition,
   });
 
-  const relationshipConfig = RelationshipTypeConfig[data.relationshipType];
+  const relationshipConfig = RelationshipTypeConfig[data?.relationshipType || RelationshipType.ALLY];
   const edgeColor = relationshipConfig.color;
 
   const handleDelete = () => {
@@ -62,7 +62,7 @@ const RelationshipEdge = memo(({
   };
 
   const handleCancel = () => {
-    setSelectedType(data.relationshipType);
+    setSelectedType(data?.relationshipType || RelationshipType.ALLY);
     setIsEditing(false);
   };
 

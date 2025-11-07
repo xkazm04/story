@@ -62,14 +62,19 @@ export function isNetworkError(error: unknown): error is Error {
     return false;
   }
 
+  // Early return for ApiError and TimeoutError
   if (isApiError(error) || isTimeoutError(error)) {
     return false;
   }
 
+  // At this point, error is guaranteed to be Error (but not ApiError or TimeoutError)
+  const errorMessage = (error as Error).message;
+  const errorName = (error as Error).name;
+
   return (
-    error.message.includes('Failed to fetch') ||
-    error.message.includes('Network') ||
-    error.message.includes('NetworkError') ||
-    error.name === 'NetworkError'
+    errorMessage.includes('Failed to fetch') ||
+    errorMessage.includes('Network') ||
+    errorMessage.includes('NetworkError') ||
+    errorName === 'NetworkError'
   );
 }

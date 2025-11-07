@@ -3,12 +3,15 @@
 import { motion } from "framer-motion";
 import { useProjectStore } from "@/app/store/projectStore";
 import { sceneApi } from "@/app/hooks/integration/useScenes";
+import { SectionWrapper } from "@/app/components/UI";
+import { Film, MapPin } from "lucide-react";
 
 const ActOverview = () => {
     const { selectedProject, selectedAct } = useProjectStore();
     const { data: scenes, isLoading } = sceneApi.useScenesByProjectAndAct(
-        selectedProject?.id, 
-        selectedAct?.id
+        selectedProject?.id || '',
+        selectedAct?.id || '',
+        !!selectedProject?.id && !!selectedAct?.id
     );
 
     if (isLoading) {
@@ -22,10 +25,12 @@ const ActOverview = () => {
     if (!scenes || scenes.length === 0) {
         return (
             <div className="flex items-center justify-center py-10">
-                <div className="text-center">
-                    <p className="text-gray-400">No scenes available for this act</p>
-                    <p className="text-gray-500 text-sm mt-2">Create scenes in the Scenes tab</p>
-                </div>
+                <SectionWrapper borderColor="gray" padding="lg">
+                    <div className="text-center">
+                        <p className="text-gray-400">No scenes available for this act</p>
+                        <p className="text-gray-500 text-sm mt-2">Create scenes in the Scenes tab</p>
+                    </div>
+                </SectionWrapper>
             </div>
         );
     }
@@ -38,22 +43,39 @@ const ActOverview = () => {
                 transition={{ delay: 0.2 }}
                 className="w-full mb-8"
             >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {scenes.map((scene) => (
-                        <div 
+                        <SectionWrapper
                             key={scene.id}
-                            className="bg-gray-900 border border-gray-800 rounded-lg p-4 hover:border-blue-500/50 transition-colors"
+                            borderColor="blue"
+                            padding="sm"
+                            className="hover:bg-gray-800/50 transition-all cursor-pointer"
                         >
-                            <h3 className="text-lg font-semibold text-white mb-2">
-                                {scene.title || 'Untitled Scene'}
-                            </h3>
-                            <p className="text-sm text-gray-400">
-                                {scene.description || 'No description'}
-                            </p>
-                            <div className="mt-3 text-xs text-gray-500">
-                                Order: {scene.order || 0}
+                            <div className="flex items-start gap-2.5">
+                                <div className="p-1.5 bg-blue-500/10 rounded border border-blue-500/30 flex-shrink-0">
+                                    <Film className="w-4 h-4 text-blue-400" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-sm font-semibold text-white mb-1 truncate">
+                                        {scene.name || 'Untitled Scene'}
+                                    </h3>
+                                    <p className="text-xs text-gray-400 line-clamp-2 mb-2">
+                                        {scene.description || 'No description'}
+                                    </p>
+                                    <div className="flex items-center justify-between">
+                                        {scene.location && (
+                                            <div className="flex items-center gap-1">
+                                                <MapPin className="w-3 h-3 text-gray-500" />
+                                                <span className="text-xs text-gray-500">{scene.location}</span>
+                                            </div>
+                                        )}
+                                        <span className="text-xs text-gray-600 font-mono">
+                                            #{scene.order || 0}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        </SectionWrapper>
                     ))}
                 </div>
             </motion.div>
@@ -62,4 +84,3 @@ const ActOverview = () => {
 }
 
 export default ActOverview;
-

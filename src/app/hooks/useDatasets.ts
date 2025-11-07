@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import {
   Dataset,
   DatasetInsert,
@@ -9,8 +9,6 @@ import {
   AudioTranscription,
   AudioTranscriptionInsert
 } from '@/app/types/Dataset';
-
-const supabase = createClient();
 
 /**
  * Fetch all datasets for a project

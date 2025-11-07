@@ -4,8 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, ChevronDown } from 'lucide-react';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
-import { actApi } from '@/app/api/acts';
-import { sceneApi } from '@/app/api/scenes';
+import { actApi } from '@/app/hooks/integration/useActs';
+import { sceneApi } from '@/app/hooks/integration/useScenes';
 import { Act } from '@/app/types/Act';
 import ActList from './ActList';
 import ActTabButton from './ActTabButton';
@@ -57,8 +57,8 @@ const ActManager: React.FC = () => {
   const getVisibleActs = () => {
     if (!acts || acts.length === 0) return [];
     if (acts.length <= 3) return acts;
-    
-    const selectedIndex = acts.findIndex((act) => act.id === selectedAct?.id);
+
+    const selectedIndex = acts.findIndex((act: Act) => act.id === selectedAct?.id);
     
     if (selectedIndex === -1) return acts.slice(0, 3);
     if (selectedIndex === 0) return acts.slice(0, 3);
@@ -79,13 +79,19 @@ const ActManager: React.FC = () => {
 
   const handleAddAct = async () => {
     if (!selectedProject) return;
-    
+
     setError(null);
     try {
+      // Calculate the next order value
+      const maxOrder = acts && acts.length > 0
+        ? Math.max(...acts.map((act: Act) => act.order || 0))
+        : -1;
+
       await actApi.createAct({
         name: `Act ${acts?.length ? acts.length + 1 : 1}`,
         project_id: selectedProject.id,
         description: '',
+        order: maxOrder + 1,
       });
       refetch();
     } catch (err) {
@@ -184,9 +190,9 @@ const ActManager: React.FC = () => {
         <ActList
           showActsList={showActsList}
           setShowActsList={setShowActsList}
-          moreButtonRef={moreButtonRef}
+          moreButtonRef={moreButtonRef as React.RefObject<HTMLDivElement>}
           acts={acts}
-          actsListRef={actsListRef}
+          actsListRef={actsListRef as React.RefObject<HTMLDivElement>}
           onActChange={handleActChange}
           onRefetch={refetch}
         />

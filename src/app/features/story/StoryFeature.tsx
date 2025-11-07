@@ -1,15 +1,27 @@
 'use client';
 
-import { useProjectStore } from "@/app/store/projectStore";
+import { useProjectStore } from "@/app/store/slices/projectSlice";
 import TabMenu from "@/app/components/UI/TabMenu";
 import ActOverview from "./components/ActOverview";
 import BeatsOverview from "./components/Beats/BeatsOverview";
 import SceneExporter from "./components/SceneExporter";
+import CenterStory from "./components/Setup/CenterStory";
+import StoryScript from "./sub_StoryScript/StoryScript";
 
 const StoryFeature = () => {
-    const { selectedProject, selectedAct } = useProjectStore();
+    const { selectedProject } = useProjectStore();
 
     const tabs = [
+        {
+            id: "story-setup",
+            label: "Setup",
+            content: <CenterStory />
+        },
+        {
+            id: "story-script",
+            label: "Script",
+            content: <StoryScript />
+        },
         {
             id: "beats",
             label: "Beats",

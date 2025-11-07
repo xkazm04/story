@@ -7,9 +7,7 @@
  * The more data in the project, the smarter the AI becomes.
  */
 
-import { createClient } from '@/lib/supabase/client';
-
-const supabase = createClient();
+import { supabase } from '@/lib/supabase/client';
 
 /**
  * Project Context - Overall story information
@@ -198,13 +196,13 @@ export async function gatherStoryContext(projectId: string): Promise<StoryContex
       .single();
 
     return {
-      acts: acts?.map(act => ({
+      acts: acts?.map((act: any) => ({
         id: act.id,
         name: act.name,
         order: act.order,
         description: act.description
       })) || [],
-      beats: beats?.map(beat => ({
+      beats: beats?.map((beat: any) => ({
         id: beat.id,
         name: beat.name,
         description: beat.description,
@@ -342,7 +340,7 @@ export async function gatherSceneContext(sceneId: string): Promise<SceneContext 
       .eq('act_id', scene.act_id)
       .order('order');
 
-    const currentIndex = actScenes?.findIndex(s => s.id === sceneId) || 0;
+    const currentIndex = actScenes?.findIndex((s: any) => s.id === sceneId) || 0;
     const previousScene = currentIndex > 0 ? actScenes?.[currentIndex - 1] : undefined;
     const nextScene = currentIndex < (actScenes?.length || 0) - 1 ? actScenes?.[currentIndex + 1] : undefined;
 
@@ -414,13 +412,13 @@ export async function gatherVisualStyleContext(projectId: string): Promise<Visua
     return {
       projectStyle: project?.visual_style,
       colorPalette: project?.color_palette,
-      characterAppearances: characters?.map(c => ({
+      characterAppearances: characters?.map((c: any) => ({
         characterId: c.id,
         characterName: c.name,
         appearance: c.appearance,
         imageUrls: c.generated_images?.map((img: any) => img.url)
       })) || [],
-      sceneVisuals: scenes?.map(s => ({
+      sceneVisuals: scenes?.map((s: any) => ({
         sceneId: s.id,
         sceneTitle: s.title,
         imageUrls: s.generated_images?.map((img: any) => img.url),
@@ -446,10 +444,10 @@ export async function gatherSceneCharacters(sceneId: string): Promise<CharacterC
     if (!sceneCharacters || sceneCharacters.length === 0) return [];
 
     const characterContexts = await Promise.all(
-      sceneCharacters.map(sc => gatherCharacterContext(sc.character_id))
+      sceneCharacters.map((sc: any) => gatherCharacterContext(sc.character_id))
     );
 
-    return characterContexts.filter((ctx): ctx is CharacterContext => ctx !== null);
+    return characterContexts.filter((ctx: CharacterContext | null): ctx is CharacterContext => ctx !== null);
   } catch (error) {
     console.error('Error gathering scene characters:', error);
     return [];
@@ -487,8 +485,8 @@ export function buildContextSummary(contexts: {
     parts.push(`\nCharacters in Context:`);
     contexts.characters.slice(0, 5).forEach(char => {
       parts.push(`- ${char.name}${char.role ? ` (${char.role})` : ''}`);
-      if (char.traits.length > 0) parts.push(`  Traits: ${char.traits.join(', ')}`);
-      if (char.relationships.length > 0) {
+      if (char.traits && char.traits.length > 0) parts.push(`  Traits: ${char.traits.join(', ')}`);
+      if (char.relationships && char.relationships.length > 0) {
         parts.push(`  Relationships: ${char.relationships.map(r => `${r.relationshipType} with ${r.targetCharacterName}`).join('; ')}`);
       }
     });

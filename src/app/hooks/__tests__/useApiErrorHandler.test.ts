@@ -261,7 +261,7 @@ describe('useApiErrorHandler', () => {
     it('should return same reference when error does not change', () => {
       const error = new ApiError(404, 'Not found');
       const { result, rerender } = renderHook(
-        ({ err }) => useApiErrorHandler(err),
+        ({ err }: { err: ApiError }) => useApiErrorHandler(err),
         { initialProps: { err: error } }
       );
 
@@ -277,7 +277,7 @@ describe('useApiErrorHandler', () => {
       const error2 = new ApiError(500, 'Server error');
 
       const { result, rerender } = renderHook(
-        ({ err }) => useApiErrorHandler(err),
+        ({ err }: { err: ApiError }) => useApiErrorHandler(err),
         { initialProps: { err: error1 } }
       );
 
@@ -286,8 +286,8 @@ describe('useApiErrorHandler', () => {
       const secondResult = result.current;
 
       expect(firstResult).not.toBe(secondResult);
-      expect(firstResult?.status).toBe(404);
-      expect(secondResult?.status).toBe(500);
+      expect(firstResult?.title).toBe('Not Found');
+      expect(secondResult?.title).toBe('Server Error');
     });
   });
 });

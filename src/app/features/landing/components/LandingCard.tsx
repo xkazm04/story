@@ -86,7 +86,7 @@ const LandingCard: React.FC<LandingCardProps> = ({
 
       <div className="flex justify-between text-sm text-white relative z-10">
         <span>{project.word_count || 0} words</span>
-        <span>{new Date(project.updated_at || project.created_at).toLocaleDateString()}</span>
+        <span>{new Date(project.updated_at || project.created_at || Date.now()).toLocaleDateString()}</span>
       </div>
       
       <div 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X } from 'lucide-react';
 import { characterApi } from '@/app/api/characters';
 import { factionApi } from '@/app/api/factions';
@@ -8,6 +8,8 @@ import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { CHARACTER_TYPES } from '@/app/store/slices/characterSlice';
 import { useOptimisticMutation } from '@/app/hooks/useOptimisticMutation';
 import { Character } from '@/app/types/Character';
+import { SmartNameInput } from '@/app/components/UI/SmartNameInput';
+import { NameSuggestion } from '@/app/api/name-suggestions/route';
 
 interface CharacterCreateFormProps {
   onClose: () => void;
@@ -23,6 +25,25 @@ const CharacterCreateForm: React.FC<CharacterCreateFormProps> = ({ onClose }) =>
     selectedProject?.id || '',
     !!selectedProject
   );
+
+  const { data: existingCharacters = [] } = characterApi.useCharacters(
+    selectedProject?.id || '',
+    !!selectedProject
+  );
+
+  // Build context for name suggestions
+  const nameContext = useMemo(() => {
+    const selectedFaction = factions.find(f => f.id === factionId);
+    return {
+      projectTitle: selectedProject?.title,
+      projectDescription: selectedProject?.description,
+      genre: selectedProject?.genre,
+      existingCharacters: existingCharacters.map(c => ({ name: c.name, role: c.type })),
+      characterRole: type,
+      characterType: type,
+      faction: selectedFaction?.name,
+    };
+  }, [selectedProject, factions, factionId, type, existingCharacters]);
 
   // Use optimistic mutation for character creation
   const { mutate: createCharacter, isLoading, rollbackError } = useOptimisticMutation<
@@ -74,19 +95,20 @@ const CharacterCreateForm: React.FC<CharacterCreateFormProps> = ({ onClose }) =>
         </button>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">
-          Character Name *
-        </label>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Enter character name"
-          className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          required
-        />
-      </div>
+      <SmartNameInput
+        entityType="character"
+        context={nameContext}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onSuggestionSelect={(suggestion: NameSuggestion) => {
+          setName(suggestion.name);
+        }}
+        label="Character Name"
+        placeholder="Enter character name or let AI suggest..."
+        required
+        enableSuggestions={true}
+        data-testid="character-name-input"
+      />
 
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">Type</label>

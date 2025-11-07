@@ -5,11 +5,11 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { motion } from 'framer-motion';
 import { Trash2 } from 'lucide-react';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
-import { sceneApi } from '@/app/api/scenes';
+import { sceneApi } from '@/app/hooks/integration/useScenes';
 import { Scene } from '@/app/types/Scene';
 
 const ScenesList: React.FC = () => {
-  const { selectedProject, selectedAct, selectedSceneId, setSelectedSceneId, setScenes } = useProjectStore();
+  const { selectedProject, selectedAct, selectedSceneId, setSelectedSceneId } = useProjectStore();
   const { data: scenes = [], refetch } = sceneApi.useScenesByProjectAndAct(
     selectedProject?.id || '',
     selectedAct?.id || '',
@@ -18,11 +18,12 @@ const ScenesList: React.FC = () => {
 
   const [editingSceneId, setEditingSceneId] = useState<string | null>(null);
   const [newSceneName, setNewSceneName] = useState('');
+  const [localScenes, setLocalScenes] = useState<Scene[]>(scenes);
 
-  // Update store scenes when data changes
+  // Update local scenes when query data changes
   useEffect(() => {
-    setScenes(scenes);
-  }, [scenes, setScenes]);
+    setLocalScenes(scenes);
+  }, [scenes]);
 
   // Select last scene when new scene is created
   useEffect(() => {
@@ -38,9 +39,9 @@ const ScenesList: React.FC = () => {
   };
 
   const confirmRename = async (id: string) => {
-    if (!newSceneName.trim() || !scenes) return;
-    
-    const scene = scenes.find((s) => s.id === id);
+    if (!newSceneName.trim() || !localScenes) return;
+
+    const scene = localScenes.find((s: Scene) => s.id === id);
     if (scene?.name === newSceneName) {
       setEditingSceneId(null);
       return;
@@ -67,13 +68,14 @@ const ScenesList: React.FC = () => {
   };
 
   const onDragEnd = async (result: DropResult) => {
-    if (!result.destination || !scenes) return;
+    if (!result.destination || !localScenes) return;
 
-    const reorderedScenes = Array.from(scenes);
-    const [movedItem] = reorderedScenes.splice(result.source.index, 1);
+    const reorderedScenes = Array.from(localScenes) as Scene[];
+    const [movedItem] = reorderedScenes.splice(result.source.index, 1) as [Scene];
     reorderedScenes.splice(result.destination.index, 0, movedItem);
 
-    setScenes(reorderedScenes);
+    // Optimistically update local state
+    setLocalScenes(reorderedScenes);
 
     try {
       await sceneApi.reorderScene(movedItem.id, result.destination.index + 1);
@@ -83,7 +85,7 @@ const ScenesList: React.FC = () => {
     }
   };
 
-  if (!scenes || scenes.length === 0) {
+  if (!localScenes || localScenes.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
         <p>No scenes yet. Add your first scene below.</p>
@@ -100,24 +102,26 @@ const ScenesList: React.FC = () => {
             ref={provided.innerRef}
             className="space-y-2 py-3 bg-gray-900/20 rounded-lg"
           >
-            {scenes.map((scene, index) => (
+            {localScenes.map((scene: Scene, index: number) => (
               <Draggable key={scene.id} draggableId={scene.id} index={index}>
                 {(provided, snapshot) => (
-                  <motion.div
+                  <div
                     ref={provided.innerRef}
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
-                    className={`flex justify-between items-center px-4 py-2 mx-2 rounded-lg cursor-pointer transition-all ${
-                      selectedSceneId === scene.id
-                        ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg'
-                        : 'bg-gray-800 text-gray-200 hover:bg-gray-700'
-                    } ${snapshot.isDragging ? 'shadow-2xl scale-105 opacity-80' : ''}`}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      handleRename(scene);
-                    }}
-                    onClick={() => setSelectedSceneId(scene.id)}
                   >
+                    <motion.div
+                      className={`flex justify-between items-center px-4 py-2 mx-2 rounded-lg cursor-pointer transition-all ${
+                        selectedSceneId === scene.id
+                          ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg'
+                          : 'bg-gray-800 text-gray-200 hover:bg-gray-700'
+                      } ${snapshot.isDragging ? 'shadow-2xl scale-105 opacity-80' : ''}`}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        handleRename(scene);
+                      }}
+                      onClick={() => setSelectedSceneId(scene.id)}
+                    >
                     {editingSceneId === scene.id ? (
                       <input
                         type="text"
@@ -147,7 +151,8 @@ const ScenesList: React.FC = () => {
                     >
                       <Trash2 size={14} />
                     </button>
-                  </motion.div>
+                    </motion.div>
+                  </div>
                 )}
               </Draggable>
             ))}

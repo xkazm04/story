@@ -3,7 +3,7 @@
 import React from 'react';
 import { VIDEO_RESOLUTIONS, VIDEO_FPS_OPTIONS, VIDEO_DURATIONS, VIDEO_STYLES, MOTION_PRESETS } from '@/app/types/Video';
 
-interface VideoParams {
+export interface VideoParams {
   width: number;
   height: number;
   duration: number;
