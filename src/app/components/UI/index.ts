@@ -14,23 +14,11 @@ export type { TextareaSize } from './Textarea';
 export { Select } from './Select';
 export type { SelectSize } from './Select';
 
-export {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-  AccordionItemWrapper,
-  CompactAccordion,
-} from './Accordion';
-
 export { Modal } from './Modal';
 export type { ModalSize } from './Modal';
 
 export { ConfirmationModal } from './ConfirmationModal';
 export type { ConfirmationType } from './ConfirmationModal';
-
-export { Drawer } from './Drawer';
-export type { DrawerSide, DrawerSize } from './Drawer';
 
 export {
   Card,
