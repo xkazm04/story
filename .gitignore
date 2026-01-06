@@ -10,8 +10,8 @@
 !.yarn/releases
 !.yarn/versions
 .claude/*
-.claude
-.scripts
+.claude/logs
+scripts
 # testing
 /coverage
 
