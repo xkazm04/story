@@ -1,22 +1,40 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
-import CharactersFeature from '@/app/features/characters/CharactersFeature';
-import StoryFeature from '@/app/features/story/StoryFeature';
-import ScenesFeature from '@/app/features/scenes/ScenesFeature';
-import AssetsFeature from '@/app/features/assets/AssetsFeature';
-import VoiceFeature from '@/app/features/voice/VoiceFeature';
-import DatasetsFeature from '@/app/features/datasets/DatasetsFeature';
-import ImageFeature from '@/app/features/image/ImageFeature';
-import VideoFeature from '@/app/features/video/VideoFeature';
+import { useAssetManagerStore } from '@/app/features/assets/store/assetManagerStore';
+import { useAppShellStore, FeatureTab } from '@/app/store/appShellStore';
 import { Users, Film, BookOpen, Image, Mic, Database, Sparkles, Video } from 'lucide-react';
 
-type TabType = 'characters' | 'scenes' | 'story' | 'assets' | 'voice' | 'datasets' | 'images' | 'videos';
+// Lazy load all feature components
+const CharactersFeature = lazy(() => import('@/app/features/characters/CharactersFeature'));
+const StoryFeature = lazy(() => import('@/app/features/story/StoryFeature'));
+const ScenesFeature = lazy(() => import('@/app/features/scenes/ScenesFeature'));
+const AssetsFeature = lazy(() => import('@/app/features/assets/AssetsFeature'));
+const VoiceFeature = lazy(() => import('@/app/features/voice/VoiceFeature'));
+const DatasetsFeature = lazy(() => import('@/app/features/datasets/DatasetsFeature'));
+const ImageFeature = lazy(() => import('@/app/features/image/ImageFeature'));
+const VideoFeature = lazy(() => import('@/app/features/video/VideoFeature'));
+
+// Loading fallback component
+const FeatureLoadingFallback: React.FC = () => (
+  <div className="h-full flex items-center justify-center" data-testid="feature-loading-fallback">
+    <div className="flex flex-col items-center gap-4">
+      <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <p className="text-gray-400 text-sm">Loading feature...</p>
+    </div>
+  </div>
+);
 
 const CenterPanel: React.FC = () => {
   const { selectedProject } = useProjectStore();
-  const [activeTab, setActiveTab] = useState<TabType>('characters');
+  const { activeFeature, setActiveFeature } = useAppShellStore();
+  const setAssetFeatureActive = useAssetManagerStore((s) => s.setAssetFeatureActive);
+
+  // Sync active tab with asset store for cross-panel communication
+  useEffect(() => {
+    setAssetFeatureActive(activeFeature === 'assets');
+  }, [activeFeature, setAssetFeatureActive]);
 
   const tabs = [
     { id: 'characters' as const, label: 'Characters', icon: Users },
@@ -30,7 +48,7 @@ const CenterPanel: React.FC = () => {
   ];
 
   const renderContent = () => {
-    switch (activeTab) {
+    switch (activeFeature) {
       case 'characters':
         return <CharactersFeature />;
       case 'scenes':
@@ -53,7 +71,7 @@ const CenterPanel: React.FC = () => {
   };
 
   return (
-    <div className="h-full w-full bg-gray-950 flex flex-col relative">
+    <div className="h-full w-full bg-slate-950 flex flex-col relative">
       {/* Paper-like background texture for storywriting */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(90deg,transparent_0%,transparent_calc(100%_-_1px),rgba(255,255,255,0.1)_calc(100%_-_1px)),linear-gradient(transparent_0%,transparent_calc(100%_-_1px),rgba(255,255,255,0.1)_calc(100%_-_1px))] bg-[length:20px_20px]"></div>
       <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[radial-gradient(circle_at_50%_50%,rgba(139,92,46,0.1),transparent_50%)]"></div>
@@ -61,21 +79,23 @@ const CenterPanel: React.FC = () => {
       {selectedProject ? (
         <>
           {/* Icon Navigation */}
-          <div className="flex items-center gap-1 px-4 py-3 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 relative z-10">
+          <div className="flex items-center gap-1 px-4 py-2 bg-slate-950/95 backdrop-blur-sm border-b border-slate-900/70 relative z-10">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                    activeTab === tab.id
-                      ? 'bg-blue-900 text-white shadow-lg shadow-blue-500/30'
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
+                  onClick={() => setActiveFeature(tab.id as FeatureTab)}
+                  className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-all duration-150 min-w-[68px] text-[11px] ${
+                    activeFeature === tab.id
+                      ? 'bg-cyan-600/20 text-slate-50 border border-cyan-500/40 shadow-[0_0_0_1px_rgba(8,145,178,0.28)]'
+                      : 'bg-slate-900/70 text-slate-400 border border-slate-800 hover:bg-slate-900 hover:text-slate-100'
                   }`}
                   title={tab.label}
+                  data-testid={`feature-tab-${tab.id}`}
                 >
                   <Icon className="w-5 h-5" />
+                  <span className="text-[10px] font-medium leading-tight tracking-tight">{tab.label}</span>
                 </button>
               );
             })}
@@ -83,7 +103,9 @@ const CenterPanel: React.FC = () => {
 
           {/* Content Area */}
           <div className="flex-1 overflow-auto relative z-0">
-            {renderContent()}
+            <Suspense fallback={<FeatureLoadingFallback />}>
+              {renderContent()}
+            </Suspense>
           </div>
         </>
       ) : (

@@ -26,7 +26,7 @@ const CharacterCreateForm: React.FC<CharacterCreateFormProps> = ({ onClose }) =>
     !!selectedProject
   );
 
-  const { data: existingCharacters = [] } = characterApi.useCharacters(
+  const { data: existingCharacters = [] } = characterApi.useProjectCharacters(
     selectedProject?.id || '',
     !!selectedProject
   );
@@ -35,9 +35,9 @@ const CharacterCreateForm: React.FC<CharacterCreateFormProps> = ({ onClose }) =>
   const nameContext = useMemo(() => {
     const selectedFaction = factions.find(f => f.id === factionId);
     return {
-      projectTitle: selectedProject?.title,
+      projectTitle: selectedProject?.name,
       projectDescription: selectedProject?.description,
-      genre: selectedProject?.genre,
+      genre: (selectedProject as any)?.genre,
       existingCharacters: existingCharacters.map(c => ({ name: c.name, role: c.type })),
       characterRole: type,
       characterType: type,

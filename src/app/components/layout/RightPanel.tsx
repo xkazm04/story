@@ -1,18 +1,41 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Users, ChevronRight } from 'lucide-react';
+import { BookOpen, Users, ChevronRight, Image } from 'lucide-react';
 import { useProjectStore } from '@/app/store/projectStore';
+import { useAssetManagerStore } from '@/app/features/assets/store/assetManagerStore';
 import StoryRightPanel from '@/app/features/story/sub_StoryRightPanel/StoryRightPanel';
 import CharRightPanel from '@/app/features/characters/sub_CharRightPanel/CharRightPanel';
 
-type RightPanelMode = 'story' | 'characters';
+// Lazy load asset panel for code splitting
+const AssetRightPanel = lazy(() => import('@/app/features/assets/components/panels/AssetRightPanel'));
+
+// Loading state for lazy-loaded panels
+const PanelLoader = () => (
+  <div className="h-full flex items-center justify-center">
+    <div className="w-6 h-6 border-2 border-cyan-500/40 border-t-transparent rounded-full animate-spin" />
+  </div>
+);
+
+type RightPanelMode = 'story' | 'characters' | 'assets';
 
 const RightPanel: React.FC = () => {
   const { selectedProject } = useProjectStore();
   const [mode, setMode] = useState<RightPanelMode>('story');
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const isAssetFeatureActive = useAssetManagerStore((s) => s.isAssetFeatureActive);
+  const detailPanelOpen = useAssetManagerStore((s) => s.detailPanelOpen);
+
+  // Auto-switch to assets mode when assets feature becomes active
+  useEffect(() => {
+    if (isAssetFeatureActive) {
+      setMode('assets');
+    } else if (mode === 'assets') {
+      // Switch back to story when leaving assets feature
+      setMode('story');
+    }
+  }, [isAssetFeatureActive, mode]);
 
   const contentVariants = {
     visible: {
@@ -31,18 +54,18 @@ const RightPanel: React.FC = () => {
 
   if (!selectedProject) {
     return (
-      <div className="h-full w-full bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center border-l border-gray-800">
-        <p className="text-gray-500 text-sm">Select a project to get started</p>
+      <div className="h-full w-full bg-slate-950/95 flex items-center justify-center border-l border-slate-900/70">
+        <p className="text-slate-500 text-xs">Select a project to get started</p>
       </div>
     );
   }
 
   return (
-    <div className="h-full w-full bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white flex flex-col border-l border-gray-800 relative overflow-hidden">
+    <div className="h-full w-full bg-slate-950/95 text-slate-100 flex flex-col border-l border-slate-900/70 relative overflow-hidden">
       {/* Collapse Toggle */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute top-4 left-4 z-20 p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+        className="absolute top-3 left-3 z-20 p-1.5 bg-slate-900/80 hover:bg-slate-800 rounded-lg border border-slate-800/80 transition-colors"
         title={isCollapsed ? 'Expand' : 'Collapse'}
       >
         <ChevronRight
@@ -60,16 +83,16 @@ const RightPanel: React.FC = () => {
             variants={contentVariants}
           >
             {/* Mode Selector */}
-            <div className="p-4 border-b border-gray-700 pl-14">
+            <div className="p-3 border-b border-slate-800/70 pl-12">
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setMode('story')}
-                  className={`
-                    flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
-                    transition-all duration-200
+                    className={`
+                    flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium
+                    transition-all duration-150
                     ${mode === 'story'
-                      ? 'bg-amber-600 text-white'
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                      ? 'bg-cyan-600/20 text-slate-50 border border-cyan-500/40'
+                      : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:bg-slate-900'
                     }
                   `}
                 >
@@ -79,18 +102,39 @@ const RightPanel: React.FC = () => {
 
                 <button
                   onClick={() => setMode('characters')}
-                  className={`
-                    flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
-                    transition-all duration-200
+                    className={`
+                    flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium
+                    transition-all duration-150
                     ${mode === 'characters'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                      ? 'bg-cyan-600/20 text-slate-50 border border-cyan-500/40'
+                      : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:bg-slate-900'
                     }
                   `}
                 >
                   <Users className="w-4 h-4" />
                   Characters
                 </button>
+
+                {/* Assets mode - auto-activates when asset feature is active */}
+                {isAssetFeatureActive && (
+                  <button
+                    onClick={() => setMode('assets')}
+                    className={`
+                      flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium
+                      transition-all duration-150
+                      ${mode === 'assets'
+                        ? 'bg-cyan-600/20 text-slate-50 border border-cyan-500/40'
+                        : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:bg-slate-900'
+                      }
+                    `}
+                  >
+                    <Image className="w-4 h-4" />
+                    Assets
+                    {detailPanelOpen && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                    )}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -98,6 +142,11 @@ const RightPanel: React.FC = () => {
             <div className="flex-1 overflow-hidden">
               {mode === 'story' && <StoryRightPanel />}
               {mode === 'characters' && <CharRightPanel />}
+              {mode === 'assets' && (
+                <Suspense fallback={<PanelLoader />}>
+                  <AssetRightPanel />
+                </Suspense>
+              )}
             </div>
           </motion.div>
         )}

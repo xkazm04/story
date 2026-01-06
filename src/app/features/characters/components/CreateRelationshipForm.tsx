@@ -1,11 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { relationshipApi } from '@/app/api/relationships';
 import { characterApi } from '@/app/api/characters';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
+import { useAISuggestionStream } from '@/app/hooks/useAISuggestionStream';
+import { AISuggestion } from '@/app/services/aiSuggestionService';
+import AISuggestionSidebar from './AISuggestionSidebar';
+import { IconButton } from '@/app/components/UI/Button';
 
 interface CreateRelationshipFormProps {
   characterId: string;
@@ -37,9 +41,34 @@ const CreateRelationshipForm: React.FC<CreateRelationshipFormProps> = ({
   const [relType, setRelType] = useState<string>('positive');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Filter out the current character from the list
   const availableCharacters = characters.filter((char) => char.id !== characterId);
+
+  // AI Suggestion Stream Hook
+  const {
+    suggestions,
+    isLoading: isSuggestionsLoading,
+    isStreaming,
+    streamProgress,
+    triggerSuggestions,
+    clearSuggestions,
+  } = useAISuggestionStream({
+    projectId: selectedProject?.id || '',
+    characterId,
+    contextType: 'relationship',
+    enabled: showSuggestions,
+    debounceMs: 1500,
+    minTextLength: 10,
+  });
+
+  // Trigger suggestions on description change
+  useEffect(() => {
+    if (showSuggestions && description.trim().length >= 10) {
+      triggerSuggestions(description);
+    }
+  }, [description, showSuggestions, triggerSuggestions]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +96,24 @@ const CreateRelationshipForm: React.FC<CreateRelationshipFormProps> = ({
     }
   };
 
+  const handleApplySuggestion = (suggestion: AISuggestion) => {
+    if (description.trim().length === 0) {
+      setDescription(suggestion.suggestion);
+    } else {
+      setDescription(prev => {
+        const trimmed = prev.trim();
+        return `${trimmed}\n\n${suggestion.suggestion}`;
+      });
+    }
+  };
+
+  const handleToggleSuggestions = () => {
+    if (showSuggestions) {
+      clearSuggestions();
+    }
+    setShowSuggestions(prev => !prev);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -84,13 +131,25 @@ const CreateRelationshipForm: React.FC<CreateRelationshipFormProps> = ({
       >
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-white">Create Relationship</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
-          >
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-2">
+            <IconButton
+              icon={<Sparkles size={16} />}
+              size="sm"
+              variant={showSuggestions ? 'primary' : 'ghost'}
+              onClick={handleToggleSuggestions}
+              aria-label="Toggle AI suggestions"
+              data-testid="toggle-relationship-suggestions-btn"
+              className={showSuggestions ? 'animate-pulse' : ''}
+            />
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-gray-400 hover:text-white transition-colors"
+              data-testid="close-relationship-form-btn"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -190,6 +249,21 @@ const CreateRelationshipForm: React.FC<CreateRelationshipFormProps> = ({
           </div>
         </form>
       </motion.div>
+
+      {/* AI Suggestion Sidebar */}
+      <AnimatePresence>
+        {showSuggestions && (
+          <AISuggestionSidebar
+            suggestions={suggestions}
+            isLoading={isSuggestionsLoading}
+            isStreaming={isStreaming}
+            streamProgress={streamProgress}
+            onApplySuggestion={handleApplySuggestion}
+            onDismiss={handleToggleSuggestions}
+            position="right"
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

@@ -7,6 +7,7 @@ interface ProjectState {
   // Projects
   selectedProject: Project | null;
   setSelectedProject: (project: Project | null) => void;
+  updateProject: (project: Project) => void;
   projects: Project[];
   setProjects: (projects: Project[]) => void;
 
@@ -28,10 +29,17 @@ interface ProjectState {
   initializeWithMockProject: (project: Project) => void;
 }
 
-export const useProjectStore = create<ProjectState>((set) => ({
+export const useProjectStore = create<ProjectState>((set, get) => ({
   // Projects
   selectedProject: null,
   setSelectedProject: (project) => set({ selectedProject: project }),
+  updateProject: (project) => {
+    const { projects } = get();
+    set({
+      selectedProject: project,
+      projects: projects.map(p => p.id === project.id ? project : p),
+    });
+  },
   projects: [],
   setProjects: (projects) => set({ projects: projects }),
 
@@ -42,7 +50,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
   // Scenes - UI state only (data is managed by React Query)
   selectedScene: null,
   selectedSceneId: null,
-  setSelectedScene: (scene) => set({ selectedScene: scene }),
+  setSelectedScene: (scene) => set({ selectedScene: scene, selectedSceneId: scene?.id || null }),
   setSelectedSceneId: (id) => set({ selectedSceneId: id }),
 
   // UI State

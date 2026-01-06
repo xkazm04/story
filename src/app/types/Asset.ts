@@ -1,21 +1,55 @@
+/**
+ * Asset types from MongoDB
+ * These match the actual data stored in the database
+ */
+export type AssetType =
+  | 'Equipment'
+  | 'Body'
+  | 'Clothing'
+  | 'Accessories'
+  | 'Background'
+  | 'Scene'
+  | 'Props'
+  | 'Location';
+
+/**
+ * All possible asset types (for filtering)
+ */
+export const ASSET_TYPES: AssetType[] = [
+  'Equipment',
+  'Body',
+  'Clothing',
+  'Accessories',
+  'Background',
+  'Scene',
+  'Props',
+  'Location',
+];
+
+/**
+ * Asset category (high-level grouping - not used in current MongoDB schema)
+ */
+export type AssetCategory = 'character' | 'story' | 'all';
+
 export interface Asset {
-  _id: string; 
+  _id: string;
   name: string;
-  type: string;
+  type: AssetType | string;
   subcategory?: string;
   gen: string;
   description?: string;
-  image_url?: string; 
+  image_url?: string;
   metadata?: {
     tags?: string[];
     compatible_with?: string[];
   };
   created_at?: string; // ISO string format from backend e.g. "2023-05-14T00:00:00Z"
+  updated_at?: string;
 
   image_data_base64?: string | null;
   image_content_type?: string | null;
 
-  searchSimilarity?: number; 
+  searchSimilarity?: number;
 }
 
 export interface SimilarAsset {

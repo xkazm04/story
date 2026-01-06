@@ -99,7 +99,7 @@ export const SmartNameInput = forwardRef<HTMLInputElement, SmartNameInputProps>(
         }
       } catch (err) {
         if (!signal.aborted) {
-          console.error('Error fetching name suggestions:', err);
+          // Error fetching name suggestions - silently fail
           setSuggestions([]);
         }
       } finally {

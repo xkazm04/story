@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
 import { FactionRelationship } from '@/app/types/Faction';
+import {
+  handleDatabaseError,
+  handleUnexpectedError,
+  createErrorResponse,
+  validateRequiredParams,
+  HTTP_STATUS,
+} from '@/app/utils/apiErrorHandling';
 
 /**
  * GET /api/faction-relationships?factionId=xxx
@@ -12,10 +19,7 @@ export async function GET(request: NextRequest) {
     const factionId = searchParams.get('factionId');
 
     if (!factionId) {
-      return NextResponse.json(
-        { error: 'factionId is required' },
-        { status: 400 }
-      );
+      return createErrorResponse('factionId is required', 400);
     }
 
     const { data, error } = await supabaseServer
@@ -24,20 +28,12 @@ export async function GET(request: NextRequest) {
       .or(`faction_a_id.eq.${factionId},faction_b_id.eq.${factionId}`);
 
     if (error) {
-      console.error('Error fetching faction relationships:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch faction relationships' },
-        { status: 500 }
-      );
+      return handleDatabaseError('fetch faction relationships', error, 'GET /api/faction-relationships');
     }
 
     return NextResponse.json(data as FactionRelationship[]);
   } catch (error) {
-    console.error('Unexpected error in GET /api/faction-relationships:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleUnexpectedError('GET /api/faction-relationships', error);
   }
 }
 
@@ -50,12 +46,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { faction_a_id, faction_b_id, description, relationship_type } = body;
 
-    if (!faction_a_id || !faction_b_id || !description) {
-      return NextResponse.json(
-        { error: 'faction_a_id, faction_b_id, and description are required' },
-        { status: 400 }
-      );
-    }
+    // Validate required parameters
+    const paramValidation = validateRequiredParams(
+      { faction_a_id, faction_b_id, description },
+      ['faction_a_id', 'faction_b_id', 'description']
+    );
+    if (paramValidation) return paramValidation;
 
     const { data, error } = await supabaseServer
       .from('faction_relationships')
@@ -69,21 +65,11 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating faction relationship:', error);
-      return NextResponse.json(
-        { error: 'Failed to create faction relationship' },
-        { status: 500 }
-      );
+      return handleDatabaseError('create faction relationship', error, 'POST /api/faction-relationships');
     }
 
-    return NextResponse.json(data as FactionRelationship, { status: 201 });
+    return NextResponse.json(data as FactionRelationship, { status: HTTP_STATUS.CREATED });
   } catch (error) {
-    console.error('Unexpected error in POST /api/faction-relationships:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleUnexpectedError('POST /api/faction-relationships', error);
   }
 }
-
-

@@ -1,44 +1,29 @@
 import { Act, ActCreateInput, ActUpdateInput } from '../../types/Act';
-import { apiFetch, useApiGet, API_BASE_URL, USE_MOCK_DATA } from '../../utils/api';
-import { useQuery } from '@tanstack/react-query';
-import { mockActs, simulateApiCall } from '../../../../db/mockData';
+import { apiFetch, API_BASE_URL } from '../../utils/api';
+import { mockActs } from '../../../../db/mockData';
+import { createMockableQuery, createFilteredMockQueryFn, createSingleMockQueryFn } from './queryHelpers';
 
 const ACTS_URL = `${API_BASE_URL}/acts`;
 
 export const actApi = {
   // Get all acts for a project
   useProjectActs: (projectId: string, enabled: boolean = true) => {
-    if (USE_MOCK_DATA) {
-      return useQuery<Act[]>({
-        queryKey: ['acts', 'project', projectId],
-        queryFn: async () => {
-          const filtered = mockActs.filter((a: Act) => a.project_id === projectId);
-          return simulateApiCall(filtered);
-        },
-        enabled: enabled && !!projectId,
-        staleTime: 5 * 60 * 1000,
-      });
-    }
-    const url = `${ACTS_URL}?projectId=${projectId}`;
-    return useApiGet<Act[]>(url, enabled && !!projectId);
+    return createMockableQuery<Act[]>(
+      ['acts', 'project', projectId],
+      () => createFilteredMockQueryFn(mockActs, (a: Act) => a.project_id === projectId),
+      `${ACTS_URL}?projectId=${projectId}`,
+      enabled && !!projectId
+    );
   },
 
   // Get a single act
   useAct: (id: string, enabled: boolean = true) => {
-    if (USE_MOCK_DATA) {
-      return useQuery<Act>({
-        queryKey: ['acts', id],
-        queryFn: async () => {
-          const act = mockActs.find((a: Act) => a.id === id);
-          if (!act) throw new Error('Act not found');
-          return simulateApiCall(act);
-        },
-        enabled: enabled && !!id,
-        staleTime: 5 * 60 * 1000,
-      });
-    }
-    const url = `${ACTS_URL}/${id}`;
-    return useApiGet<Act>(url, enabled && !!id);
+    return createMockableQuery<Act>(
+      ['acts', id],
+      () => createSingleMockQueryFn(mockActs, (a: Act) => a.id === id, 'Act not found'),
+      `${ACTS_URL}/${id}`,
+      enabled && !!id
+    );
   },
 
   // Create act

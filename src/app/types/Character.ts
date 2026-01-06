@@ -5,11 +5,51 @@ export interface Character {
   voice?: string;
   avatar_url?: string;
   project_id?: string;
-  faction_id?: string;
+  faction_id?: string | null;
+  faction_role?: string;
+  faction_rank?: number;
   transparent_avatar_url?: string;
   body_url?: string;
   transparent_body_url?: string;
 }
+
+// Predefined faction roles
+export type FactionRole =
+  | 'Leader'
+  | 'Co-Leader'
+  | 'Advisor'
+  | 'Elder'
+  | 'Member'
+  | 'Recruit'
+  | 'Guard'
+  | 'Diplomat'
+  | 'Scholar'
+  | 'Merchant'
+  | 'Craftsman'
+  | 'Warrior'
+  | 'Mage'
+  | 'Healer'
+  | 'Scout'
+  | 'Other';
+
+export const FACTION_ROLES: FactionRole[] = [
+  'Leader',
+  'Co-Leader',
+  'Advisor',
+  'Elder',
+  'Member',
+  'Recruit',
+  'Guard',
+  'Diplomat',
+  'Scholar',
+  'Merchant',
+  'Craftsman',
+  'Warrior',
+  'Mage',
+  'Healer',
+  'Scout',
+  'Other',
+];
 
 export interface Trait {
   id: string;
@@ -24,7 +64,7 @@ export interface CharRelationship {
   character_b_id: string;
   event_date?: string;
   description: string;
-  act_id?: string;
+  act_id?: string | null;
   relationship_type?: string;
 }
 

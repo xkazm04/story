@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Sparkles, Pencil, Image as ImageIcon } from 'lucide-react';
 import ImageGenerator from './generator/ImageGenerator';
 import ImageEditor from './editor/ImageEditor';
-import SketchToImage from './sketch/SketchToImage';
+import SketchToImage from './sub_Sketch/SketchToImage';
+import { TabButton } from '@/app/components/UI/TabButton';
 
 type TabType = 'generator' | 'sketch' | 'editor';
 
@@ -25,39 +26,22 @@ const ImageFeature: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('generator');
 
   return (
-    <div className="h-full flex flex-col bg-gray-950">
+    <div className="h-full flex flex-col bg-slate-950">
       {/* Tab Navigation */}
-      <div className="flex gap-2 p-4 border-b border-gray-800">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`
-                relative flex items-center gap-2 px-4 py-2 rounded-lg
-                transition-all duration-200
-                ${isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
-                }
-              `}
-            >
-              <Icon className="w-4 h-4" />
-              <span className="font-medium">{tab.label}</span>
-
-              {isActive && (
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute inset-0 bg-blue-600 rounded-lg -z-10"
-                  transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                />
-              )}
-            </button>
-          );
-        })}
+      <div className="flex gap-2 px-4 pt-3 pb-2 border-b border-slate-900/70 bg-slate-950/95">
+        {tabs.map((tab) => (
+          <TabButton
+            key={tab.id}
+            id={tab.id}
+            label={tab.label}
+            icon={tab.icon}
+            isActive={activeTab === tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            layoutId="activeImageTab"
+            activeColor="bg-cyan-600/20 border border-cyan-500/40 text-slate-50"
+            data-testid={`image-tab-${tab.id}`}
+          />
+        ))}
       </div>
 
       {/* Tab Content */}

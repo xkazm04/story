@@ -1,8 +1,83 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { LLMRequest, LLMResponse, OllamaGenerateRequest, OllamaGenerateResponse, DEFAULT_LLM_CONFIG } from '@/app/types/LLM';
+import { LLMRequest, LLMResponse, OllamaGenerateRequest, DEFAULT_LLM_CONFIG } from '@/app/types/LLM';
+import { logger, createErrorResponse, handleUnexpectedError } from '@/app/utils/apiErrorHandling';
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || DEFAULT_LLM_CONFIG.baseUrl;
 const DEFAULT_MODEL = process.env.OLLAMA_MODEL || DEFAULT_LLM_CONFIG.model;
+
+/**
+ * Ollama API response structure
+ */
+interface OllamaGenerateResponse {
+  response: string;
+  model: string;
+  done: boolean;
+  total_duration?: number;
+  prompt_eval_count?: number;
+  eval_count?: number;
+}
+
+/**
+ * Ollama tags response structure
+ */
+interface OllamaTagsResponse {
+  models?: Array<{ name: string }>;
+}
+
+/**
+ * Prepares Ollama request from LLM request
+ */
+function prepareOllamaRequest(body: LLMRequest): OllamaGenerateRequest {
+  const {
+    prompt,
+    model = DEFAULT_MODEL,
+    temperature = DEFAULT_LLM_CONFIG.temperature,
+    maxTokens = DEFAULT_LLM_CONFIG.maxTokens,
+    stream = false,
+    systemPrompt,
+  } = body;
+
+  const ollamaRequest: OllamaGenerateRequest = {
+    model,
+    prompt,
+    temperature,
+    max_tokens: maxTokens,
+    stream,
+  };
+
+  if (systemPrompt) {
+    ollamaRequest.system = systemPrompt;
+  }
+
+  return ollamaRequest;
+}
+
+/**
+ * Calls Ollama generate API
+ */
+async function callOllamaGenerate(request: OllamaGenerateRequest): Promise<Response> {
+  return await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+}
+
+/**
+ * Transforms Ollama response to LLM response format
+ */
+function transformOllamaResponse(ollamaData: OllamaGenerateResponse): LLMResponse {
+  return {
+    content: ollamaData.response,
+    model: ollamaData.model,
+    done: ollamaData.done,
+    totalDuration: ollamaData.total_duration,
+    promptEvalCount: ollamaData.prompt_eval_count,
+    evalCount: ollamaData.eval_count,
+  };
+}
 
 /**
  * POST /api/llm
@@ -14,47 +89,27 @@ export async function POST(request: NextRequest) {
   try {
     const body: LLMRequest = await request.json();
 
-    const {
-      prompt,
-      model = DEFAULT_MODEL,
-      temperature = DEFAULT_LLM_CONFIG.temperature,
-      maxTokens = DEFAULT_LLM_CONFIG.maxTokens,
-      stream = false,
-      systemPrompt,
-    } = body;
-
-    if (!prompt) {
-      return NextResponse.json(
-        { error: 'Missing prompt', message: 'Prompt is required' },
-        { status: 400 }
+    if (!body.prompt) {
+      return createErrorResponse(
+        'Missing prompt',
+        400,
+        'Prompt is required'
       );
     }
 
     // Prepare Ollama request
-    const ollamaRequest: OllamaGenerateRequest = {
-      model,
-      prompt,
-      temperature,
-      max_tokens: maxTokens,
-      stream,
-    };
-
-    if (systemPrompt) {
-      ollamaRequest.system = systemPrompt;
-    }
+    const ollamaRequest = prepareOllamaRequest(body);
 
     // Make request to Ollama
-    const ollamaResponse = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(ollamaRequest),
-    });
+    const ollamaResponse = await callOllamaGenerate(ollamaRequest);
 
     if (!ollamaResponse.ok) {
       const errorText = await ollamaResponse.text();
-      console.error('Ollama API error:', errorText);
+      logger.error('LLM API error', new Error(`Ollama returned ${ollamaResponse.status}`), {
+        endpoint: '/api/llm',
+        status: ollamaResponse.status,
+        errorText,
+      });
 
       return NextResponse.json(
         {
@@ -67,8 +122,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle streaming response
-    if (stream) {
-      // For streaming, we need to pass through the response
+    if (body.stream) {
       return new NextResponse(ollamaResponse.body, {
         headers: {
           'Content-Type': 'text/event-stream',
@@ -80,27 +134,11 @@ export async function POST(request: NextRequest) {
 
     // Handle non-streaming response
     const ollamaData: OllamaGenerateResponse = await ollamaResponse.json();
-
-    const response: LLMResponse = {
-      content: ollamaData.response,
-      model: ollamaData.model,
-      done: ollamaData.done,
-      totalDuration: ollamaData.total_duration,
-      promptEvalCount: ollamaData.prompt_eval_count,
-      evalCount: ollamaData.eval_count,
-    };
+    const response = transformOllamaResponse(ollamaData);
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('LLM API error:', error);
-
-    return NextResponse.json(
-      {
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error occurred',
-      },
-      { status: 500 }
-    );
+    return handleUnexpectedError('POST /api/llm', error);
   }
 }
 
@@ -126,14 +164,14 @@ export async function GET() {
       );
     }
 
-    const data = await response.json();
+    const data: OllamaTagsResponse = await response.json();
 
     return NextResponse.json({
       status: 'ok',
       message: 'Ollama is accessible',
       ollamaUrl: OLLAMA_BASE_URL,
       defaultModel: DEFAULT_MODEL,
-      availableModels: data.models?.map((m: any) => m.name) || [],
+      availableModels: data.models?.map((m) => m.name) || [],
     });
   } catch (error) {
     return NextResponse.json(

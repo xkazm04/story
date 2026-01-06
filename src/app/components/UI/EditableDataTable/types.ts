@@ -3,7 +3,7 @@ import { ReactNode } from 'react';
 export type CellEditMode = 'inline' | 'modal' | 'none';
 export type ColumnType = 'text' | 'number' | 'boolean' | 'select' | 'custom';
 
-export interface ColumnDefinition<T = any> {
+export interface ColumnDefinition<T = Record<string, unknown>> {
   key: string;
   header: string;
   width?: string; // e.g., 'w-1/4', 'w-24', 'flex-1'
@@ -13,24 +13,24 @@ export interface ColumnDefinition<T = any> {
   sortable?: boolean;
 
   // Rendering
-  render?: (value: any, row: T, index: number) => ReactNode;
-  renderEdit?: (value: any, onChange: (value: any) => void, row: T) => ReactNode;
+  render?: (value: unknown, row: T, index: number) => ReactNode;
+  renderEdit?: (value: unknown, onChange: (value: unknown) => void, row: T) => ReactNode;
 
   // Select options (when type is 'select')
-  options?: Array<{ label: string; value: any }>;
+  options?: Array<{ label: string; value: string; disabled?: boolean }>;
 
   // Custom validation
-  validate?: (value: any, row: T) => string | null;
+  validate?: (value: unknown, row: T) => string | null;
 
   // Formatting
-  format?: (value: any) => string;
+  format?: (value: unknown) => string;
 
   // Classes
   className?: string;
   headerClassName?: string;
 }
 
-export interface RowAction<T = any> {
+export interface RowAction<T = Record<string, unknown>> {
   icon: ReactNode;
   label: string;
   onClick: (row: T, index: number) => void;
@@ -39,7 +39,7 @@ export interface RowAction<T = any> {
   disabled?: (row: T) => boolean;
 }
 
-export interface EditableDataTableProps<T = any> {
+export interface EditableDataTableProps<T = Record<string, unknown>> {
   // Data
   columns: ColumnDefinition<T>[];
   data: T[];
@@ -107,7 +107,7 @@ export interface EditableDataTableProps<T = any> {
 
 export interface EditableRowState {
   isEditing: boolean;
-  editValues: Record<string, any>;
+  editValues: Record<string, unknown>;
   errors: Record<string, string>;
   isExpanded: boolean;
 }

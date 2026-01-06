@@ -4,6 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/app/utils/logger';
+import { createErrorResponse, validateRequiredParams, HTTP_STATUS } from '@/app/utils/apiErrorHandling';
 
 export async function PATCH(
   request: NextRequest,
@@ -14,11 +16,10 @@ export async function PATCH(
     const body = await request.json();
     const { resolution_type, custom_resolution, user_feedback } = body;
 
-    if (!resolution_type) {
-      return NextResponse.json(
-        { error: 'resolution_type is required' },
-        { status: 400 }
-      );
+    // Validate required parameters
+    const validationError = validateRequiredParams(body, ['resolution_type']);
+    if (validationError) {
+      return validationError;
     }
 
     // In a real implementation, you would:
@@ -36,10 +37,7 @@ export async function PATCH(
       resolved_at: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Error resolving consistency issue:', error);
-    return NextResponse.json(
-      { error: 'Failed to resolve consistency issue' },
-      { status: 500 }
-    );
+    logger.apiError('/api/character-consistency/[id]', error);
+    return createErrorResponse('Failed to resolve consistency issue', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }

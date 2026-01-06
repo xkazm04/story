@@ -1,46 +1,32 @@
 import { FactionRelationship } from '../../types/Faction';
-import { apiFetch, useApiGet, API_BASE_URL, USE_MOCK_DATA } from '../../utils/api';
-import { useQuery } from '@tanstack/react-query';
-import { mockFactionRelationships, simulateApiCall } from '../../../../db/mockData';
+import { apiFetch, API_BASE_URL } from '../../utils/api';
+import { mockFactionRelationships } from '../../../../db/mockData';
+import { createMockableQuery, createFilteredMockQueryFn, createSingleMockQueryFn } from './queryHelpers';
 
 const FACTION_RELATIONSHIPS_URL = `${API_BASE_URL}/faction-relationships`;
 
 export const factionRelationshipApi = {
   // Get all relationships for a faction
   useFactionRelationships: (factionId: string, enabled: boolean = true) => {
-    if (USE_MOCK_DATA) {
-      return useQuery<FactionRelationship[]>({
-        queryKey: ['factionRelationships', 'faction', factionId],
-        queryFn: async () => {
-          const filtered = mockFactionRelationships.filter(
-            r => r.faction_a_id === factionId || r.faction_b_id === factionId
-          );
-          return simulateApiCall(filtered);
-        },
-        enabled: enabled && !!factionId,
-        staleTime: 5 * 60 * 1000,
-      });
-    }
-    const url = `${FACTION_RELATIONSHIPS_URL}?factionId=${factionId}`;
-    return useApiGet<FactionRelationship[]>(url, enabled && !!factionId);
+    return createMockableQuery<FactionRelationship[]>(
+      ['factionRelationships', 'faction', factionId],
+      () => createFilteredMockQueryFn(
+        mockFactionRelationships,
+        r => r.faction_a_id === factionId || r.faction_b_id === factionId
+      ),
+      `${FACTION_RELATIONSHIPS_URL}?factionId=${factionId}`,
+      enabled && !!factionId
+    );
   },
 
   // Get a single relationship
   useFactionRelationship: (id: string, enabled: boolean = true) => {
-    if (USE_MOCK_DATA) {
-      return useQuery<FactionRelationship>({
-        queryKey: ['factionRelationships', id],
-        queryFn: async () => {
-          const relationship = mockFactionRelationships.find(r => r.id === id);
-          if (!relationship) throw new Error('Faction relationship not found');
-          return simulateApiCall(relationship);
-        },
-        enabled: enabled && !!id,
-        staleTime: 5 * 60 * 1000,
-      });
-    }
-    const url = `${FACTION_RELATIONSHIPS_URL}/${id}`;
-    return useApiGet<FactionRelationship>(url, enabled && !!id);
+    return createMockableQuery<FactionRelationship>(
+      ['factionRelationships', id],
+      () => createSingleMockQueryFn(mockFactionRelationships, r => r.id === id, 'Faction relationship not found'),
+      `${FACTION_RELATIONSHIPS_URL}/${id}`,
+      enabled && !!id
+    );
   },
 
   // Create faction relationship

@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Save, Upload, Shield, Award, Zap, Image as ImageIcon } from 'lucide-react';
+import { Save, Upload, Shield, Award, Zap, Image as ImageIcon, Play, Pause, RotateCw, ArrowBigUpDash, Wind, Move } from 'lucide-react';
 import { FactionBranding } from '@/app/types/Faction';
+import PhysicsPreview from './PhysicsPreview';
 
 interface EmblemDesignerProps {
   currentBranding?: FactionBranding;
@@ -13,6 +14,7 @@ interface EmblemDesignerProps {
 }
 
 type EmblemStyle = 'shield' | 'crest' | 'sigil' | 'custom';
+type AnimationMode = 'spin' | 'bounce' | 'float' | 'wobble';
 
 const EMBLEM_STYLES: Array<{
   id: EmblemStyle;
@@ -46,6 +48,38 @@ const EMBLEM_STYLES: Array<{
   },
 ];
 
+const ANIMATION_MODES: Array<{
+  id: AnimationMode;
+  name: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  description: string;
+}> = [
+  {
+    id: 'spin',
+    name: 'Spin',
+    icon: RotateCw,
+    description: 'Continuous rotation',
+  },
+  {
+    id: 'bounce',
+    name: 'Bounce',
+    icon: ArrowBigUpDash,
+    description: 'Bouncing motion',
+  },
+  {
+    id: 'float',
+    name: 'Float',
+    icon: Wind,
+    description: 'Gentle floating',
+  },
+  {
+    id: 'wobble',
+    name: 'Wobble',
+    icon: Move,
+    description: 'Wobble effect',
+  },
+];
+
 const EmblemDesigner: React.FC<EmblemDesignerProps> = ({
   currentBranding,
   onSave,
@@ -59,6 +93,8 @@ const EmblemDesigner: React.FC<EmblemDesignerProps> = ({
     currentBranding?.custom_logo_url || null
   );
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [physicsEnabled, setPhysicsEnabled] = useState(false);
+  const [animationMode, setAnimationMode] = useState<AnimationMode>('spin');
 
   useEffect(() => {
     if (currentBranding) {
@@ -104,9 +140,98 @@ const EmblemDesigner: React.FC<EmblemDesignerProps> = ({
     });
   };
 
-  // Render emblem preview with SVG
-  const renderEmblemPreview = () => {
+  // Render emblem content
+  const renderEmblemContent = () => {
     const initial = factionName.charAt(0).toUpperCase() || 'F';
+
+    const emblemElement = selectedStyle === 'custom' && customImage ? (
+      <img
+        src={customImage}
+        alt="Custom emblem"
+        className="w-full h-full object-contain rounded-lg"
+      />
+    ) : (
+      <svg
+        viewBox="0 0 200 200"
+        className="w-full h-full"
+        style={{ filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3))' }}
+      >
+        {selectedStyle === 'shield' && (
+          <g>
+            <path
+              d="M100 10 L170 40 L170 100 Q170 160 100 190 Q30 160 30 100 L30 40 Z"
+              fill={`${primaryColor}40`}
+              stroke={primaryColor}
+              strokeWidth="3"
+            />
+            <path
+              d="M100 30 L155 55 L155 100 Q155 145 100 170 Q45 145 45 100 L45 55 Z"
+              fill={`${primaryColor}20`}
+              stroke={primaryColor}
+              strokeWidth="2"
+            />
+            <text
+              x="100"
+              y="120"
+              fontSize="60"
+              fontWeight="bold"
+              textAnchor="middle"
+              fill={primaryColor}
+            >
+              {initial}
+            </text>
+          </g>
+        )}
+        {selectedStyle === 'crest' && (
+          <g>
+            <path
+              d="M100 15 L160 50 L150 130 L100 180 L50 130 L40 50 Z"
+              fill={`${primaryColor}40`}
+              stroke={primaryColor}
+              strokeWidth="3"
+            />
+            <circle cx="100" cy="90" r="50" fill={`${primaryColor}20`} stroke={primaryColor} strokeWidth="2" />
+            <path
+              d="M70 70 L100 40 L130 70 L115 90 L85 90 Z"
+              fill={primaryColor}
+              opacity="0.3"
+            />
+            <text
+              x="100"
+              y="105"
+              fontSize="50"
+              fontWeight="bold"
+              textAnchor="middle"
+              fill={primaryColor}
+            >
+              {initial}
+            </text>
+          </g>
+        )}
+        {selectedStyle === 'sigil' && (
+          <g>
+            <circle cx="100" cy="100" r="80" fill={`${primaryColor}40`} stroke={primaryColor} strokeWidth="3" />
+            <path
+              d="M100 30 L115 85 L170 85 L125 115 L145 170 L100 135 L55 170 L75 115 L30 85 L85 85 Z"
+              fill={`${primaryColor}20`}
+              stroke={primaryColor}
+              strokeWidth="2"
+            />
+            <circle cx="100" cy="100" r="35" fill={`${primaryColor}60`} />
+            <text
+              x="100"
+              y="115"
+              fontSize="40"
+              fontWeight="bold"
+              textAnchor="middle"
+              fill="white"
+            >
+              {initial}
+            </text>
+          </g>
+        )}
+      </svg>
+    );
 
     return (
       <motion.div
@@ -117,94 +242,7 @@ const EmblemDesigner: React.FC<EmblemDesignerProps> = ({
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         className="relative w-48 h-48 mx-auto"
       >
-        {selectedStyle === 'custom' && customImage ? (
-          <img
-            src={customImage}
-            alt="Custom emblem"
-            className="w-full h-full object-contain rounded-lg"
-          />
-        ) : (
-          <svg
-            viewBox="0 0 200 200"
-            className="w-full h-full"
-            style={{ filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3))' }}
-          >
-            {selectedStyle === 'shield' && (
-              <g>
-                <path
-                  d="M100 10 L170 40 L170 100 Q170 160 100 190 Q30 160 30 100 L30 40 Z"
-                  fill={`${primaryColor}40`}
-                  stroke={primaryColor}
-                  strokeWidth="3"
-                />
-                <path
-                  d="M100 30 L155 55 L155 100 Q155 145 100 170 Q45 145 45 100 L45 55 Z"
-                  fill={`${primaryColor}20`}
-                  stroke={primaryColor}
-                  strokeWidth="2"
-                />
-                <text
-                  x="100"
-                  y="120"
-                  fontSize="60"
-                  fontWeight="bold"
-                  textAnchor="middle"
-                  fill={primaryColor}
-                >
-                  {initial}
-                </text>
-              </g>
-            )}
-            {selectedStyle === 'crest' && (
-              <g>
-                <path
-                  d="M100 15 L160 50 L150 130 L100 180 L50 130 L40 50 Z"
-                  fill={`${primaryColor}40`}
-                  stroke={primaryColor}
-                  strokeWidth="3"
-                />
-                <circle cx="100" cy="90" r="50" fill={`${primaryColor}20`} stroke={primaryColor} strokeWidth="2" />
-                <path
-                  d="M70 70 L100 40 L130 70 L115 90 L85 90 Z"
-                  fill={primaryColor}
-                  opacity="0.3"
-                />
-                <text
-                  x="100"
-                  y="105"
-                  fontSize="50"
-                  fontWeight="bold"
-                  textAnchor="middle"
-                  fill={primaryColor}
-                >
-                  {initial}
-                </text>
-              </g>
-            )}
-            {selectedStyle === 'sigil' && (
-              <g>
-                <circle cx="100" cy="100" r="80" fill={`${primaryColor}40`} stroke={primaryColor} strokeWidth="3" />
-                <path
-                  d="M100 30 L115 85 L170 85 L125 115 L145 170 L100 135 L55 170 L75 115 L30 85 L85 85 Z"
-                  fill={`${primaryColor}20`}
-                  stroke={primaryColor}
-                  strokeWidth="2"
-                />
-                <circle cx="100" cy="100" r="35" fill={`${primaryColor}60`} />
-                <text
-                  x="100"
-                  y="115"
-                  fontSize="40"
-                  fontWeight="bold"
-                  textAnchor="middle"
-                  fill="white"
-                >
-                  {initial}
-                </text>
-              </g>
-            )}
-          </svg>
-        )}
+        {emblemElement}
       </motion.div>
     );
   };
@@ -222,6 +260,7 @@ const EmblemDesigner: React.FC<EmblemDesignerProps> = ({
                 key={style.id}
                 type="button"
                 onClick={() => handleStyleSelect(style.id)}
+                data-testid={`emblem-style-${style.id}-btn`}
                 className={`relative p-4 rounded-lg border-2 transition-all ${
                   selectedStyle === style.id
                     ? 'border-blue-500 bg-blue-500/10'
@@ -271,6 +310,7 @@ const EmblemDesigner: React.FC<EmblemDesignerProps> = ({
                 type="file"
                 accept="image/*"
                 onChange={handleImageUpload}
+                data-testid="custom-emblem-upload-input"
                 className="hidden"
               />
             </label>
@@ -284,14 +324,77 @@ const EmblemDesigner: React.FC<EmblemDesignerProps> = ({
 
       {/* Live Preview */}
       <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-        <h4 className="text-sm font-medium text-gray-300 mb-4 flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          Emblem Preview
-        </h4>
-        <AnimatePresence mode="wait">{renderEmblemPreview()}</AnimatePresence>
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-sm font-medium text-gray-300 flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            Emblem Preview
+          </h4>
+          <button
+            type="button"
+            onClick={() => setPhysicsEnabled(!physicsEnabled)}
+            data-testid="toggle-physics-preview-btn"
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${
+              physicsEnabled
+                ? 'bg-green-600 hover:bg-green-700 text-white'
+                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+            }`}
+          >
+            {physicsEnabled ? <Pause size={14} /> : <Play size={14} />}
+            <span className="text-xs font-medium">
+              {physicsEnabled ? 'Stop Physics' : 'Start Physics'}
+            </span>
+          </button>
+        </div>
+
+        {/* Animation Mode Selection */}
+        {physicsEnabled && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-4"
+          >
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-gray-400 mr-2">Animation:</span>
+              {ANIMATION_MODES.map((mode) => {
+                const IconComponent = mode.icon;
+                return (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    onClick={() => setAnimationMode(mode.id)}
+                    data-testid={`animation-mode-${mode.id}-btn`}
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-all ${
+                      animationMode === mode.id
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                    title={mode.description}
+                  >
+                    <IconComponent size={12} />
+                    {mode.name}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
+        <div className="min-h-[300px] flex items-center justify-center">
+          <AnimatePresence mode="wait">
+            <PhysicsPreview
+              emblemContent={renderEmblemContent()}
+              isActive={physicsEnabled}
+              animationMode={animationMode}
+            />
+          </AnimatePresence>
+        </div>
+
         <div className="mt-4 text-center">
           <p className="text-sm text-gray-400">
-            Emblem will be displayed on faction cards and member profiles
+            {physicsEnabled
+              ? 'Move your mouse over the emblem to interact with it'
+              : 'Emblem will be displayed on faction cards and member profiles'}
           </p>
         </div>
       </div>
@@ -301,6 +404,7 @@ const EmblemDesigner: React.FC<EmblemDesignerProps> = ({
         <button
           type="button"
           onClick={handleSave}
+          data-testid="save-emblem-btn"
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
         >
           <Save size={16} />

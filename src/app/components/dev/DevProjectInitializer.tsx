@@ -30,12 +30,14 @@ const DevProjectInitializer: React.FC<DevProjectInitializerProps> = ({
   const { selectedProject, initializeWithMockProject } = useProjectStore();
 
   useEffect(() => {
-    // Only auto-select if:
-    // 1. Feature is enabled
-    // 2. Mock data is being used
-    // 3. No project is currently selected
-    // 4. We have mock projects available
-    if (autoSelect && USE_MOCK_DATA && !selectedProject && mockProjects.length > 0) {
+    // Named conditions for clarity
+    const isAutoSelectEnabled = autoSelect && USE_MOCK_DATA;
+    const noProjectSelected = !selectedProject;
+    const hasMockProjects = mockProjects.length > 0;
+
+    const shouldAutoSelectProject = isAutoSelectEnabled && noProjectSelected && hasMockProjects;
+
+    if (shouldAutoSelectProject) {
       const projectToSelect = mockProjects[projectIndex] || mockProjects[0];
       console.log('[DEV] Auto-selecting project:', projectToSelect.name);
       initializeWithMockProject(projectToSelect);

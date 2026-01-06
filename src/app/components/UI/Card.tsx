@@ -1,7 +1,9 @@
 'use client';
 
 import { ReactNode, HTMLAttributes } from 'react';
+import Image from 'next/image';
 import { clsx } from 'clsx';
+import { focusRing } from '@/app/utils/focusRing';
 
 export type CardVariant = 'default' | 'bordered' | 'gradient' | 'glass';
 export type CardPadding = 'none' | 'sm' | 'md' | 'lg';
@@ -10,14 +12,15 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
   variant?: CardVariant;
   padding?: CardPadding;
   hoverable?: boolean;
+  clickable?: boolean;
   children: ReactNode;
 }
 
 const variantClasses: Record<CardVariant, string> = {
-  default: 'bg-gray-800/50 border border-gray-700/50',
-  bordered: 'bg-gray-800/30 border-2 border-gray-700/50',
-  gradient: 'bg-gradient-to-br from-gray-800 via-gray-800/80 to-gray-900 border border-gray-700/30',
-  glass: 'bg-white/5 backdrop-blur-sm border border-white/10',
+  default: 'bg-slate-950/70 border border-slate-800/80',
+  bordered: 'bg-slate-950/80 border border-cyan-500/20 shadow-[0_0_0_1px_rgba(8,145,178,0.12)]',
+  gradient: 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-slate-800/70',
+  glass: 'bg-white/5 backdrop-blur-md border border-white/10',
 };
 
 const paddingClasses: Record<CardPadding, string> = {
@@ -31,6 +34,7 @@ export function Card({
   variant = 'default',
   padding = 'md',
   hoverable = false,
+  clickable = false,
   className,
   children,
   ...props
@@ -38,12 +42,15 @@ export function Card({
   return (
     <div
       className={clsx(
-        'rounded-lg transition-all',
+        'rounded-lg transition-all shadow-sm',
+        clickable && focusRing.card,
         variantClasses[variant],
         paddingClasses[padding],
-        hoverable && 'hover:border-cyan-500/30 hover:shadow-lg hover:shadow-cyan-500/10 cursor-pointer',
+        hoverable && 'hover:border-cyan-500/40 hover:shadow-md hover:shadow-cyan-500/10 cursor-pointer',
+        clickable && 'cursor-pointer',
         className
       )}
+      tabIndex={clickable ? 0 : undefined}
       {...props}
     >
       {children}
@@ -133,7 +140,7 @@ export function CardFooter({ className, children, ...props }: CardFooterProps) {
 }
 
 // Compact Card variant for lists
-interface CompactCardProps extends Omit<CardProps, 'padding' | 'children'> {
+interface CompactCardProps extends Omit<CardProps, 'padding' | 'children' | 'clickable'> {
   icon?: ReactNode;
   title: string;
   subtitle?: string;
@@ -191,6 +198,7 @@ interface GridCardProps extends CardProps {
 }
 
 export function GridCard({
+  onClick,
   image,
   title,
   subtitle,
@@ -210,18 +218,19 @@ export function GridCard({
       {/* Image Section */}
       {image && (
         <div className="relative aspect-square overflow-hidden bg-gray-900">
-          <img
+          <Image
             src={image}
             alt={title}
-            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+            fill
+            className="object-cover transition-transform group-hover:scale-105"
           />
           {badge && (
-            <div className="absolute top-2 right-2">
+            <div className="absolute top-2 right-2 z-10">
               {badge}
             </div>
           )}
           {overlay && (
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10">
               {overlay}
             </div>
           )}

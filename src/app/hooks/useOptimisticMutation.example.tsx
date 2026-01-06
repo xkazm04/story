@@ -47,10 +47,10 @@ function Example2_CustomToastMessage() {
     toastMessage: 'Creating your faction... (You can undo within 3 seconds)',
     enableUndo: true,
     onSuccess: (data) => {
-      console.log('Faction created successfully:', data);
+      // Faction created successfully
     },
     onError: (error) => {
-      console.error('Failed to create faction:', error);
+      // Failed to create faction
     },
   });
 
@@ -165,7 +165,7 @@ function Example5_ComplexMutation() {
     toastMessage: 'Assigning character to faction...',
     enableUndo: true,
     onSuccess: () => {
-      console.log('Character successfully assigned to faction');
+      // Character successfully assigned to faction
     },
   });
 
@@ -299,14 +299,14 @@ async function Example8_AsyncAwait() {
 
   try {
     const result = await mutateAsync({ name: 'New Faction', project_id: 'project-123' });
-    console.log('Created faction:', result);
+    // Created faction successfully
 
     // Continue with dependent operations
     // const relatedData = await someOtherOperation(result.id);
 
     return { result };
   } catch (error) {
-    console.error('Failed to create faction:', error);
+    // Failed to create faction
     throw error;
   }
 }
@@ -344,9 +344,9 @@ function Example9_SequentialMutations() {
         faction_id: faction.id,
       });
 
-      console.log('Created both:', { faction, character });
+      // Created both successfully
     } catch (error) {
-      console.error('Failed to create:', error);
+      // Failed to create
     }
   };
 

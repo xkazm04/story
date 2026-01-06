@@ -8,19 +8,19 @@
 
 'use client';
 
-import { ReactNode, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { clsx } from 'clsx';
 import {
   EntitySchema,
   SchemaField,
   GeneratedTableProps,
-  TableComponentOptions,
   GeneratedFormProps,
-  FormComponentOptions,
 } from './types';
 import { ColumnDefinition, RowAction, EditableDataTable } from '@/app/components/UI/EditableDataTable';
 import { schemaFieldToColumnDefinition } from './fieldMappers';
 import { validateEntity } from './validators';
+import { renderInputByType } from './FormFieldRenderer';
+import { logger } from '@/app/utils/logger';
 
 export class ComponentFactory {
   /**
@@ -49,27 +49,32 @@ export class ComponentFactory {
       const rowActions = useMemo((): RowAction<T>[] => {
         if (!schema.actions) return [];
 
-        return schema.actions.map((action): RowAction<T> => ({
-          icon: action.icon,
-          label: action.label,
-          onClick: async (row: T) => {
-            if (action.requiresConfirmation) {
-              const message =
-                typeof action.confirmationMessage === 'function'
-                  ? action.confirmationMessage(row)
-                  : action.confirmationMessage || `Are you sure you want to ${action.label}?`;
+        return schema.actions.map((action): RowAction<T> => {
+          // Map success variant to primary for compatibility
+          const variant = action.variant === 'success' ? 'primary' : (action.variant || 'default');
 
-              if (!window.confirm(message)) {
-                return;
+          return {
+            icon: action.icon,
+            label: action.label,
+            onClick: async (row: T) => {
+              if (action.requiresConfirmation) {
+                const message =
+                  typeof action.confirmationMessage === 'function'
+                    ? action.confirmationMessage(row)
+                    : action.confirmationMessage || `Are you sure you want to ${action.label}?`;
+
+                if (!window.confirm(message)) {
+                  return;
+                }
               }
-            }
 
-            await action.handler(row);
-          },
-          variant: action.variant || 'default',
-          show: action.show,
-          disabled: action.disabled,
-        }));
+              await action.handler(row);
+            },
+            variant,
+            show: action.show,
+            disabled: action.disabled,
+          };
+        });
       }, []);
 
       // Handle row updates with validation and hooks
@@ -102,7 +107,7 @@ export class ComponentFactory {
             await Promise.resolve(schema.hooks.afterUpdate(updatedEntity));
           }
         } catch (err) {
-          console.error('Update failed:', err);
+          logger.error('Update failed in ComponentFactory', err);
           throw err;
         }
       };
@@ -128,7 +133,7 @@ export class ComponentFactory {
             await Promise.resolve(schema.hooks.afterDelete(row));
           }
         } catch (err) {
-          console.error('Delete failed:', err);
+          logger.error('Delete failed in ComponentFactory', err);
           throw err;
         }
       };
@@ -214,7 +219,7 @@ export class ComponentFactory {
       };
 
       // Handle field change
-      const handleFieldChange = (key: keyof T & string, value: any) => {
+      const handleFieldChange = (key: keyof T & string, value: T[keyof T]) => {
         setFormData((prev) => ({ ...prev, [key]: value }));
         setTouched((prev) => new Set(prev).add(key));
 
@@ -255,7 +260,7 @@ export class ComponentFactory {
             await Promise.resolve(schema.hooks.afterUpdate(processedData as T));
           }
         } catch (err) {
-          console.error('Form submission failed:', err);
+          logger.error('Form submission failed in ComponentFactory', err);
         }
       };
 
@@ -296,7 +301,7 @@ export class ComponentFactory {
             )}
 
             {renderInputByType(field, value, isReadonly, (newValue) =>
-              handleFieldChange(field.key, newValue)
+              handleFieldChange(field.key, newValue as T[keyof T])
             )}
 
             {fieldError && options.showValidation !== false && (
@@ -390,134 +395,3 @@ export class ComponentFactory {
     };
   }
 }
-
-/**
- * Helper to render input by field type
- */
-function renderInputByType(
-  field: SchemaField<any>,
-  value: any,
-  readonly: boolean,
-  onChange: (value: any) => void
-): ReactNode {
-  const baseInputClass =
-    'w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:border-blue-500 transition';
-
-  if (readonly) {
-    return (
-      <div className="px-3 py-2 bg-gray-900/50 border border-gray-800 rounded-lg text-gray-300">
-        {value !== null && value !== undefined
-          ? field.format
-            ? field.format(value, {} as any)
-            : String(value)
-          : '-'}
-      </div>
-    );
-  }
-
-  switch (field.type) {
-    case 'boolean':
-      return (
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={Boolean(value)}
-            onChange={(e) => onChange(e.target.checked)}
-            className="w-4 h-4 rounded border-gray-700 text-blue-600 focus:ring-blue-500"
-          />
-          <span className="text-sm text-gray-400">{field.placeholder}</span>
-        </label>
-      );
-
-    case 'number':
-      return (
-        <input
-          type="number"
-          value={value || ''}
-          onChange={(e) => onChange(Number(e.target.value))}
-          placeholder={field.placeholder}
-          className={baseInputClass}
-        />
-      );
-
-    case 'date':
-      return (
-        <input
-          type="date"
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          className={baseInputClass}
-        />
-      );
-
-    case 'datetime':
-      return (
-        <input
-          type="datetime-local"
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          className={baseInputClass}
-        />
-      );
-
-    case 'textarea':
-      return (
-        <textarea
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={field.placeholder}
-          rows={4}
-          className={baseInputClass}
-        />
-      );
-
-    case 'select':
-      return (
-        <select
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          className={baseInputClass}
-        >
-          <option value="">Select {field.label}</option>
-          {field.options?.map((opt) => (
-            <option key={String(opt.value)} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      );
-
-    case 'color':
-      return (
-        <div className="flex gap-2">
-          <input
-            type="color"
-            value={value || '#000000'}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-12 h-10 rounded border border-gray-700"
-          />
-          <input
-            type="text"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="#000000"
-            className={baseInputClass}
-          />
-        </div>
-      );
-
-    default:
-      return (
-        <input
-          type="text"
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={field.placeholder}
-          className={baseInputClass}
-        />
-      );
-  }
-}
-
-// Import React for hooks
-import React from 'react';

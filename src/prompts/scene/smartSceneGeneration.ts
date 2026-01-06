@@ -1,4 +1,10 @@
 import { PromptTemplate } from '../index';
+import type {
+  CharacterInfo,
+  ProjectContextInfo,
+  StoryContextInfo,
+  SceneContextInfo,
+} from '../types';
 
 /**
  * Smart Scene Generation (Context-Aware)
@@ -12,15 +18,15 @@ Create scenes that flow naturally from the story's progression.
 Consider character relationships, emotional arcs, story beats, and narrative continuity.
 Every scene should advance the plot, develop characters, or explore themes.`,
 
-  user: (context) => {
-    const {
-      sceneTitle,
-      sceneLocation,
-      projectContext,
-      storyContext,
-      sceneContext,
-      characters
-    } = context;
+  user: (context: {
+    sceneTitle: string;
+    sceneLocation?: string;
+    projectContext?: ProjectContextInfo;
+    storyContext?: StoryContextInfo;
+    sceneContext?: SceneContextInfo;
+    characters?: CharacterInfo[];
+  }) => {
+    const { sceneTitle, sceneLocation, projectContext, storyContext, sceneContext, characters } = context;
 
     let prompt = `Create a detailed scene:\n`;
     prompt += `Title: "${sceneTitle}"\n`;
@@ -40,7 +46,7 @@ Every scene should advance the plot, develop characters, or explore themes.`,
       if (storyContext.currentActName) prompt += `Current Act: ${storyContext.currentActName}\n`;
       if (storyContext.beats && storyContext.beats.length > 0) {
         prompt += `Relevant Story Beats:\n`;
-        storyContext.beats.slice(-5).forEach((beat: any) => {
+        storyContext.beats.slice(-5).forEach((beat) => {
           prompt += `- ${beat.name}: ${beat.description || 'Advance the narrative'}\n`;
         });
       }
@@ -65,7 +71,7 @@ Every scene should advance the plot, develop characters, or explore themes.`,
     // Character context
     if (characters && characters.length > 0) {
       prompt += `\n=== CHARACTERS IN SCENE ===\n`;
-      characters.forEach((char: any) => {
+      characters.forEach((char) => {
         prompt += `\n${char.name}${char.role ? ` (${char.role})` : ''}\n`;
         if (char.traits?.length) prompt += `  Traits: ${char.traits.join(', ')}\n`;
         if (char.personality) prompt += `  Personality: ${char.personality}\n`;
@@ -73,12 +79,12 @@ Every scene should advance the plot, develop characters, or explore themes.`,
 
         // Show relationships between characters in the scene
         if (char.relationships && char.relationships.length > 0) {
-          const relevantRels = char.relationships.filter((r: any) =>
-            characters.some((c: any) => c.id === r.targetCharacterId)
+          const relevantRels = char.relationships.filter((r) =>
+            characters.some((c) => c.id === r.targetCharacterId)
           );
           if (relevantRels.length > 0) {
             prompt += `  Relationships:\n`;
-            relevantRels.forEach((rel: any) => {
+            relevantRels.forEach((rel) => {
               prompt += `    - ${rel.relationshipType} with ${rel.targetCharacterName}`;
               if (rel.description) prompt += `: ${rel.description}`;
               prompt += `\n`;

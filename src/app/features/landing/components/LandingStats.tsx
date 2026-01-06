@@ -13,9 +13,9 @@ type Props = {
 const LandingStats = ({project}: Props) => {
       const [hoveredStat, setHoveredStat] = useState<string | null>(null);
       
-    return <div className="grid grid-cols-2 gap-4 mb-auto">
+    return <div className="grid grid-cols-2 gap-4 mb-auto" data-testid="project-stats">
       {/* Completion stat with interactive hover effect */}
-      <div 
+      <div
         className={`relative p-4 rounded-lg text-center overflow-hidden transition-all duration-300 ease-out ${
           hoveredStat === 'completion' ? 'ring-2 ring-blue-500' : ''
         }`}
@@ -26,6 +26,7 @@ const LandingStats = ({project}: Props) => {
         }}
         onMouseEnter={() => setHoveredStat('completion')}
         onMouseLeave={() => setHoveredStat(null)}
+        data-testid="stat-completion"
       >
         <div 
           className="absolute bottom-0 left-0 h-1 transition-all duration-500 ease-out" 

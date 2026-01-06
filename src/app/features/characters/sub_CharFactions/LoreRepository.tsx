@@ -2,14 +2,16 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Search, Filter, Edit, Plus, Scroll } from 'lucide-react';
+import { BookOpen, Search, Filter, Edit, Plus, Scroll, Tag, X } from 'lucide-react';
 import { FactionLore } from '@/app/types/Faction';
+import LoreSummaryPanel from './LoreSummaryPanel';
 
 interface LoreRepositoryProps {
   loreEntries: FactionLore[];
   isLeader: boolean;
   onAddLore?: () => void;
   onEditLore?: (loreId: string) => void;
+  onUpdateLore?: (loreId: string, updates: Partial<FactionLore>) => void;
 }
 
 const categoryLabels = {
@@ -31,10 +33,23 @@ const LoreRepository: React.FC<LoreRepositoryProps> = ({
   isLeader,
   onAddLore,
   onEditLore,
+  onUpdateLore,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<keyof typeof categoryLabels | null>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [expandedLore, setExpandedLore] = useState<string | null>(null);
+
+  // Get all unique tags from lore entries
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    loreEntries.forEach((lore) => {
+      if (lore.tags) {
+        lore.tags.forEach((tag) => tagSet.add(tag));
+      }
+    });
+    return Array.from(tagSet).sort();
+  }, [loreEntries]);
 
   // Filter and search lore entries
   const filteredLore = useMemo(() => {
@@ -42,14 +57,20 @@ const LoreRepository: React.FC<LoreRepositoryProps> = ({
       const matchesSearch =
         searchTerm === '' ||
         lore.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lore.content.toLowerCase().includes(searchTerm.toLowerCase());
+        lore.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (lore.summary && lore.summary.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (lore.tags && lore.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
 
       const matchesCategory =
         selectedCategory === null || lore.category === selectedCategory;
 
-      return matchesSearch && matchesCategory;
+      const matchesTags =
+        selectedTags.length === 0 ||
+        (lore.tags && selectedTags.every(tag => lore.tags!.includes(tag)));
+
+      return matchesSearch && matchesCategory && matchesTags;
     });
-  }, [loreEntries, searchTerm, selectedCategory]);
+  }, [loreEntries, searchTerm, selectedCategory, selectedTags]);
 
   // Count entries per category
   const categoryCounts = useMemo(() => {
@@ -71,6 +92,12 @@ const LoreRepository: React.FC<LoreRepositoryProps> = ({
       month: 'long',
       day: 'numeric',
     });
+  };
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
   };
 
   return (
@@ -108,8 +135,9 @@ const LoreRepository: React.FC<LoreRepositoryProps> = ({
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search lore entries..."
+            placeholder="Search lore entries, summaries, and tags..."
             className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            data-testid="lore-search-input"
           />
         </div>
 
@@ -123,23 +151,82 @@ const LoreRepository: React.FC<LoreRepositoryProps> = ({
                 ? 'bg-purple-600 text-white'
                 : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
             }`}
+            data-testid="category-filter-all"
           >
             All ({loreEntries.length})
           </button>
           {Object.entries(categoryLabels).map(([key, label]) => (
             <button
               key={key}
-              onClick={() => setSelectedCategory(key)}
+              onClick={() => setSelectedCategory(key as keyof typeof categoryLabels)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 selectedCategory === key
                   ? 'bg-purple-600 text-white'
                   : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
               }`}
+              data-testid={`category-filter-${key}`}
             >
               {label} ({categoryCounts[key] || 0})
             </button>
           ))}
         </div>
+
+        {/* Tag filters */}
+        {allTags.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <Tag size={14} />
+              <span>Filter by tags:</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {allTags.map((tag) => {
+                const isSelected = selectedTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => toggleTag(tag)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                      isSelected
+                        ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white border border-purple-500'
+                        : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                    }`}
+                    data-testid={`tag-filter-${tag}`}
+                  >
+                    {tag}
+                    {isSelected && <X size={12} className="inline ml-1" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Active filters display */}
+        {(selectedCategory || selectedTags.length > 0) && (
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <span>Active filters:</span>
+            {selectedCategory && (
+              <span className="px-2 py-1 bg-purple-600/30 rounded">
+                Category: {categoryLabels[selectedCategory]}
+              </span>
+            )}
+            {selectedTags.length > 0 && (
+              <span className="px-2 py-1 bg-blue-600/30 rounded">
+                Tags: {selectedTags.length}
+              </span>
+            )}
+            <button
+              onClick={() => {
+                setSelectedCategory(null);
+                setSelectedTags([]);
+              }}
+              className="text-purple-400 hover:text-purple-300"
+              data-testid="clear-filters-btn"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Lore entries */}
@@ -192,6 +279,13 @@ const LoreRepository: React.FC<LoreRepositoryProps> = ({
                       )}
                     </div>
 
+                    {/* AI Summary Panel */}
+                    {isExpanded && (
+                      <div className="mb-4">
+                        <LoreSummaryPanel lore={lore} onUpdateLore={onUpdateLore} />
+                      </div>
+                    )}
+
                     {/* Content with typewriter effect */}
                     <motion.div
                       className="relative"
@@ -226,6 +320,7 @@ const LoreRepository: React.FC<LoreRepositoryProps> = ({
                         setExpandedLore(isExpanded ? null : lore.id)
                       }
                       className="mt-4 text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
+                      data-testid={`lore-expand-btn-${lore.id}`}
                     >
                       {isExpanded ? 'Show less' : 'Read more...'}
                     </button>

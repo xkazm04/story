@@ -98,11 +98,11 @@ const ImageGenerator: React.FC = () => {
   };
 
   return (
-    <div className="h-full grid grid-cols-2 gap-4 p-4 overflow-hidden">
+    <div className="h-full grid grid-cols-2 gap-4 p-4 overflow-hidden text-sm text-slate-200">
       {/* Left Panel - Prompt & Settings */}
       <div className="flex flex-col gap-4 overflow-y-auto">
         {/* Prompt Builder */}
-        <div className="bg-gray-900 rounded-lg border border-gray-800">
+        <div className="bg-slate-950/95 rounded-lg border border-slate-900/70">
           <PromptBuilder
             promptComponents={promptComponents}
             setPromptComponents={setPromptComponents}
@@ -112,8 +112,8 @@ const ImageGenerator: React.FC = () => {
         </div>
 
         {/* Camera Setup */}
-        <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
-          <h3 className="text-lg font-semibold text-white mb-4">Camera Setup</h3>
+        <div className="bg-slate-950/95 rounded-lg border border-slate-900/70 p-4">
+          <h3 className="text-sm font-semibold text-slate-50 mb-3 tracking-tight">Camera Setup</h3>
           <CameraSetup
             onCameraChange={(cameraPrompt) => {
               setPromptComponents((prev) => ({
@@ -125,8 +125,8 @@ const ImageGenerator: React.FC = () => {
         </div>
 
         {/* Generation Controls */}
-        <div className="bg-gray-900 rounded-lg border border-gray-800 p-4">
-          <h3 className="text-lg font-semibold text-white mb-4">Generation Settings</h3>
+        <div className="bg-slate-950/95 rounded-lg border border-slate-900/70 p-4">
+          <h3 className="text-sm font-semibold text-slate-50 mb-3 tracking-tight">Generation Settings</h3>
           <GenerationControls
             params={generationParams}
             onChange={(params) => setGenerationParams(params)}
@@ -137,20 +137,20 @@ const ImageGenerator: React.FC = () => {
         <motion.button
           onClick={handleGenerate}
           disabled={isGenerating || !activeProjectId}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
           className={`
-            w-full py-4 rounded-lg font-semibold text-lg
+            w-full py-3 rounded-lg font-semibold text-sm
             transition-colors duration-200 flex items-center justify-center gap-2
             ${isGenerating || !activeProjectId
-              ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700 text-white'
+              ? 'bg-slate-900/80 text-slate-500 cursor-not-allowed border border-slate-800'
+              : 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-500 text-white shadow-md shadow-cyan-500/25'
             }
           `}
         >
           {isGenerating ? (
             <>
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
               Generating...
             </>
           ) : (
@@ -160,8 +160,8 @@ const ImageGenerator: React.FC = () => {
       </div>
 
       {/* Right Panel - Gallery */}
-      <div className="bg-gray-900 rounded-lg border border-gray-800 p-4 overflow-hidden">
-        <h3 className="text-lg font-semibold text-white mb-4">Generated Images</h3>
+      <div className="bg-slate-950/95 rounded-lg border border-slate-900/70 p-4 overflow-hidden">
+        <h3 className="text-sm font-semibold text-slate-50 mb-3 tracking-tight">Generated Images</h3>
         <ImageGallery />
       </div>
     </div>

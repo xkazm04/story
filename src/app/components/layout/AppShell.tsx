@@ -1,3 +1,9 @@
+/**
+ * AppShell Component
+ * Main application layout with resizable three-panel structure
+ * Design: Clean Manuscript style - sans-serif fonts with monospace accents
+ */
+
 'use client';
 
 import React, { useRef, Suspense, useState, useCallback } from 'react';
@@ -7,13 +13,9 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../UI/resi
 import { ImperativePanelHandle } from 'react-resizable-panels';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import Landing from '@/app/features/landing/Landing';
-import CharacterSelectionBadge from '../UI/CharacterSelectionBadge';
 import { useCharacterProjectSync } from '@/app/hooks/useCharacterProjectSync';
-import ActSelector from './header/ActSelector';
-import SceneSelector from './header/SceneSelector';
-import ProjectEditModal from '@/app/features/projects/sub_projectModal/ProjectEditModal';
-import { Edit } from 'lucide-react';
-import { IconButton } from '../UI/Button';
+import AppShellHeader from './header/AppShellHeader';
+import { WriterStudioBackground } from './header/WriterStudioThemes';
 import { safePanelStorageAPI, DEFAULT_PANEL_SIZES } from '@/app/utils/safePanelStorage';
 import PanelPresetOverlay from './PanelPresetOverlay';
 import { PanelPreset } from '@/app/types/PanelPreset';
@@ -43,9 +45,23 @@ const queryClient = new QueryClient({
   },
 });
 
+/**
+ * LoadingPanel - Clean Manuscript style loading indicator
+ * Uses monospace font for status text with cyan accent spinner
+ */
 const LoadingPanel = () => (
-  <div className="h-full w-full flex items-center justify-center bg-gray-900">
-    <div className="animate-pulse text-gray-400">Loading...</div>
+  <div className="h-full w-full flex items-center justify-center ms-surface">
+    <div className="flex flex-col items-center gap-3">
+      {/* Spinner with cyan accent */}
+      <div className="relative">
+        <div className="w-8 h-8 border-2 border-slate-700/50 rounded-full" />
+        <div className="absolute inset-0 w-8 h-8 border-2 border-cyan-500/60 border-t-transparent rounded-full animate-spin" />
+      </div>
+      {/* Monospace status text */}
+      <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500">
+        loading_panel...
+      </span>
+    </div>
   </div>
 );
 
@@ -54,7 +70,6 @@ const AppShellContent: React.FC = () => {
   const centerPanelRef = useRef<ImperativePanelHandle>(null);
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
   const { selectedProject, showLanding } = useProjectStore();
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [showPresetOverlay, setShowPresetOverlay] = useState(false);
   const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -109,47 +124,12 @@ const AppShellContent: React.FC = () => {
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-gray-950">
+    <div className="h-screen w-screen flex flex-col text-slate-100 relative overflow-hidden ms-notebook-bg">
+      {/* Writer Studio Theme Background - Notebook pattern layer */}
+      <WriterStudioBackground />
+
       {/* Header with Navigation */}
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-900/50 border-b border-gray-800 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
-          {/* Project Name with Edit Button */}
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold text-white">
-              {selectedProject?.name || 'Project'}
-            </h1>
-            <IconButton
-              icon={<Edit size={14} />}
-              size="sm"
-              variant="ghost"
-              onClick={() => setIsEditModalOpen(true)}
-              aria-label="Edit project"
-              title="Edit project details"
-            />
-          </div>
-
-          {/* Divider */}
-          <div className="h-5 w-px bg-gray-700" />
-
-          {/* Act Selector */}
-          <ActSelector />
-
-          {/* Scene Selector */}
-          <SceneSelector />
-        </div>
-
-        {/* Right side - Character Selection */}
-        <div className="flex items-center gap-4">
-          <CharacterSelectionBadge />
-        </div>
-      </div>
-
-      {/* Project Edit Modal */}
-      <ProjectEditModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        project={selectedProject}
-      />
+      <AppShellHeader />
 
       {/* Panel Preset Overlay */}
       <PanelPresetOverlay
@@ -157,71 +137,75 @@ const AppShellContent: React.FC = () => {
         onPresetSelect={handlePresetSelect}
       />
 
+      {/* Main Panel Layout - Three-column resizable structure */}
       <ResizablePanelGroup
         direction="horizontal"
         storage={safePanelStorageAPI}
         autoSaveId="app-shell-panels"
+        className="flex-1"
       >
-          {/* Left Panel */}
-          <ResizablePanel
-            ref={leftPanelRef}
-            defaultSize={DEFAULT_PANEL_SIZES.left}
-            minSize={15}
-            maxSize={40}
-            collapsible={true}
-            collapsedSize={2}
-            className="transition-all duration-300 ease-in-out"
-            data-testid="left-panel"
-          >
-            <Suspense fallback={<LoadingPanel />}>
-              <LeftPanel />
-            </Suspense>
-          </ResizablePanel>
+        {/* Left Panel - Sidebar navigation */}
+        <ResizablePanel
+          ref={leftPanelRef}
+          defaultSize={DEFAULT_PANEL_SIZES.left}
+          minSize={15}
+          maxSize={40}
+          collapsible={true}
+          collapsedSize={2}
+          className="ms-transition-slow ms-panel ms-scrollbar"
+          data-testid="left-panel"
+        >
+          <Suspense fallback={<LoadingPanel />}>
+            <LeftPanel />
+          </Suspense>
+        </ResizablePanel>
 
-          <ResizableHandle
-            withHandle
-            className="transition-opacity duration-200"
-            data-testid="left-center-handle"
-            onDragging={handleDragging}
-          />
+        {/* Left-Center Handle - Styled via globals.css */}
+        <ResizableHandle
+          withHandle
+          className="ms-transition"
+          data-testid="left-center-handle"
+          onDragging={handleDragging}
+        />
 
-          {/* Center Panel */}
-          <ResizablePanel
-            ref={centerPanelRef}
-            defaultSize={DEFAULT_PANEL_SIZES.center}
-            minSize={30}
-            className="relative transition-all duration-300 ease-in-out"
-            data-testid="center-panel"
-          >
-            <Suspense fallback={<LoadingPanel />}>
-              <CenterPanel />
-            </Suspense>
-          </ResizablePanel>
+        {/* Center Panel - Main content area */}
+        <ResizablePanel
+          ref={centerPanelRef}
+          defaultSize={DEFAULT_PANEL_SIZES.center}
+          minSize={30}
+          className="relative ms-transition-slow ms-surface ms-scrollbar"
+          data-testid="center-panel"
+        >
+          <Suspense fallback={<LoadingPanel />}>
+            <CenterPanel />
+          </Suspense>
+        </ResizablePanel>
 
-          <ResizableHandle
-            withHandle
-            className="transition-opacity duration-200"
-            data-testid="center-right-handle"
-            onDragging={handleDragging}
-          />
+        {/* Center-Right Handle - Styled via globals.css */}
+        <ResizableHandle
+          withHandle
+          className="ms-transition"
+          data-testid="center-right-handle"
+          onDragging={handleDragging}
+        />
 
-          {/* Right Panel */}
-          <ResizablePanel
-            ref={rightPanelRef}
-            defaultSize={DEFAULT_PANEL_SIZES.right}
-            minSize={15}
-            maxSize={40}
-            collapsible={true}
-            collapsedSize={2}
-            className="transition-all duration-300 ease-in-out"
-            data-testid="right-panel"
-          >
-            <Suspense fallback={<LoadingPanel />}>
-              <RightPanel />
-            </Suspense>
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </div>
+        {/* Right Panel - Properties/details sidebar */}
+        <ResizablePanel
+          ref={rightPanelRef}
+          defaultSize={DEFAULT_PANEL_SIZES.right}
+          minSize={15}
+          maxSize={40}
+          collapsible={true}
+          collapsedSize={2}
+          className="ms-transition-slow ms-panel ms-scrollbar"
+          data-testid="right-panel"
+        >
+          <Suspense fallback={<LoadingPanel />}>
+            <RightPanel />
+          </Suspense>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
   );
 };
 

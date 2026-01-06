@@ -1,24 +1,27 @@
 'use client';
 
-import { forwardRef, InputHTMLAttributes } from 'react';
+import { forwardRef, InputHTMLAttributes, useId, ReactNode } from 'react';
 import { clsx } from 'clsx';
+import { useFocusRing } from '@/app/utils/focusRing';
 
 export type InputSize = 'sm' | 'md' | 'lg';
 export type InputVariant = 'default' | 'mono';
 
-interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
+interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'prefix'> {
   size?: InputSize;
   variant?: InputVariant;
   error?: string;
   label?: string;
   helperText?: string;
   fullWidth?: boolean;
+  prefix?: ReactNode;
+  suffix?: ReactNode;
 }
 
 const sizeClasses: Record<InputSize, string> = {
-  sm: 'px-2 py-1.5 text-xs',
+  sm: 'px-2.5 py-1.5 text-xs',
   md: 'px-3 py-2 text-sm',
-  lg: 'px-4 py-2.5 text-base',
+  lg: 'px-3.5 py-2.5 text-base',
 };
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
@@ -31,13 +34,17 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       helperText,
       fullWidth = true,
       className,
+      prefix,
+      suffix,
       id,
       ...props
     },
     ref
   ) => {
-    const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+    const reactId = useId();
+    const inputId = id || `input-${reactId}`;
     const hasError = !!error;
+    const focusClasses = useFocusRing(hasError, "input");
 
     return (
       <div className={clsx('flex flex-col gap-1', fullWidth && 'w-full')}>
@@ -50,24 +57,40 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {props.required && <span className="text-red-400 ml-1">*</span>}
           </label>
         )}
-        <input
-          ref={ref}
-          id={inputId}
+        <div
           className={clsx(
-            'bg-gray-900/50 border rounded-lg text-white placeholder-gray-500',
-            'transition-all outline-none',
-            'focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50',
+            'inline-flex items-center gap-1 rounded-lg border bg-slate-950/60',
+            'transition-all outline-none text-white placeholder-gray-500',
+            'focus-within:border-cyan-500/60 focus-within:ring-1 focus-within:ring-cyan-500/60',
             'disabled:opacity-50 disabled:cursor-not-allowed',
-            variant === 'mono' && 'font-mono',
             hasError
-              ? 'border-red-500/50 focus:border-red-500/50 focus:ring-red-500/50'
-              : 'border-gray-600/50',
-            sizeClasses[size],
-            fullWidth && 'w-full',
-            className
+              ? 'border-red-500/60 focus-within:border-red-500/60 focus-within:ring-red-500/60'
+              : 'border-slate-700/70',
+            fullWidth && 'w-full'
           )}
-          {...props}
-        />
+        >
+          {prefix && (
+            <span className="pl-2 text-xs text-slate-400 flex items-center gap-1">
+              {prefix}
+            </span>
+          )}
+          <input
+            ref={ref}
+            id={inputId}
+            className={clsx(
+              'bg-transparent border-none outline-none flex-1 min-w-0',
+              variant === 'mono' && 'font-mono',
+              sizeClasses[size],
+              className
+            )}
+            {...props}
+          />
+          {suffix && (
+            <span className="pr-2 text-xs text-slate-400 flex items-center gap-1">
+              {suffix}
+            </span>
+          )}
+        </div>
         {(error || helperText) && (
           <span
             className={clsx(

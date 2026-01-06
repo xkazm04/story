@@ -20,10 +20,11 @@ const LandingProjectCreate = ({
     // Large centered variant for first project
     if (variant === 'large') {
         return (
-            <div className="col-span-1 sm:col-span-2 lg:col-span-3 xl:col-span-4 flex items-center justify-center py-12">
+            <div className="col-span-1 sm:col-span-2 lg:grid-cols-3 xl:col-span-4 flex items-center justify-center py-12">
                 <button
                     onClick={handleClick}
                     className="relative group bg-white/5 border-2 border-dashed border-white/20 rounded-2xl p-12 w-full max-w-2xl h-96 flex flex-col items-center justify-center transition-all duration-300 hover:-translate-y-1 hover:border-blue-500/50 hover:bg-white/10 hover:shadow-xl hover:shadow-blue-500/20 active:scale-95"
+                    data-testid="create-first-project-btn"
                 >
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     
@@ -60,6 +61,7 @@ const LandingProjectCreate = ({
         <button
             onClick={handleClick}
             className="bg-white/5 border-2 border-dashed border-white/20 rounded-xl p-6 h-80 flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/20 hover:bg-white/10 hover:border-blue-500/50 active:scale-95"
+            data-testid="create-new-project-btn"
         >
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
             

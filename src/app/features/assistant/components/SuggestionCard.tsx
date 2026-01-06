@@ -18,6 +18,14 @@ import {
 import type { AISuggestion, SuggestionType } from '@/app/types/AIAssistant';
 import { SectionWrapper } from '@/app/components/UI';
 
+/**
+ * Confidence threshold constants for visual feedback
+ */
+const CONFIDENCE_THRESHOLDS = {
+  HIGH: 0.8,
+  MEDIUM: 0.6,
+} as const;
+
 interface SuggestionCardProps {
   suggestion: AISuggestion;
   onCopy?: (suggestion: AISuggestion) => void;
@@ -74,9 +82,9 @@ export const SuggestionCard: React.FC<SuggestionCardProps> = ({
   };
 
   const confidenceColor =
-    suggestion.confidence >= 0.8
+    suggestion.confidence >= CONFIDENCE_THRESHOLDS.HIGH
       ? 'text-green-400'
-      : suggestion.confidence >= 0.6
+      : suggestion.confidence >= CONFIDENCE_THRESHOLDS.MEDIUM
       ? 'text-yellow-400'
       : 'text-gray-400';
 

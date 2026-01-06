@@ -71,6 +71,7 @@ const LandingCard: React.FC<LandingCardProps> = ({
       className={`bg-white/5 border border-white/10 rounded-xl p-6 h-80 flex flex-col relative overflow-hidden transition cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 hover:bg-white/10 hover:border-white/20 ${
         index === 0 ? 'animate-float' : index === 1 ? 'animate-float-delay-1' : 'animate-float-delay-2'
       }`}
+      data-testid={`project-card-${project.id}`}
     >
       <div className="absolute inset-0 z-0" style={{
         backgroundImage: `url(${getImageForProjectType(project.type)})`,

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, X } from 'lucide-react';
 import { useCharacterStore } from '@/app/store/slices/characterSlice';
@@ -84,7 +85,7 @@ const CharacterSelectionBadge: React.FC = () => {
 
         {/* Character Avatar/Icon */}
         <div
-          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold overflow-hidden"
           style={{
             backgroundColor: `${factionColor}22`,
             color: factionColor,
@@ -92,9 +93,11 @@ const CharacterSelectionBadge: React.FC = () => {
           }}
         >
           {character.avatar_url ? (
-            <img
+            <Image
               src={character.avatar_url}
               alt={character.name}
+              width={24}
+              height={24}
               className="w-full h-full rounded-full object-cover"
             />
           ) : (

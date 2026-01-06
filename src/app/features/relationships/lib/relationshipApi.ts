@@ -17,9 +17,6 @@ import {
   validateRelationshipMapData,
   validateNodePositionUpdate,
   validateEdgeUpdate,
-  validateRelationshipType,
-  assertValidation,
-  safeValidate,
   ValidationError
 } from '../types/validators';
 import {
@@ -27,6 +24,7 @@ import {
   validateRelationshipEdge,
   isRelationshipType
 } from '../types/guards';
+import { logger } from '@/app/utils/logger';
 
 // Fetch all relationships for a project and convert to graph data
 export async function fetchRelationships(projectId: string): Promise<RelationshipMapData> {
@@ -61,16 +59,16 @@ export async function fetchRelationships(projectId: string): Promise<Relationshi
 
     // Log validation errors if any
     if (!charactersResult.success) {
-      console.warn('Character validation errors:', charactersResult.errors);
+      logger.warn('Character validation errors', { errors: charactersResult.errors });
     }
     if (!factionsResult.success) {
-      console.warn('Faction validation errors:', factionsResult.errors);
+      logger.warn('Faction validation errors', { errors: factionsResult.errors });
     }
     if (!charRelationshipsResult.success) {
-      console.warn('Character relationship validation errors:', charRelationshipsResult.errors);
+      logger.warn('Character relationship validation errors', { errors: charRelationshipsResult.errors });
     }
     if (!factionRelationshipsResult.success) {
-      console.warn('Faction relationship validation errors:', factionRelationshipsResult.errors);
+      logger.warn('Faction relationship validation errors', { errors: factionRelationshipsResult.errors });
     }
 
     // Convert characters to nodes
@@ -105,7 +103,7 @@ export async function fetchRelationships(projectId: string): Promise<Relationshi
 
         // Skip if entities not found
         if (!sourceChar || !targetChar) {
-          console.warn(`Skipping character relationship ${rel.id}: missing entities`);
+          logger.warn(`Skipping character relationship`, { relationshipId: rel.id, reason: 'missing entities' });
           return null;
         }
 
@@ -126,7 +124,7 @@ export async function fetchRelationships(projectId: string): Promise<Relationshi
         // Validate edge structure
         const validation = validateRelationshipEdge(edge);
         if (!validation.isValid) {
-          console.warn(`Invalid character edge ${rel.id}:`, validation.errors);
+          logger.warn(`Invalid character edge`, { edgeId: rel.id, errors: validation.errors });
           return null;
         }
 
@@ -142,7 +140,7 @@ export async function fetchRelationships(projectId: string): Promise<Relationshi
 
         // Skip if entities not found
         if (!sourceFaction || !targetFaction) {
-          console.warn(`Skipping faction relationship ${rel.id}: missing entities`);
+          logger.warn(`Skipping faction relationship`, { relationshipId: rel.id, reason: 'missing entities' });
           return null;
         }
 
@@ -163,7 +161,7 @@ export async function fetchRelationships(projectId: string): Promise<Relationshi
         // Validate edge structure
         const validation = validateRelationshipEdge(edge);
         if (!validation.isValid) {
-          console.warn(`Invalid faction edge ${rel.id}:`, validation.errors);
+          logger.warn(`Invalid faction edge`, { edgeId: rel.id, errors: validation.errors });
           return null;
         }
 
@@ -179,14 +177,14 @@ export async function fetchRelationships(projectId: string): Promise<Relationshi
 
     const mapValidation = validateRelationshipMapData(mapData);
     if (!mapValidation.success) {
-      console.error('Relationship map validation failed:', mapValidation.errors);
+      logger.error('Relationship map validation failed', undefined, { errors: mapValidation.errors });
       // Return valid structure even if validation fails
       return mapData;
     }
 
     return mapValidation.data!;
   } catch (error) {
-    console.error('Error fetching relationships:', error);
+    logger.error('Error fetching relationships', error);
     throw error;
   }
 }
@@ -258,7 +256,7 @@ export async function updateEdge(
       });
     }
   } catch (error) {
-    console.error('Error updating edge:', error);
+    logger.error('Error updating edge', error);
     throw error;
   }
 }
@@ -281,7 +279,7 @@ export async function deleteEdge(projectId: string, edgeId: string): Promise<voi
       });
     }
   } catch (error) {
-    console.error('Error deleting edge:', error);
+    logger.error('Error deleting edge', error);
     throw error;
   }
 }

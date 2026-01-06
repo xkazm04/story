@@ -2,18 +2,20 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Edit, Trash2, Users, Save, X, Image as ImageIcon, Trophy } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Users, Save, X } from 'lucide-react';
 import { Faction } from '@/app/types/Faction';
+import { Character } from '@/app/types/Character';
 import { factionApi } from '@/app/api/factions';
-import { characterApi } from '@/app/api/characters';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
-import { MOCK_USER_ID } from '../../../../../db/mockData';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
-import CharacterCard from '../components/CharacterCard';
 import FactionMediaGallery from './FactionMediaGallery';
 import MediaUploadForm from './MediaUploadForm';
 import FactionBrandingPanel from './FactionBrandingPanel';
 import FactionLoreGallery from './FactionLoreGallery';
+import SemanticSearchPanel from './SemanticSearchPanel';
+import RoleRankEditor from './RoleRankEditor';
+import FactionTabNav, { FactionTabType } from './FactionTabNav';
+import FactionMembersList from './FactionMembersList';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface FactionDetailsProps {
@@ -29,7 +31,7 @@ const PRESET_COLORS = [
   '#ec4899', '#f43f5e', '#64748b', '#6b7280', '#71717a',
 ];
 
-type TabType = 'info' | 'members' | 'media' | 'branding' | 'history';
+type TabType = FactionTabType;
 
 const FactionDetails: React.FC<FactionDetailsProps> = ({
   faction,
@@ -38,11 +40,17 @@ const FactionDetails: React.FC<FactionDetailsProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const { selectedProject } = useProjectStore();
-  const { data: characters = [] } = characterApi.useProjectCharacters(
-    selectedProject?.id || '',
-    !!selectedProject
-  );
-  const { data: factionMedia = [] } = factionApi.useFactionMedia(faction.id);
+
+  // Use the new aggregated summary endpoint to fetch all data in one call
+  const { data: factionSummary, isLoading: isSummaryLoading } = factionApi.useFactionSummary(faction.id);
+
+  // Extract data from summary or use empty defaults
+  const factionMembers = factionSummary?.members || [];
+  const factionMedia = factionSummary?.media || [];
+  const factionRelationships = factionSummary?.relationships || [];
+  const factionLore = factionSummary?.lore || [];
+  const factionAchievements = factionSummary?.achievements || [];
+  const factionEvents = factionSummary?.events || [];
 
   const [activeTab, setActiveTab] = useState<TabType>('info');
   const [isEditing, setIsEditing] = useState(false);
@@ -52,9 +60,7 @@ const FactionDetails: React.FC<FactionDetailsProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showUploadForm, setShowUploadForm] = useState(false);
-
-  // Get characters in this faction
-  const factionMembers = characters.filter((char) => char.faction_id === faction.id);
+  const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
 
   // Check if current user is faction leader (for simplicity, the user who has the first character in the faction)
   // In a real app, this would be based on user roles/permissions
@@ -101,15 +107,21 @@ const FactionDetails: React.FC<FactionDetailsProps> = ({
 
   const handleMediaUpload = async (file: File, type: string, description: string) => {
     await factionApi.uploadFactionMedia(faction.id, file, type, description);
-    // Invalidate and refetch the media query
-    queryClient.invalidateQueries({ queryKey: ['faction-media', faction.id] });
+    // Invalidate and refetch the summary query to get updated media
+    queryClient.invalidateQueries({ queryKey: ['factions', faction.id, 'summary'] });
     setShowUploadForm(false);
   };
 
   const handleMediaDelete = async (mediaId: string) => {
     await factionApi.deleteFactionMedia(mediaId);
-    // Invalidate and refetch the media query
-    queryClient.invalidateQueries({ queryKey: ['faction-media', faction.id] });
+    // Invalidate and refetch the summary query to get updated media
+    queryClient.invalidateQueries({ queryKey: ['factions', faction.id, 'summary'] });
+  };
+
+  const handleRoleRankUpdate = () => {
+    // Invalidate and refetch the summary query to get updated member data
+    queryClient.invalidateQueries({ queryKey: ['factions', faction.id, 'summary'] });
+    setEditingCharacter(null);
   };
 
   return (
@@ -260,64 +272,13 @@ const FactionDetails: React.FC<FactionDetailsProps> = ({
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 border-b border-gray-800">
-        <button
-          onClick={() => setActiveTab('info')}
-          className={`px-6 py-3 font-medium transition-all ${
-            activeTab === 'info'
-              ? 'text-blue-400 border-b-2 border-blue-400'
-              : 'text-gray-400 hover:text-gray-300'
-          }`}
-        >
-          Information
-        </button>
-        <button
-          onClick={() => setActiveTab('members')}
-          className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${
-            activeTab === 'members'
-              ? 'text-purple-400 border-b-2 border-purple-400'
-              : 'text-gray-400 hover:text-gray-300'
-          }`}
-        >
-          <Users size={18} />
-          Members ({factionMembers.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('media')}
-          className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${
-            activeTab === 'media'
-              ? 'text-purple-400 border-b-2 border-purple-400'
-              : 'text-gray-400 hover:text-gray-300'
-          }`}
-        >
-          <ImageIcon size={18} />
-          Media ({factionMedia.length})
-        </button>
-        {isLeader && (
-          <button
-            onClick={() => setActiveTab('branding')}
-            className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${
-              activeTab === 'branding'
-                ? 'text-orange-400 border-b-2 border-orange-400'
-                : 'text-gray-400 hover:text-gray-300'
-            }`}
-          >
-            <Edit size={18} />
-            Branding
-          </button>
-        )}
-        <button
-          onClick={() => setActiveTab('history')}
-          className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${
-            activeTab === 'history'
-              ? 'text-purple-400 border-b-2 border-purple-400'
-              : 'text-gray-400 hover:text-gray-300'
-          }`}
-        >
-          <Trophy size={18} />
-          History & Achievements
-        </button>
-      </div>
+      <FactionTabNav
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        memberCount={factionMembers.length}
+        mediaCount={factionMedia.length}
+        isLeader={isLeader}
+      />
 
       {/* Tab Content */}
       <AnimatePresence mode="wait">
@@ -356,33 +317,11 @@ const FactionDetails: React.FC<FactionDetailsProps> = ({
         )}
 
         {activeTab === 'members' && (
-          <motion.div
-            key="members"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
-              <ColoredBorder color="purple" />
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Users size={18} />
-                Faction Members ({factionMembers.length})
-              </h3>
-
-              {factionMembers.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {factionMembers.map((character) => (
-                    <CharacterCard key={character.id} character={character} />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-400 text-center py-8">
-                  No characters in this faction yet
-                </p>
-              )}
-            </div>
-          </motion.div>
+          <FactionMembersList
+            members={factionMembers}
+            isLeader={isLeader}
+            onEditCharacter={setEditingCharacter}
+          />
         )}
 
         {activeTab === 'media' && (
@@ -442,6 +381,21 @@ const FactionDetails: React.FC<FactionDetailsProps> = ({
             </div>
           </motion.div>
         )}
+
+        {activeTab === 'search' && (
+          <motion.div
+            key="search"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <SemanticSearchPanel
+              factionId={faction.id}
+              factionName={faction.name}
+            />
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Media Upload Modal */}
@@ -451,6 +405,17 @@ const FactionDetails: React.FC<FactionDetailsProps> = ({
             factionId={faction.id}
             onClose={() => setShowUploadForm(false)}
             onUpload={handleMediaUpload}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Role & Rank Editor Modal */}
+      <AnimatePresence>
+        {editingCharacter && (
+          <RoleRankEditor
+            character={editingCharacter}
+            onClose={() => setEditingCharacter(null)}
+            onUpdate={handleRoleRankUpdate}
           />
         )}
       </AnimatePresence>

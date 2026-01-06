@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Video, Clapperboard } from 'lucide-react';
 import VideoGenerator from './generator/VideoGenerator';
 import StoryboardEditor from './storyboard/StoryboardEditor';
+import { TabButton } from '@/app/components/UI/TabButton';
 
 type TabType = 'generator' | 'storyboard';
 
@@ -26,36 +27,18 @@ const VideoFeature: React.FC = () => {
     <div className="h-full flex flex-col bg-gray-950">
       {/* Tab Navigation */}
       <div className="flex gap-2 p-4 border-b border-gray-800">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`
-                relative flex items-center gap-2 px-4 py-2 rounded-lg
-                transition-all duration-200
-                ${isActive
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
-                }
-              `}
-            >
-              <Icon className="w-4 h-4" />
-              <span className="font-medium">{tab.label}</span>
-
-              {isActive && (
-                <motion.div
-                  layoutId="activeVideoTab"
-                  className="absolute inset-0 bg-purple-600 rounded-lg -z-10"
-                  transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                />
-              )}
-            </button>
-          );
-        })}
+        {tabs.map((tab) => (
+          <TabButton
+            key={tab.id}
+            id={tab.id}
+            label={tab.label}
+            icon={tab.icon}
+            isActive={activeTab === tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            layoutId="activeVideoTab"
+            activeColor="bg-purple-600"
+          />
+        ))}
       </div>
 
       {/* Tab Content */}

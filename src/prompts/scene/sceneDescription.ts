@@ -1,5 +1,125 @@
 import { PromptTemplate } from '../index';
 
+interface SceneDescriptionContext {
+  sceneName: string;
+  currentDescription?: string;
+  location?: string;
+  timeOfDay?: string;
+  characters?: string[];
+  mood?: string;
+  purpose?: string;
+  povCharacter?: string;
+  emotionalState?: string;
+  storyThemes?: string[];
+}
+
+/**
+ * Build scene context section of the prompt
+ */
+function buildSceneContext(context: SceneDescriptionContext): string {
+  let prompt = `Create a vivid scene description for: "${context.sceneName}"\n`;
+
+  if (context.currentDescription) {
+    prompt += `\nCurrent Description: ${context.currentDescription}`;
+    prompt += `\nTask: Enrich with specific sensory details, emotional filtering, and atmospheric depth.\n`;
+  } else {
+    prompt += `\nTask: Write a compelling scene description from scratch.\n`;
+  }
+
+  if (context.povCharacter) {
+    prompt += `\nPOV Character: ${context.povCharacter}`;
+    prompt += `\nFilter description through their perspective and emotional state.\n`;
+  }
+
+  if (context.location) {
+    prompt += `\nLocation: ${context.location}\n`;
+  }
+
+  if (context.timeOfDay) {
+    prompt += `Time: ${context.timeOfDay}\n`;
+  }
+
+  return prompt;
+}
+
+/**
+ * Build mood and emotional state section
+ */
+function buildMoodContext(context: SceneDescriptionContext): string {
+  let prompt = '';
+
+  if (context.mood) {
+    prompt += `\nMood/Tone: ${context.mood}`;
+    prompt += ` (Setting details should reinforce or ironically contrast this)\n`;
+  }
+
+  if (context.emotionalState) {
+    prompt += `\nEmotional State: ${context.emotionalState}`;
+    prompt += `\nDetails noticed should reflect this emotional lens.\n`;
+  }
+
+  if (context.characters && context.characters.length > 0) {
+    prompt += `\nCharacters Present: ${context.characters.join(', ')}\n`;
+  }
+
+  return prompt;
+}
+
+/**
+ * Build purpose and theme context
+ */
+function buildPurposeContext(context: SceneDescriptionContext): string {
+  let prompt = '';
+
+  if (context.purpose) {
+    prompt += `\nScene Purpose: ${context.purpose}\n`;
+  }
+
+  if (context.storyThemes && context.storyThemes.length > 0) {
+    prompt += `\nStory Themes: ${context.storyThemes.join(', ')}`;
+    prompt += `\nConsider details that subtly echo these themes.\n`;
+  }
+
+  return prompt;
+}
+
+/**
+ * Build requirements section
+ */
+function buildRequirements(): string {
+  let prompt = `\n=== SCENE DESCRIPTION REQUIREMENTS ===\n`;
+  prompt += `Write 2-4 sentences (150-250 words) that:\n\n`;
+
+  prompt += `1. **Establish Setting Through POV**\n`;
+  prompt += `   - What would the POV character notice in this moment?\n`;
+  prompt += `   - Choose 2-3 specific sensory details (not all senses, just evocative ones)\n`;
+  prompt += `   - Make details concrete and specific, never generic\n\n`;
+
+  prompt += `2. **Create Atmosphere**\n`;
+  prompt += `   - Use description to establish mood\n`;
+  prompt += `   - Consider light, sound, temperature, texture\n`;
+  prompt += `   - Avoid clichéd descriptors - find fresh ways to evoke feeling\n\n`;
+
+  prompt += `3. **Reflect Emotional State**\n`;
+  prompt += `   - A nervous character notices different things than a confident one\n`;
+  prompt += `   - Setting can mirror, amplify, or ironically contrast emotion\n`;
+  prompt += `   - Use active description - things in motion, in relation to characters\n\n`;
+
+  prompt += `4. **Hint at Stakes/Subtext**\n`;
+  prompt += `   - What's beneath the surface of this scene?\n`;
+  prompt += `   - Details should create tension or anticipation\n`;
+  prompt += `   - What's unseen but felt?\n\n`;
+
+  prompt += `5. **Serve Theme**\n`;
+  prompt += `   - Can any details subtly reinforce thematic concerns?\n`;
+  prompt += `   - Symbolic elements should feel organic, not forced\n\n`;
+
+  prompt += `Write in vivid, economical prose. Every detail should earn its place by doing emotional or narrative work.`;
+  prompt += `Think cinematically: What's the shot? What's in focus? How does the camera move?`;
+
+  return prompt;
+}
+
 /**
  * Scene Description Prompt
  *
@@ -31,101 +151,12 @@ AVOID:
 
 Think like a cinematographer: What's in focus? What's in shadow? Where's the camera? How does the environment reflect the internal landscape?`,
 
-  user: (context) => {
-    const {
-      sceneName,
-      currentDescription,
-      location,
-      timeOfDay,
-      characters,
-      mood,
-      purpose,
-      povCharacter,
-      emotionalState,
-      storyThemes
-    } = context;
-
-    let prompt = `Create a vivid scene description for: "${sceneName}"\n`;
-
-    if (currentDescription) {
-      prompt += `\nCurrent Description: ${currentDescription}`;
-      prompt += `\nTask: Enrich with specific sensory details, emotional filtering, and atmospheric depth.\n`;
-    } else {
-      prompt += `\nTask: Write a compelling scene description from scratch.\n`;
-    }
-
-    // POV character for filtering
-    if (povCharacter) {
-      prompt += `\nPOV Character: ${povCharacter}`;
-      prompt += `\nFilter description through their perspective and emotional state.\n`;
-    }
-
-    if (location) {
-      prompt += `\nLocation: ${location}\n`;
-    }
-
-    if (timeOfDay) {
-      prompt += `Time: ${timeOfDay}\n`;
-    }
-
-    // Mood/tone for atmosphere
-    if (mood) {
-      prompt += `\nMood/Tone: ${mood}`;
-      prompt += ` (Setting details should reinforce or ironically contrast this)\n`;
-    }
-
-    // Emotional state affects what characters notice
-    if (emotionalState) {
-      prompt += `\nEmotional State: ${emotionalState}`;
-      prompt += `\nDetails noticed should reflect this emotional lens.\n`;
-    }
-
-    // Characters present
-    if (characters && characters.length > 0) {
-      prompt += `\nCharacters Present: ${characters.join(', ')}\n`;
-    }
-
-    // Scene purpose for thematic details
-    if (purpose) {
-      prompt += `\nScene Purpose: ${purpose}\n`;
-    }
-
-    // Themes for symbolic details
-    if (storyThemes && storyThemes.length > 0) {
-      prompt += `\nStory Themes: ${storyThemes.join(', ')}`;
-      prompt += `\nConsider details that subtly echo these themes.\n`;
-    }
-
-    prompt += `\n=== SCENE DESCRIPTION REQUIREMENTS ===\n`;
-    prompt += `Write 2-4 sentences (150-250 words) that:\n\n`;
-
-    prompt += `1. **Establish Setting Through POV**\n`;
-    prompt += `   - What would the POV character notice in this moment?\n`;
-    prompt += `   - Choose 2-3 specific sensory details (not all senses, just evocative ones)\n`;
-    prompt += `   - Make details concrete and specific, never generic\n\n`;
-
-    prompt += `2. **Create Atmosphere**\n`;
-    prompt += `   - Use description to establish mood\n`;
-    prompt += `   - Consider light, sound, temperature, texture\n`;
-    prompt += `   - Avoid clichéd descriptors - find fresh ways to evoke feeling\n\n`;
-
-    prompt += `3. **Reflect Emotional State**\n`;
-    prompt += `   - A nervous character notices different things than a confident one\n`;
-    prompt += `   - Setting can mirror, amplify, or ironically contrast emotion\n`;
-    prompt += `   - Use active description - things in motion, in relation to characters\n\n`;
-
-    prompt += `4. **Hint at Stakes/Subtext**\n`;
-    prompt += `   - What's beneath the surface of this scene?\n`;
-    prompt += `   - Details should create tension or anticipation\n`;
-    prompt += `   - What's unseen but felt?\n\n`;
-
-    prompt += `5. **Serve Theme**\n`;
-    prompt += `   - Can any details subtly reinforce thematic concerns?\n`;
-    prompt += `   - Symbolic elements should feel organic, not forced\n\n`;
-
-    prompt += `Write in vivid, economical prose. Every detail should earn its place by doing emotional or narrative work.`;
-    prompt += `Think cinematically: What's the shot? What's in focus? How does the camera move?`;
+  user: (context: SceneDescriptionContext) => {
+    let prompt = buildSceneContext(context);
+    prompt += buildMoodContext(context);
+    prompt += buildPurposeContext(context);
+    prompt += buildRequirements();
 
     return prompt;
-  }
+  },
 };

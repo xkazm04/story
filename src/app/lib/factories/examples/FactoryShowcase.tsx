@@ -14,7 +14,7 @@ import { Beat } from '@/app/types/Beat';
 import { Act } from '@/app/types/Act';
 import { Scene } from '@/app/types/Scene';
 import { Character } from '@/app/types/Character';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/app/components/UI/TabMenu';
+// Note: TabMenu exports as default, not named exports. Using manual tab implementation instead
 
 export function FactoryShowcase() {
   const [activeTab, setActiveTab] = useState('beats');
@@ -34,38 +34,29 @@ export function FactoryShowcase() {
 
         {/* Tabs */}
         <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger value="beats" data-testid="tab-beats">
-                Beats
-              </TabsTrigger>
-              <TabsTrigger value="acts" data-testid="tab-acts">
-                Acts
-              </TabsTrigger>
-              <TabsTrigger value="scenes" data-testid="tab-scenes">
-                Scenes
-              </TabsTrigger>
-              <TabsTrigger value="characters" data-testid="tab-characters">
-                Characters
-              </TabsTrigger>
-            </TabsList>
+          <div className="flex gap-2 mb-6 border-b border-gray-800">
+            {['beats', 'acts', 'scenes', 'characters'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                data-testid={`tab-${tab}`}
+                className={`px-4 py-2 font-medium capitalize transition-colors ${
+                  activeTab === tab
+                    ? 'border-b-2 border-cyan-500 text-cyan-400'
+                    : 'text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
 
-            <TabsContent value="beats">
-              <BeatsShowcase />
-            </TabsContent>
-
-            <TabsContent value="acts">
-              <ActsShowcase />
-            </TabsContent>
-
-            <TabsContent value="scenes">
-              <ScenesShowcase />
-            </TabsContent>
-
-            <TabsContent value="characters">
-              <CharactersShowcase />
-            </TabsContent>
-          </Tabs>
+          <div className="mt-4">
+            {activeTab === 'beats' && <BeatsShowcase />}
+            {activeTab === 'acts' && <ActsShowcase />}
+            {activeTab === 'scenes' && <ScenesShowcase />}
+            {activeTab === 'characters' && <CharactersShowcase />}
+          </div>
         </div>
       </div>
     </div>

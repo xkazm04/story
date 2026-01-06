@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
 import { Beat } from '@/app/types/Beat';
+import { logger } from '@/app/utils/logger';
+import { HTTP_STATUS } from '@/app/utils/apiErrorHandling';
 
 /**
  * PUT /api/beats/[id]
@@ -22,19 +24,19 @@ export async function PUT(
       .single();
 
     if (error) {
-      console.error('Error updating beat:', error);
+      logger.apiError('PUT /api/beats/[id]', error, { beatId: id });
       return NextResponse.json(
         { error: 'Failed to update beat' },
-        { status: 500 }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
       );
     }
 
     return NextResponse.json(data as Beat);
   } catch (error) {
-    console.error('Unexpected error in PUT /api/beats/[id]:', error);
+    logger.apiError('PUT /api/beats/[id]', error, { beatId: await context.params.then(p => p.id) });
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -56,19 +58,19 @@ export async function DELETE(
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting beat:', error);
+      logger.apiError('DELETE /api/beats/[id]', error, { beatId: id });
       return NextResponse.json(
         { error: 'Failed to delete beat' },
-        { status: 500 }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
       );
     }
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    return NextResponse.json({ success: true }, { status: HTTP_STATUS.OK });
   } catch (error) {
-    console.error('Unexpected error in DELETE /api/beats/[id]:', error);
+    logger.apiError('DELETE /api/beats/[id]', error, { beatId: await context.params.then(p => p.id) });
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

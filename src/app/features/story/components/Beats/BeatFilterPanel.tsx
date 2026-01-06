@@ -75,13 +75,13 @@ export const BeatFilterPanel = ({
   // Compact view for mobile
   if (isMobile && !isExpanded) {
     return (
-      <div className="flex items-center gap-2 p-2 bg-gray-900/30 border border-gray-800 rounded-lg">
+      <div className="flex items-center gap-2 p-2 bg-slate-950/80 border border-slate-900/70 rounded-lg">
         <button
           onClick={() => setIsExpanded(true)}
           className={clsx(
-            'flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all',
-            'bg-gray-800/50 hover:bg-gray-800 text-sm',
-            hasActiveFilters && 'border border-cyan-500/30'
+            'flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-xs',
+            'bg-slate-900/80 hover:bg-slate-900',
+            hasActiveFilters ? 'border border-cyan-500/40 text-slate-50' : 'border border-slate-800 text-slate-300'
           )}
           data-testid="beat-filter-expand-btn"
         >
@@ -94,7 +94,7 @@ export const BeatFilterPanel = ({
           )}
         </button>
         {filteredBeatsCount !== totalBeats && (
-          <span className="text-xs text-gray-400 ml-auto">
+          <span className="text-xs text-slate-400 ml-auto">
             {filteredBeatsCount} of {totalBeats}
           </span>
         )}
@@ -103,12 +103,12 @@ export const BeatFilterPanel = ({
   }
 
   return (
-    <div className="space-y-3 p-3 bg-gray-900/30 border border-gray-800 rounded-lg">
+    <div className="space-y-3 p-3 bg-slate-950/90 border border-slate-900/70 rounded-lg">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-cyan-400" />
-          <span className="text-sm font-medium text-gray-300">Filter Beats</span>
+          <span className="text-xs font-medium text-slate-200 tracking-tight">Filter Beats</span>
           {hasActiveFilters && (
             <span className="flex items-center justify-center w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-medium">
               {activeFilterCount}
@@ -117,14 +117,14 @@ export const BeatFilterPanel = ({
         </div>
         <div className="flex items-center gap-2">
           {filteredBeatsCount !== totalBeats && (
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-slate-400">
               {filteredBeatsCount} of {totalBeats}
             </span>
           )}
           {isMobile && (
             <button
               onClick={() => setIsExpanded(false)}
-              className="p-1 hover:bg-gray-800 rounded transition-colors"
+              className="p-1 hover:bg-slate-900 rounded transition-colors"
               data-testid="beat-filter-collapse-btn"
             >
               <ChevronUp className="w-4 h-4 text-gray-400" />
@@ -138,7 +138,7 @@ export const BeatFilterPanel = ({
         {/* Search Input */}
         <div className="relative md:col-span-1">
           <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-            <Search className="w-4 h-4 text-gray-400" />
+            <Search className="w-4 h-4 text-slate-500" />
           </div>
           <Input
             type="text"
@@ -186,7 +186,7 @@ export const BeatFilterPanel = ({
         <div className="flex justify-end pt-1">
           <button
             onClick={handleClearFilters}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition-all bg-gray-800/50 hover:bg-gray-800 text-gray-400 hover:text-gray-300"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] rounded-lg transition-all bg-slate-900/80 hover:bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800"
             data-testid="beat-clear-filters-btn"
           >
             <X className="w-3.5 h-3.5" />

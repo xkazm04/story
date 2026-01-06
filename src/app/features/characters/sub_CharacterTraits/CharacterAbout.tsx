@@ -1,12 +1,16 @@
+/**
+ * CharacterAbout - Character traits management
+ * Design: Clean Manuscript style with cyan accents
+ */
+
 'use client';
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Check, AlertCircle } from 'lucide-react';
+import { Check, AlertCircle } from 'lucide-react';
 import { PROMPT_SECTIONS } from '@/app/constants/promptSections';
 import { traitApi } from '@/app/api/traits';
 import { Trait } from '@/app/types/Character';
-import { Button } from '@/app/components/UI/Button';
 import { SmartGenerateButton } from '@/app/components/UI/SmartGenerateButton';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { useCharacters } from '@/app/hooks/useCharacters';
@@ -24,14 +28,13 @@ const CharacterAbout: React.FC<CharacterAboutProps> = ({ characterId }) => {
 
   const { selectedProject } = useProjectStore();
   const { data: allCharacters = [] } = useCharacters(selectedProject?.id || '');
-  
+
   const { generateAllTraits, isGenerating, error, saveTraits } = useUnifiedTraitGeneration(
     characterId,
     selectedProject?.id || '',
     allCharacters
   );
 
-  // Create a map of trait types to their descriptions
   const traitsMap = React.useMemo(() => {
     const map: Record<string, string> = {};
     traits.forEach((trait: Trait) => {
@@ -42,17 +45,11 @@ const CharacterAbout: React.FC<CharacterAboutProps> = ({ characterId }) => {
 
   const handleGenerateAllTraits = async () => {
     setGenerateSuccess(false);
-    
     const result = await generateAllTraits();
-    
+
     if (result) {
-      // Save all traits to database
       await saveTraits(characterId, result);
-      
-      // Refetch to update UI
       await refetch();
-      
-      // Show success message
       setGenerateSuccess(true);
       setTimeout(() => setGenerateSuccess(false), 5000);
     }
@@ -60,15 +57,15 @@ const CharacterAbout: React.FC<CharacterAboutProps> = ({ characterId }) => {
 
   return (
     <div className="space-y-4">
-      {/* Header with Generate All Button */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex-1">
-          <h2 className="text-xl font-semibold text-white mb-1">Character Traits</h2>
-          <p className="text-sm text-gray-400">
-            Generate comprehensive traits or edit individual sections
+          <h2 className="font-mono text-sm uppercase tracking-wide text-slate-300">// character_traits</h2>
+          <p className="text-xs text-slate-500 mt-1">
+            generate or edit individual trait sections
           </p>
         </div>
-        
+
         <div className="flex flex-col items-end gap-2">
           <SmartGenerateButton
             onClick={handleGenerateAllTraits}
@@ -78,7 +75,7 @@ const CharacterAbout: React.FC<CharacterAboutProps> = ({ characterId }) => {
             size="md"
             variant="primary"
           />
-          
+
           {/* Status messages */}
           <AnimatePresence>
             {error && (
@@ -86,22 +83,22 @@ const CharacterAbout: React.FC<CharacterAboutProps> = ({ characterId }) => {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="flex items-center gap-1.5 text-sm text-red-400"
+                className="flex items-center gap-1.5 font-mono text-xs text-red-400"
               >
-                <AlertCircle size={14} />
+                <AlertCircle size={12} />
                 {error}
               </motion.div>
             )}
-            
+
             {generateSuccess && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="flex items-center gap-1.5 text-sm text-green-400"
+                className="flex items-center gap-1.5 font-mono text-xs text-emerald-400"
               >
-                <Check size={14} />
-                All traits generated successfully!
+                <Check size={12} />
+                traits_generated_successfully
               </motion.div>
             )}
           </AnimatePresence>
@@ -109,26 +106,33 @@ const CharacterAbout: React.FC<CharacterAboutProps> = ({ characterId }) => {
       </div>
 
       {/* Section Selector */}
-      <div className="flex flex-wrap gap-1.5 p-3 bg-gray-900/50 rounded-lg border border-gray-800">
-        {PROMPT_SECTIONS.map((section, index) => (
-          <Button
-            key={section.id}
-            size="sm"
-            variant={activeSection === index ? 'primary' : 'secondary'}
-            icon={section.icon}
-            onClick={() => setActiveSection(index)}
-          >
-            {section.title}
-          </Button>
-        ))}
+      <div className="flex flex-wrap gap-1.5 p-3 bg-slate-900/50 rounded-lg border border-slate-800/50">
+        {PROMPT_SECTIONS.map((section, index) => {
+          const isActive = activeSection === index;
+          return (
+            <button
+              key={section.id}
+              onClick={() => setActiveSection(index)}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md font-mono text-xs
+                         transition-all duration-200 ${
+                isActive
+                  ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
+                  : 'text-slate-400 border border-transparent hover:text-slate-200 hover:bg-slate-800/50'
+              }`}
+            >
+              {section.icon && <span className="w-3 h-3">{section.icon}</span>}
+              <span className="uppercase tracking-wide">{section.title.toLowerCase().replace(/\s+/g, '_')}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Active Section Content */}
       <motion.div
         key={activeSection}
-        initial={{ opacity: 0, x: 20 }}
+        initial={{ opacity: 0, x: 16 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
       >
         <TraitPromptSection
           section={PROMPT_SECTIONS[activeSection]}

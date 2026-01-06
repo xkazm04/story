@@ -1,4 +1,20 @@
 import { PromptTemplate } from '../index';
+import type { SmartCharacterCreationContext, ActInfo, BeatInfo } from '../types';
+
+interface ExistingCharacter {
+  name: string;
+  role?: string;
+  faction?: string;
+  traits?: string[];
+  relationships?: Array<{ targetCharacterName: string }>;
+}
+
+interface ExistingFaction {
+  name: string;
+  description?: string;
+  values?: string;
+  memberCount?: number;
+}
 
 /**
  * Smart Character Creation (Context-Aware)
@@ -34,6 +50,7 @@ Draw on:
 Avoid clichés and stereotypes. Every character should surprise us while feeling inevitable.`,
 
   user: (context) => {
+    const ctx = context as SmartCharacterCreationContext;
     const {
       characterName,
       characterRole,
@@ -42,7 +59,7 @@ Avoid clichés and stereotypes. Every character should surprise us while feeling
       existingCharacters,
       existingFactions,
       visualStyle
-    } = context;
+    } = ctx;
 
     let prompt = `Create a comprehensive character profile for:\n`;
     prompt += `Name: ${characterName}\n`;
@@ -62,10 +79,10 @@ Avoid clichés and stereotypes. Every character should surprise us while feeling
     // Story structure context
     if (storyContext && storyContext.acts.length > 0) {
       prompt += `\n=== STORY STRUCTURE ===\n`;
-      prompt += `Acts: ${storyContext.acts.map((a: any) => `"${a.name}"`).join(', ')}\n`;
+      prompt += `Acts: ${storyContext.acts.map((a: ActInfo) => `"${a.name}"`).join(', ')}\n`;
       if (storyContext.beats.length > 0) {
         prompt += `Key Beats:\n`;
-        storyContext.beats.slice(0, 5).forEach((beat: any) => {
+        storyContext.beats.slice(0, 5).forEach((beat: BeatInfo) => {
           prompt += `- ${beat.name}: ${beat.description || 'No description'}\n`;
         });
       }
@@ -74,13 +91,13 @@ Avoid clichés and stereotypes. Every character should surprise us while feeling
     // Existing characters context
     if (existingCharacters && existingCharacters.length > 0) {
       prompt += `\n=== EXISTING CHARACTERS ===\n`;
-      existingCharacters.forEach((char: any) => {
+      existingCharacters.forEach((char: ExistingCharacter) => {
         prompt += `${char.name}${char.role ? ` (${char.role})` : ''}${char.faction ? ` [${char.faction}]` : ''}\n`;
         if (char.traits && char.traits.length > 0) {
           prompt += `  Traits: ${char.traits.join(', ')}\n`;
         }
         if (char.relationships && char.relationships.length > 0) {
-          prompt += `  Connected to: ${char.relationships.map((r: any) => r.targetCharacterName).join(', ')}\n`;
+          prompt += `  Connected to: ${char.relationships.map((r) => r.targetCharacterName).join(', ')}\n`;
         }
       });
     }
@@ -88,7 +105,7 @@ Avoid clichés and stereotypes. Every character should surprise us while feeling
     // Existing factions context
     if (existingFactions && existingFactions.length > 0) {
       prompt += `\n=== EXISTING FACTIONS ===\n`;
-      existingFactions.forEach((faction: any) => {
+      existingFactions.forEach((faction: ExistingFaction) => {
         prompt += `${faction.name}`;
         if (faction.description) prompt += `: ${faction.description.substring(0, 100)}...`;
         prompt += `\n`;

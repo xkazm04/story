@@ -132,12 +132,14 @@ const ActManager: React.FC = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="text-center py-8 rounded-lg border-2 border-dashed border-gray-700 bg-gray-800/30 flex flex-col items-center"
+        data-testid="no-acts-state"
       >
         <p className="text-gray-400 font-medium mb-3">No acts available</p>
         {error && <p className="text-sm text-red-500 mb-3">{error}</p>}
         <button
           onClick={handleAddAct}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+          data-testid="create-first-act-btn"
         >
           <Plus size={16} />
           Create First Act
@@ -148,7 +150,7 @@ const ActManager: React.FC = () => {
 
   return (
     <>
-      <div className="flex flex-col py-2">
+      <div className="flex flex-col py-2" data-testid="act-manager">
         <div className="flex justify-center items-center relative">
           <AnimatePresence mode="popLayout">
             <motion.div
@@ -170,6 +172,7 @@ const ActManager: React.FC = () => {
                   animate={{ opacity: 1 }}
                   layout
                   onClick={() => setShowActsList(!showActsList)}
+                  data-testid="more-acts-btn"
                 >
                   +{acts.length - visibleActs.length}
                   <ChevronDown

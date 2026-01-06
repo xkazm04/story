@@ -1,8 +1,13 @@
+/**
+ * FactionsList - Grid display of faction cards
+ * Design: Clean Manuscript style with cyan accents
+ */
+
 'use client';
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus } from 'lucide-react';
+import { Plus, Shield } from 'lucide-react';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { factionApi } from '@/app/api/factions';
 import { Faction } from '@/app/types/Faction';
@@ -22,8 +27,9 @@ const FactionsList: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-pulse text-gray-400">Loading factions...</div>
+      <div className="flex flex-col items-center justify-center h-64 gap-2">
+        <div className="w-6 h-6 border-2 border-cyan-500/50 border-t-transparent rounded-full animate-spin" />
+        <span className="font-mono text-xs text-slate-500">loading_factions...</span>
       </div>
     );
   }
@@ -36,7 +42,6 @@ const FactionsList: React.FC = () => {
         onBack={() => setSelectedFaction(null)}
         onUpdate={() => {
           refetch();
-          // Update selected faction with fresh data
           const updated = factions.find(f => f.id === selectedFaction.id);
           if (updated) setSelectedFaction(updated);
         }}
@@ -45,50 +50,61 @@ const FactionsList: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pt-2">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-white">Factions</h2>
-          <p className="text-sm text-gray-400 mt-1">
-            Organize characters into factions and groups
+          <h2 className="font-mono text-sm uppercase tracking-wide text-slate-300">// factions</h2>
+          <p className="text-xs text-slate-500 mt-1">
+            organize characters into groups and allegiances
           </p>
         </div>
         <button
           onClick={() => setShowCreateForm(true)}
-          className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-xs
+                     bg-cyan-600 hover:bg-cyan-500 text-white
+                     transition-all duration-200 shadow-sm hover:shadow-md"
         >
-          <Plus size={16} />
-          New Faction
+          <Plus className="w-3.5 h-3.5" />
+          <span className="uppercase tracking-wide">new_faction</span>
         </button>
       </div>
 
       {/* Factions Grid */}
       {factions.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-800/50 text-gray-400 mb-4">
-            <Plus size={28} />
-          </div>
-          <h3 className="text-lg text-white mb-2">No factions yet</h3>
-          <p className="text-gray-400 text-sm max-w-md mx-auto mb-6">
-            Create factions to organize your characters into groups, organizations, or allegiances.
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <Shield className="w-10 h-10 text-slate-600" />
+          <span className="font-mono text-xs text-slate-500">// no_factions_yet</span>
+          <p className="text-xs text-slate-500 text-center max-w-md">
+            create factions to organize characters into groups
           </p>
           <button
             onClick={() => setShowCreateForm(true)}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+            className="mt-2 text-xs text-cyan-400 hover:text-cyan-300 font-mono hover:underline"
           >
-            Create First Faction
+            create_first_faction
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <AnimatePresence mode="popLayout">
-            {factions.map((faction) => (
-              <FactionCard
+            {factions.map((faction, index) => (
+              <motion.div
                 key={faction.id}
-                faction={faction}
-                onSelect={setSelectedFaction}
-              />
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{
+                  duration: 0.35,
+                  delay: index * 0.04,
+                  ease: [0.4, 0, 0.2, 1],
+                }}
+              >
+                <FactionCard
+                  faction={faction}
+                  onSelect={setSelectedFaction}
+                />
+              </motion.div>
             ))}
           </AnimatePresence>
         </div>

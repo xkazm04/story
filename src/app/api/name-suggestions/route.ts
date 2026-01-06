@@ -5,6 +5,13 @@ import {
   sceneNameSuggestionsPrompt,
   beatNameSuggestionsPrompt,
 } from '@/prompts';
+import {
+  logger,
+  handleUnexpectedError,
+  createErrorResponse,
+  HTTP_STATUS,
+  API_CONSTANTS,
+} from '@/app/utils/apiErrorHandling';
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -24,113 +31,142 @@ export interface NameSuggestionsRequest {
   context?: Record<string, any>;
 }
 
+interface PromptTemplate {
+  system: string;
+  user: (context: any) => string;
+}
+
+/**
+ * Selects appropriate prompt template based on entity type
+ */
+function selectPromptTemplate(entityType: EntityType): PromptTemplate {
+  switch (entityType) {
+    case 'character':
+      return characterNameSuggestionsPrompt;
+    case 'scene':
+      return sceneNameSuggestionsPrompt;
+    case 'beat':
+      return beatNameSuggestionsPrompt;
+    case 'faction':
+      // Use character prompt as fallback for faction
+      return characterNameSuggestionsPrompt;
+    case 'location':
+      // Use scene prompt as fallback for location
+      return sceneNameSuggestionsPrompt;
+    default:
+      throw new Error('Invalid entity type');
+  }
+}
+
+/**
+ * Builds prompt context from request data
+ */
+function buildPromptContext(body: NameSuggestionsRequest) {
+  return {
+    partialName: body.partialName || '',
+    entityType: body.entityType,
+    ...(body.context || {}),
+  };
+}
+
+/**
+ * Calls Groq API for name suggestions
+ */
+async function callGroqAPI(
+  systemPrompt: string,
+  userPrompt: string
+): Promise<string> {
+  const completion = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile', // Fast model for low latency
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ],
+    temperature: 0.8,
+    max_tokens: 1500,
+    response_format: { type: 'json_object' },
+  });
+
+  const responseText = completion.choices[0]?.message?.content;
+
+  if (!responseText) {
+    throw new Error('No response from AI model');
+  }
+
+  return responseText;
+}
+
+/**
+ * Parses and validates AI response into name suggestions
+ */
+function parseAndValidateSuggestions(responseText: string): NameSuggestion[] {
+  const parsedResponse = JSON.parse(responseText);
+
+  // Handle both array responses and object with suggestions array
+  let suggestions: NameSuggestion[];
+  if (Array.isArray(parsedResponse)) {
+    suggestions = parsedResponse;
+  } else if (parsedResponse.suggestions && Array.isArray(parsedResponse.suggestions)) {
+    suggestions = parsedResponse.suggestions;
+  } else {
+    throw new Error('Invalid response format from AI model');
+  }
+
+  // Validate suggestions
+  if (!suggestions || suggestions.length === 0) {
+    throw new Error('No suggestions generated');
+  }
+
+  // Ensure each suggestion has required fields
+  return suggestions
+    .filter((s) => s.name && s.description)
+    .slice(0, API_CONSTANTS.MAX_SUGGESTIONS_LIMIT)
+    .map((s) => ({
+      name: s.name,
+      description: s.description,
+      reasoning: s.reasoning || '',
+    }));
+}
+
+/**
+ * POST /api/name-suggestions
+ * Generate AI-powered name suggestions for entities
+ */
 export async function POST(request: NextRequest) {
   try {
     const body: NameSuggestionsRequest = await request.json();
 
     if (!body.entityType) {
-      return NextResponse.json(
-        {
-          error: 'Entity type is required',
-          success: false,
-        },
-        { status: 400 }
+      return createErrorResponse(
+        'Entity type is required',
+        400
       );
     }
 
     // Select the appropriate prompt based on entity type
-    let promptTemplate;
-    switch (body.entityType) {
-      case 'character':
-        promptTemplate = characterNameSuggestionsPrompt;
-        break;
-      case 'scene':
-        promptTemplate = sceneNameSuggestionsPrompt;
-        break;
-      case 'beat':
-        promptTemplate = beatNameSuggestionsPrompt;
-        break;
-      case 'faction':
-        // Use character prompt as fallback for faction
-        promptTemplate = characterNameSuggestionsPrompt;
-        break;
-      case 'location':
-        // Use scene prompt as fallback for location
-        promptTemplate = sceneNameSuggestionsPrompt;
-        break;
-      default:
-        return NextResponse.json(
-          {
-            error: 'Invalid entity type',
-            success: false,
-          },
-          { status: 400 }
-        );
-    }
+    const promptTemplate = selectPromptTemplate(body.entityType);
 
     // Build the context for the prompt
-    const promptContext = {
-      partialName: body.partialName || '',
-      entityType: body.entityType,
-      ...(body.context || {}),
-    };
+    const promptContext = buildPromptContext(body);
 
     // Generate the prompt
     const systemPrompt = promptTemplate.system;
     const userPrompt = promptTemplate.user(promptContext);
 
     // Call Groq API for fast inference
-    const completion = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile', // Fast model for low latency
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      temperature: 0.8,
-      max_tokens: 1500,
-      response_format: { type: 'json_object' },
-    });
+    const responseText = await callGroqAPI(systemPrompt, userPrompt);
 
-    const responseText = completion.choices[0]?.message?.content;
-
-    if (!responseText) {
-      throw new Error('No response from AI model');
-    }
-
-    // Parse the JSON response
-    const parsedResponse = JSON.parse(responseText);
-
-    // Handle both array responses and object with suggestions array
-    let suggestions: NameSuggestion[];
-    if (Array.isArray(parsedResponse)) {
-      suggestions = parsedResponse;
-    } else if (parsedResponse.suggestions && Array.isArray(parsedResponse.suggestions)) {
-      suggestions = parsedResponse.suggestions;
-    } else {
-      throw new Error('Invalid response format from AI model');
-    }
-
-    // Validate suggestions
-    if (!suggestions || suggestions.length === 0) {
-      throw new Error('No suggestions generated');
-    }
-
-    // Ensure each suggestion has required fields
-    const validatedSuggestions = suggestions
-      .filter((s) => s.name && s.description)
-      .slice(0, 5)
-      .map((s) => ({
-        name: s.name,
-        description: s.description,
-        reasoning: s.reasoning || '',
-      }));
+    // Parse and validate suggestions
+    const validatedSuggestions = parseAndValidateSuggestions(responseText);
 
     return NextResponse.json({
       suggestions: validatedSuggestions,
       success: true,
     });
   } catch (error) {
-    console.error('Error generating name suggestions:', error);
+    logger.error('Name suggestions API error', error, {
+      endpoint: '/api/name-suggestions',
+    });
 
     return NextResponse.json(
       {
@@ -138,7 +174,7 @@ export async function POST(request: NextRequest) {
         details: error instanceof Error ? error.message : 'Unknown error',
         success: false,
       },
-      { status: 500 }
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

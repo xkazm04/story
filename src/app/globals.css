@@ -1,8 +1,84 @@
 @import "tailwindcss";
 
+/* =============================================================================
+   CLEAN MANUSCRIPT DESIGN SYSTEM
+   A cohesive design language for the Writer Studio application
+
+   Design Philosophy:
+   - Sans-serif fonts with monospace accents for labels and code-like elements
+   - Notebook ruled lines + dot grid subtle background patterns
+   - Cyan accent colors on slate/zinc dark backgrounds
+   - Rounded elements (rounded-md, rounded-lg)
+   - Clean, sharp UI with subtle depth and backdrop blur
+   ============================================================================= */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* --------------------------------------------------------------------------
+     BASE COLORS - Clean Manuscript Palette
+     -------------------------------------------------------------------------- */
+
+  /* Background layers (darkest to lightest) */
+  --ms-bg-base: #030712;           /* gray-950 - Deepest background */
+  --ms-bg-surface: #0f172a;        /* slate-900 - Elevated surfaces */
+  --ms-bg-elevated: #1e293b;       /* slate-800 - Hover states, cards */
+  --ms-bg-overlay: rgba(15, 23, 42, 0.95); /* slate-900/95 - Overlays with blur */
+
+  /* Borders */
+  --ms-border-subtle: rgba(51, 65, 85, 0.5);   /* slate-700/50 */
+  --ms-border-default: rgba(71, 85, 105, 0.7); /* slate-600/70 */
+  --ms-border-strong: #475569;                  /* slate-600 */
+
+  /* Text */
+  --ms-text-primary: #f1f5f9;      /* slate-100 */
+  --ms-text-secondary: #cbd5e1;    /* slate-300 */
+  --ms-text-muted: #94a3b8;        /* slate-400 */
+  --ms-text-dim: #64748b;          /* slate-500 */
+
+  /* Accent - Cyan (Primary) */
+  --ms-accent-primary: #06b6d4;    /* cyan-500 */
+  --ms-accent-hover: #22d3ee;      /* cyan-400 */
+  --ms-accent-muted: #0891b2;      /* cyan-600 */
+  --ms-accent-bg: rgba(6, 182, 212, 0.1);     /* cyan-500/10 */
+  --ms-accent-border: rgba(6, 182, 212, 0.3); /* cyan-500/30 */
+
+  /* Status colors */
+  --ms-success: #10b981;           /* emerald-500 */
+  --ms-success-bg: rgba(16, 185, 129, 0.1);
+  --ms-warning: #f59e0b;           /* amber-500 */
+  --ms-warning-bg: rgba(245, 158, 11, 0.1);
+  --ms-error: #ef4444;             /* red-500 */
+  --ms-error-bg: rgba(239, 68, 68, 0.1);
+  --ms-info: #a855f7;              /* purple-500 */
+  --ms-info-bg: rgba(168, 85, 247, 0.1);
+
+  /* --------------------------------------------------------------------------
+     SPACING & SIZING
+     -------------------------------------------------------------------------- */
+  --ms-radius-sm: 0.25rem;         /* 4px */
+  --ms-radius-md: 0.375rem;        /* 6px */
+  --ms-radius-lg: 0.5rem;          /* 8px */
+  --ms-radius-xl: 0.75rem;         /* 12px */
+
+  /* --------------------------------------------------------------------------
+     SHADOWS
+     -------------------------------------------------------------------------- */
+  --ms-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --ms-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+  --ms-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  --ms-shadow-glow: 0 0 20px rgba(6, 182, 212, 0.15);
+
+  /* --------------------------------------------------------------------------
+     NOTEBOOK PATTERN COLORS
+     -------------------------------------------------------------------------- */
+  --ms-pattern-line: #0891b2;      /* cyan-600 for ruled lines */
+  --ms-pattern-dot: #0891b2;       /* cyan-600 for dot grid */
+  --ms-pattern-margin: rgba(6, 182, 212, 0.05); /* Margin line accent */
+
+  /* --------------------------------------------------------------------------
+     LEGACY COMPATIBILITY
+     -------------------------------------------------------------------------- */
+  --background: var(--ms-bg-base);
+  --foreground: var(--ms-text-primary);
 }
 
 @theme inline {
@@ -12,22 +88,326 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* =============================================================================
+   BASE STYLES
+   ============================================================================= */
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--ms-bg-base);
+  color: var(--ms-text-primary);
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* =============================================================================
+   CLEAN MANUSCRIPT COMPONENT CLASSES
+   ============================================================================= */
+
+/* --------------------------------------------------------------------------
+   Surfaces & Cards
+   -------------------------------------------------------------------------- */
+.ms-surface {
+  @apply bg-slate-900/80 backdrop-blur-sm;
+}
+
+.ms-surface-elevated {
+  @apply bg-slate-800/80 backdrop-blur-sm;
+}
+
+.ms-card {
+  @apply bg-slate-900/80 border border-slate-700/50 rounded-lg backdrop-blur-sm;
+}
+
+.ms-card-hover {
+  @apply hover:bg-slate-800/80 hover:border-slate-600/50 transition-all duration-200;
+}
+
+.ms-panel {
+  @apply bg-slate-900/95 border border-slate-800/70 backdrop-blur-sm;
+}
+
+/* --------------------------------------------------------------------------
+   Typography - Manuscript Style
+   -------------------------------------------------------------------------- */
+.ms-heading {
+  @apply font-sans font-semibold text-slate-100;
+}
+
+.ms-label {
+  @apply font-mono text-xs uppercase tracking-wider text-slate-400;
+}
+
+.ms-code-label {
+  @apply font-mono text-xs uppercase tracking-wide text-slate-300;
+}
+
+.ms-body {
+  @apply font-sans text-sm text-slate-300;
+}
+
+.ms-caption {
+  @apply font-mono text-[10px] uppercase tracking-wide text-slate-500;
+}
+
+/* --------------------------------------------------------------------------
+   Inputs
+   -------------------------------------------------------------------------- */
+.ms-input {
+  @apply w-full px-3 py-2 rounded-md
+         bg-slate-900/80 border border-slate-700/50
+         text-slate-100 placeholder:text-slate-500
+         focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20
+         transition-all duration-200;
+}
+
+.ms-input-mono {
+  @apply w-full px-3 py-2 rounded-md font-mono
+         bg-slate-900/80 border border-slate-700/50
+         text-slate-100 placeholder:text-slate-500
+         focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20
+         transition-all duration-200;
+}
+
+.ms-textarea {
+  @apply w-full px-3 py-2 rounded-md resize-y min-h-[100px]
+         bg-slate-900/80 border border-slate-700/50
+         text-slate-100 placeholder:text-slate-500
+         focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20
+         transition-all duration-200;
+}
+
+.ms-select {
+  @apply w-full px-3 py-2 rounded-md cursor-pointer
+         bg-slate-900/80 border border-slate-700/50
+         text-slate-100
+         focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20
+         transition-all duration-200;
+}
+
+/* --------------------------------------------------------------------------
+   Buttons
+   -------------------------------------------------------------------------- */
+.ms-btn {
+  @apply inline-flex items-center justify-center gap-1.5
+         px-3 py-1.5 rounded-md
+         text-xs font-mono font-medium
+         transition-all duration-200;
+}
+
+.ms-btn-primary {
+  @apply inline-flex items-center justify-center gap-1.5
+         px-3 py-1.5 rounded-md
+         text-xs font-mono font-medium
+         transition-all duration-200
+         bg-cyan-600 hover:bg-cyan-500 text-white
+         shadow-sm hover:shadow-md;
+}
+
+.ms-btn-secondary {
+  @apply inline-flex items-center justify-center gap-1.5
+         px-3 py-1.5 rounded-md
+         text-xs font-mono font-medium
+         transition-all duration-200
+         bg-slate-800/80 hover:bg-slate-700 text-slate-100
+         border border-slate-600/50;
+}
+
+.ms-btn-ghost {
+  @apply inline-flex items-center justify-center gap-1.5
+         px-3 py-1.5 rounded-md
+         text-xs font-mono font-medium
+         transition-all duration-200
+         text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10;
+}
+
+.ms-btn-danger {
+  @apply inline-flex items-center justify-center gap-1.5
+         px-3 py-1.5 rounded-md
+         text-xs font-mono font-medium
+         transition-all duration-200
+         bg-red-600/80 hover:bg-red-500 text-white;
+}
+
+/* --------------------------------------------------------------------------
+   Badges
+   -------------------------------------------------------------------------- */
+.ms-badge {
+  @apply inline-flex items-center gap-1
+         px-1.5 py-0.5 rounded-md
+         text-[10px] font-mono font-medium uppercase tracking-wide
+         border;
+}
+
+.ms-badge-default {
+  @apply inline-flex items-center gap-1
+         px-1.5 py-0.5 rounded-md
+         text-[10px] font-mono font-medium uppercase tracking-wide
+         border bg-slate-800/80 text-slate-300 border-slate-700/50;
+}
+
+.ms-badge-accent {
+  @apply inline-flex items-center gap-1
+         px-1.5 py-0.5 rounded-md
+         text-[10px] font-mono font-medium uppercase tracking-wide
+         border bg-cyan-500/15 text-cyan-400 border-cyan-500/30;
+}
+
+.ms-badge-success {
+  @apply inline-flex items-center gap-1
+         px-1.5 py-0.5 rounded-md
+         text-[10px] font-mono font-medium uppercase tracking-wide
+         border bg-emerald-500/15 text-emerald-400 border-emerald-500/30;
+}
+
+.ms-badge-warning {
+  @apply inline-flex items-center gap-1
+         px-1.5 py-0.5 rounded-md
+         text-[10px] font-mono font-medium uppercase tracking-wide
+         border bg-amber-500/15 text-amber-400 border-amber-500/30;
+}
+
+.ms-badge-error {
+  @apply inline-flex items-center gap-1
+         px-1.5 py-0.5 rounded-md
+         text-[10px] font-mono font-medium uppercase tracking-wide
+         border bg-red-500/15 text-red-400 border-red-500/30;
+}
+
+/* --------------------------------------------------------------------------
+   Borders
+   -------------------------------------------------------------------------- */
+.ms-border {
+  @apply border border-slate-700/50;
+}
+
+.ms-border-subtle {
+  @apply border border-slate-800/70;
+}
+
+.ms-border-accent {
+  @apply border border-cyan-500/30;
+}
+
+.ms-divider {
+  @apply h-px w-full bg-slate-800/70;
+}
+
+.ms-divider-vertical {
+  @apply w-px h-full bg-slate-800/70;
+}
+
+/* --------------------------------------------------------------------------
+   Notebook Background Patterns (Inline SVG version)
+   -------------------------------------------------------------------------- */
+.ms-notebook-bg {
+  position: relative;
+  background: linear-gradient(to bottom right, #030712, #18181b, #030712);
+}
+
+.ms-notebook-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 19px,
+      rgba(8, 145, 178, 0.04) 19px,
+      rgba(8, 145, 178, 0.04) 20px
+    );
+}
+
+.ms-notebook-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at center, rgba(8, 145, 178, 0.03) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* Margin line accent */
+.ms-margin-line {
+  @apply absolute left-[8%] top-0 bottom-0 w-px;
+  background: var(--ms-pattern-margin);
+}
+
+/* --------------------------------------------------------------------------
+   Status Indicators
+   -------------------------------------------------------------------------- */
+.ms-status-dot {
+  @apply w-2 h-2 rounded-full;
+}
+
+.ms-status-active {
+  @apply w-2 h-2 rounded-full bg-emerald-400;
+}
+
+.ms-status-warning {
+  @apply w-2 h-2 rounded-full bg-amber-400;
+}
+
+.ms-status-error {
+  @apply w-2 h-2 rounded-full bg-red-400;
+}
+
+.ms-status-inactive {
+  @apply w-2 h-2 rounded-full bg-slate-600;
+}
+
+/* --------------------------------------------------------------------------
+   Scrollbars - Manuscript Style
+   -------------------------------------------------------------------------- */
+.ms-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.ms-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: var(--ms-radius-sm);
+}
+
+.ms-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(6, 182, 212, 0.3);
+  border-radius: var(--ms-radius-sm);
+}
+
+.ms-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(6, 182, 212, 0.5);
+}
+
+/* --------------------------------------------------------------------------
+   Focus States
+   -------------------------------------------------------------------------- */
+.ms-focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:ring-offset-2 focus:ring-offset-slate-950;
+}
+
+/* --------------------------------------------------------------------------
+   Transitions
+   -------------------------------------------------------------------------- */
+.ms-transition {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.ms-transition-fast {
+  @apply transition-all duration-150 ease-in-out;
+}
+
+.ms-transition-slow {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+/* =============================================================================
+   LEGACY UTILITY CLASSES (Maintained for compatibility)
+   ============================================================================= */
+
 /* Dark theme base */
 .bg-dark-base {
-  background-color: #02071d;
+  background-color: var(--ms-bg-base);
 }
 
 /* Utility Classes */
@@ -36,12 +416,15 @@ textarea {
 }
 
 .form-input {
-  @apply bg-gray-800 border border-gray-600 p-1 rounded-md text-white placeholder-gray-400 text-sm placeholder:px-1
-  focus:ring-2 focus:ring-blue-500/30 outline-none;
+  @apply w-full px-3 py-2 rounded-md
+         bg-slate-900/80 border border-slate-700/50
+         text-slate-100 placeholder:text-slate-500
+         focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20
+         transition-all duration-200;
 }
 
 .blue-gradient {
-  @apply bg-gradient-to-r from-blue-700/40 to-blue-800/40 transition-all duration-200 hover:opacity-80;
+  @apply bg-gradient-to-r from-cyan-700/40 to-cyan-800/40 transition-all duration-200 hover:opacity-80;
 }
 
 .width-btn {
@@ -49,63 +432,78 @@ textarea {
 }
 
 .small-title {
-  @apply text-sm font-bold uppercase tracking-wide text-gray-300;
+  @apply font-mono text-xs uppercase tracking-wider text-slate-400;
 }
 
 .long-text {
-  @apply text-sm leading-relaxed text-gray-200;
+  @apply text-sm leading-relaxed text-slate-200;
   line-height: 1.7;
   letter-spacing: 0.01em;
 }
 
-/* Relationship Map Animations and Effects */
+/* =============================================================================
+   ANIMATIONS
+   ============================================================================= */
+
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 @keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
 }
 
 @keyframes shimmer {
-  0% {
-    background-position: -1000px 0;
-  }
-  100% {
-    background-position: 1000px 0;
-  }
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(6, 182, 212, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(6, 182, 212, 0.4); }
+}
+
+/* Animation utilities */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.2s ease-out;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
 }
 
 /* Glassmorphism effects */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(71, 85, 105, 0.5);
 }
 
-/* React Flow custom styles */
+/* =============================================================================
+   REACT FLOW CUSTOM STYLES
+   ============================================================================= */
+
 .react-flow__node {
   animation: fadeIn 0.3s ease-out;
 }
@@ -126,75 +524,41 @@ textarea {
   transform: scale(1.3);
 }
 
-/* Custom scrollbar for panels */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-}
+/* =============================================================================
+   GLOBAL SCROLLBAR (Clean Manuscript Style)
+   ============================================================================= */
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
-}
-
-/* Landing Page Animations */
-@keyframes float-delay-1 {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
-}
-
-@keyframes float-delay-2 {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-15px);
-  }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-.animate-float-delay-1 {
-  animation: float-delay-1 6s ease-in-out infinite 0.3s;
-}
-
-.animate-float-delay-2 {
-  animation: float-delay-2 6s ease-in-out infinite 0.6s;
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
-}
-
-/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 2px;
-  border-radius: 50px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #00102a;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #f7ffac;
-  border-radius: 2px;
+  background: rgba(6, 182, 212, 0.3);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #00167a;
+  background: rgba(6, 182, 212, 0.5);
+}
+
+/* =============================================================================
+   RESIZABLE PANEL HANDLE STYLES
+   ============================================================================= */
+
+[data-panel-group-direction="horizontal"] > [data-resize-handle] {
+  @apply w-1 bg-slate-800/50 hover:bg-cyan-500/30 transition-colors;
+}
+
+[data-panel-group-direction="horizontal"] > [data-resize-handle]:hover {
+  @apply bg-cyan-500/40;
+}
+
+[data-panel-group-direction="horizontal"] > [data-resize-handle][data-resize-handle-active] {
+  @apply bg-cyan-500/50;
 }

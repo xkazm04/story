@@ -3,13 +3,39 @@
  * Modular components for character creation with AI-powered image extraction
  */
 
+// Main form components
 export { default as CharacterAppearanceForm } from './CharacterAppearanceForm';
-export { CharacterImageExtraction } from './CharacterImageExtraction';
-export { CharacterImageUpload } from './CharacterImageUpload';
-export { AppearanceBasicAttributes } from './AppearanceBasicAttributes';
-export { AppearanceFacialFeatures } from './AppearanceFacialFeatures';
-export { AppearanceClothing } from './AppearanceClothing';
-export { AppearanceCustomFeatures } from './AppearanceCustomFeatures';
-export { AppearancePreview } from './AppearancePreview';
+export { default as CharacterAppearanceWithArchetypes } from './CharacterAppearanceWithArchetypes';
 
+// UI Components
+export {
+  GenderSelector,
+  FormField,
+  FormSection,
+  PromptGenerator,
+  AppearancePreview,
+  ImageGenerationPreview,
+  CharacterImageUpload,
+  CharacterImageExtraction,
+  FormStepper,
+  SteppedAppearanceForm,
+} from './components';
+
+// Library functions and configs
+export {
+  appearanceFormConfig,
+  getFieldValue,
+  setFieldValue,
+  generateFacialFeaturesPrompt,
+  generateClothingPrompt,
+  generateFullPrompt,
+  randomizeCharacter,
+  useAppearanceForm,
+  type FormFieldConfig,
+  type FormSectionConfig,
+  type FieldType,
+  type SectionColor,
+} from './lib';
+
+// Types
 export type { ImageExtractionConfig, ExtractionResult } from './types';

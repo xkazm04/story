@@ -1,6 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
 import { Scene } from '@/app/types/Scene';
+import { logger } from '@/app/utils/logger';
+import { HTTP_STATUS, createErrorResponse } from '@/app/utils/apiErrorHandling';
+
+/**
+ * Fetches a scene by ID from the database
+ */
+async function fetchScene(id: string) {
+  const { data, error } = await supabaseServer
+    .from('scenes')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  return { data, error };
+}
+
+/**
+ * Updates a scene in the database
+ */
+async function updateScene(id: string, body: Partial<Scene>) {
+  const { data, error } = await supabaseServer
+    .from('scenes')
+    .update(body)
+    .eq('id', id)
+    .select()
+    .single();
+
+  return { data, error };
+}
+
+/**
+ * Deletes a scene from the database
+ */
+async function deleteScene(id: string) {
+  const { error } = await supabaseServer
+    .from('scenes')
+    .delete()
+    .eq('id', id);
+
+  return { error };
+}
 
 /**
  * GET /api/scenes/[id]
@@ -13,27 +54,17 @@ export async function GET(
   try {
     const { id } = await context.params;
 
-    const { data, error } = await supabaseServer
-      .from('scenes')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const { data, error } = await fetchScene(id);
 
     if (error) {
-      console.error('Error fetching scene:', error);
-      return NextResponse.json(
-        { error: 'Scene not found' },
-        { status: 404 }
-      );
+      logger.apiError('GET /api/scenes/[id]', error, { sceneId: id });
+      return createErrorResponse('Scene not found', HTTP_STATUS.NOT_FOUND);
     }
 
     return NextResponse.json(data as Scene);
   } catch (error) {
-    console.error('Unexpected error in GET /api/scenes/[id]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.apiError('GET /api/scenes/[id]', error);
+    return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }
 
@@ -49,28 +80,17 @@ export async function PUT(
     const { id } = await context.params;
     const body = await request.json();
 
-    const { data, error } = await supabaseServer
-      .from('scenes')
-      .update(body)
-      .eq('id', id)
-      .select()
-      .single();
+    const { data, error } = await updateScene(id, body);
 
     if (error) {
-      console.error('Error updating scene:', error);
-      return NextResponse.json(
-        { error: 'Failed to update scene' },
-        { status: 500 }
-      );
+      logger.apiError('PUT /api/scenes/[id]', error, { sceneId: id });
+      return createErrorResponse('Failed to update scene', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
     return NextResponse.json(data as Scene);
   } catch (error) {
-    console.error('Unexpected error in PUT /api/scenes/[id]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.apiError('PUT /api/scenes/[id]', error);
+    return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }
 
@@ -85,27 +105,16 @@ export async function DELETE(
   try {
     const { id } = await context.params;
 
-    const { error } = await supabaseServer
-      .from('scenes')
-      .delete()
-      .eq('id', id);
+    const { error } = await deleteScene(id);
 
     if (error) {
-      console.error('Error deleting scene:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete scene' },
-        { status: 500 }
-      );
+      logger.apiError('DELETE /api/scenes/[id]', error, { sceneId: id });
+      return createErrorResponse('Failed to delete scene', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    return NextResponse.json({ success: true }, { status: HTTP_STATUS.OK });
   } catch (error) {
-    console.error('Unexpected error in DELETE /api/scenes/[id]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.apiError('DELETE /api/scenes/[id]', error);
+    return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }
-
-

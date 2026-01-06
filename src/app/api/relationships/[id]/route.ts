@@ -1,6 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
 import { CharRelationship } from '@/app/types/Character';
+import { logger } from '@/app/utils/logger';
+import { HTTP_STATUS, createErrorResponse } from '@/app/utils/apiErrorHandling';
+
+/**
+ * Updates a character relationship in the database
+ */
+async function updateRelationship(id: string, body: Partial<CharRelationship>) {
+  const { data, error } = await supabaseServer
+    .from('character_relationships')
+    .update(body)
+    .eq('id', id)
+    .select()
+    .single();
+
+  return { data, error };
+}
+
+/**
+ * Deletes a character relationship from the database
+ */
+async function deleteRelationship(id: string) {
+  const { error } = await supabaseServer
+    .from('character_relationships')
+    .delete()
+    .eq('id', id);
+
+  return { error };
+}
 
 /**
  * PUT /api/relationships/[id]
@@ -14,28 +42,17 @@ export async function PUT(
     const { id } = await context.params;
     const body = await request.json();
 
-    const { data, error } = await supabaseServer
-      .from('character_relationships')
-      .update(body)
-      .eq('id', id)
-      .select()
-      .single();
+    const { data, error } = await updateRelationship(id, body);
 
     if (error) {
-      console.error('Error updating relationship:', error);
-      return NextResponse.json(
-        { error: 'Failed to update relationship' },
-        { status: 500 }
-      );
+      logger.apiError('PUT /api/relationships/[id]', error, { relationshipId: id });
+      return createErrorResponse('Failed to update relationship', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
     return NextResponse.json(data as CharRelationship);
   } catch (error) {
-    console.error('Unexpected error in PUT /api/relationships/[id]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.apiError('PUT /api/relationships/[id]', error);
+    return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }
 
@@ -50,27 +67,16 @@ export async function DELETE(
   try {
     const { id } = await context.params;
 
-    const { error } = await supabaseServer
-      .from('character_relationships')
-      .delete()
-      .eq('id', id);
+    const { error } = await deleteRelationship(id);
 
     if (error) {
-      console.error('Error deleting relationship:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete relationship' },
-        { status: 500 }
-      );
+      logger.apiError('DELETE /api/relationships/[id]', error, { relationshipId: id });
+      return createErrorResponse('Failed to delete relationship', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    return NextResponse.json({ success: true }, { status: HTTP_STATUS.OK });
   } catch (error) {
-    console.error('Unexpected error in DELETE /api/relationships/[id]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.apiError('DELETE /api/relationships/[id]', error);
+    return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }
-
-

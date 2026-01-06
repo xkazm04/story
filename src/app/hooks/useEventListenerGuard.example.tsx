@@ -20,11 +20,11 @@ export function Example1_ProperCleanup() {
 
   useEffect(() => {
     const handleResize = () => {
-      console.log('Window resized:', window.innerWidth, window.innerHeight);
+      // Window resized
     };
 
     const handleScroll = () => {
-      console.log('Window scrolled:', window.scrollY);
+      // Window scrolled
     };
 
     // Add multiple listeners
@@ -63,7 +63,7 @@ export function Example2_MemoryLeak() {
 
   useEffect(() => {
     const handleClick = () => {
-      console.log('Document clicked!');
+      // Document clicked
     };
 
     document.addEventListener('click', handleClick);
@@ -197,7 +197,7 @@ export function Example5_SimpleLeakDetector() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        console.log('Escape pressed!');
+        // Escape pressed
       }
     };
 

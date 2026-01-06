@@ -5,9 +5,9 @@ import type {
   AIAssistantResponse,
   AISuggestion,
   AIAssistantSettings,
-  defaultAssistantSettings,
   SuggestionType,
 } from '@/app/types/AIAssistant';
+import { defaultAssistantSettings } from '@/app/types/AIAssistant';
 
 interface UseAIAssistantOptions {
   projectId?: string;

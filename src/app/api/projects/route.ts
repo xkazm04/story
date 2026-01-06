@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
 import { Project } from '@/app/types/Project';
+import { validateRequiredParams, handleDatabaseError, handleUnexpectedError } from '@/app/utils/apiErrorHandling';
 
 /**
  * GET /api/projects?userId=xxx
@@ -11,12 +12,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId');
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'userId is required' },
-        { status: 400 }
-      );
-    }
+    const validationError = validateRequiredParams({ userId }, ['userId']);
+    if (validationError) return validationError;
 
     const { data, error } = await supabaseServer
       .from('projects')
@@ -25,20 +22,12 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching projects:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch projects' },
-        { status: 500 }
-      );
+      return handleDatabaseError('fetch projects', error);
     }
 
     return NextResponse.json(data as Project[]);
   } catch (error) {
-    console.error('Unexpected error in GET /api/projects:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleUnexpectedError('GET /api/projects', error);
   }
 }
 
@@ -51,12 +40,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, description, user_id } = body;
 
-    if (!name || !user_id) {
-      return NextResponse.json(
-        { error: 'name and user_id are required' },
-        { status: 400 }
-      );
-    }
+    const validationError = validateRequiredParams(
+      { name, user_id },
+      ['name', 'user_id']
+    );
+    if (validationError) return validationError;
 
     const { data, error } = await supabaseServer
       .from('projects')
@@ -69,20 +57,12 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating project:', error);
-      return NextResponse.json(
-        { error: 'Failed to create project' },
-        { status: 500 }
-      );
+      return handleDatabaseError('create project', error);
     }
 
     return NextResponse.json(data as Project, { status: 201 });
   } catch (error) {
-    console.error('Unexpected error in POST /api/projects:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleUnexpectedError('POST /api/projects', error);
   }
 }
 

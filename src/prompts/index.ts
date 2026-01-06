@@ -34,6 +34,8 @@ export { actDescriptionRecommendationPrompt } from './story/actDescriptionRecomm
 export { sceneDescriptionPrompt } from './scene/sceneDescription';
 export { dialogueImprovementPrompt } from './scene/dialogueImprovement';
 export { sceneNameSuggestionsPrompt } from './scene/sceneNameSuggestions';
+export { generateDialoguePrompt } from './scene/generateDialogue';
+export { generateOverviewPrompt } from './scene/generateOverview';
 
 // Voice prompts
 export { voiceDescriptionPrompt } from './voice/voiceDescription';
@@ -89,12 +91,14 @@ export {
 
 /**
  * Base prompt template utility
+ * Using 'any' for context to allow flexibility in prompt implementations
  */
-export interface PromptTemplate {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface PromptTemplate<T = any> {
   system: string;
-  user: (context: Record<string, any>) => string;
+  user: (context: T) => string;
 }
 
-export const createPrompt = (template: PromptTemplate, context: Record<string, any>): string => {
+export const createPrompt = <T>(template: PromptTemplate<T>, context: T): string => {
   return `${template.system}\n\n${template.user(context)}`;
 };

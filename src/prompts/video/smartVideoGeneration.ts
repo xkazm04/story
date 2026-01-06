@@ -1,4 +1,11 @@
 import { PromptTemplate } from '../index';
+import type {
+  CharacterInfo,
+  ProjectContextInfo,
+  SceneInfo,
+  VisualStyleContextInfo,
+  PreviousShot,
+} from '../types';
 
 /**
  * Smart Video Generation (Context-Aware)
@@ -12,7 +19,17 @@ Create video generation prompts that maintain visual consistency and narrative f
 Consider character appearances, scene continuity, and established visual style.
 Every shot should serve the story and maintain the established look.`,
 
-  user: (context) => {
+  user: (context: {
+    basicPrompt: string;
+    projectContext?: ProjectContextInfo;
+    sceneContext?: SceneInfo & {
+      previousScene?: SceneInfo;
+    };
+    characters?: CharacterInfo[];
+    visualStyleContext?: VisualStyleContextInfo;
+    duration?: number;
+    previousShots?: PreviousShot[];
+  }) => {
     const {
       basicPrompt,
       projectContext,
@@ -20,7 +37,7 @@ Every shot should serve the story and maintain the established look.`,
       characters,
       visualStyleContext,
       duration,
-      previousShots
+      previousShots,
     } = context;
 
     let prompt = `Create a video generation prompt for:\n`;
@@ -64,7 +81,7 @@ Every shot should serve the story and maintain the established look.`,
     // Characters in shot
     if (characters && characters.length > 0) {
       prompt += `\n=== CHARACTERS ===\n`;
-      characters.forEach((char: any) => {
+      characters.forEach((char) => {
         prompt += `\n${char.name}:\n`;
         if (char.appearance) prompt += `  Appearance: ${char.appearance}\n`;
         if (char.traits && char.traits.length > 0) {
@@ -73,14 +90,14 @@ Every shot should serve the story and maintain the established look.`,
 
         // Character dynamics
         if (char.relationships && char.relationships.length > 0) {
-          const relevantRels = char.relationships.filter((r: any) =>
-            characters.some((c: any) => c.id === r.targetCharacterId)
+          const relevantRels = char.relationships.filter((r) =>
+            characters.some((c) => c.id === r.targetCharacterId)
           );
           if (relevantRels.length > 0) {
             prompt += `  Dynamics: `;
-            prompt += relevantRels.map((r: any) =>
-              `${r.relationshipType} with ${r.targetCharacterName}`
-            ).join('; ');
+            prompt += relevantRels
+              .map((r) => `${r.relationshipType} with ${r.targetCharacterName}`)
+              .join('; ');
             prompt += `\n`;
           }
         }
@@ -90,7 +107,7 @@ Every shot should serve the story and maintain the established look.`,
     // Shot continuity
     if (previousShots && previousShots.length > 0) {
       prompt += `\n=== PREVIOUS SHOTS ===\n`;
-      previousShots.slice(-3).forEach((shot: any, idx: number) => {
+      previousShots.slice(-3).forEach((shot, idx) => {
         prompt += `Shot ${idx + 1}: ${shot.prompt || shot.description}\n`;
       });
       prompt += `(Maintain visual and narrative continuity)\n`;

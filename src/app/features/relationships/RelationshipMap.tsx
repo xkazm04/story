@@ -59,7 +59,7 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({ projectId }) => {
         setNodes(nodesWithPositions);
         setEdges(data.edges);
       } catch (err) {
-        console.error('Failed to load relationships:', err);
+        // Error is handled by setting error state
         setError(
           err instanceof Error
             ? err.message
@@ -88,7 +88,7 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({ projectId }) => {
         try {
           await updateNodePosition(projectId, nodeId, position);
         } catch (err) {
-          console.error('Failed to update node position:', err);
+          // Position update failure is silently handled - non-critical
         }
       }, 500); // 500ms debounce
     },

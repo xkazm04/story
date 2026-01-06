@@ -232,7 +232,10 @@ export function DynamicComponentLoader<P = {}>({
     load();
   };
 
-  const containerProps: any = {};
+  const containerProps: {
+    onMouseEnter?: () => void;
+    ref?: (node: HTMLDivElement | null) => void;
+  } = {};
 
   // Add preload on hover if enabled
   if (preloadOnHover && !Component) {
@@ -273,7 +276,8 @@ export function DynamicComponentLoader<P = {}>({
             transition={{ duration: 0.3, ease: 'easeOut' }}
           >
             <Suspense fallback={loadingComponent || <DefaultLoadingComponent height={loadingHeight} />}>
-              <Component {...(componentProps || {} as any)} />
+              {/* @ts-expect-error - Generic component props cannot be perfectly typed */}
+              <Component {...componentProps} />
             </Suspense>
           </motion.div>
         </AnimatePresence>

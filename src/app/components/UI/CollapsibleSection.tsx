@@ -30,14 +30,33 @@ export function CollapsibleSection({
 }: CollapsibleSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
+  const handleToggle = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleToggle();
+    }
+  };
+
   return (
-    <div className={`relative group bg-gray-850/50 backdrop-blur-sm rounded-lg overflow-hidden ${className}`}>
+    <div
+      className={`relative group bg-gray-850/50 backdrop-blur-sm rounded-lg overflow-hidden ${className}`}
+      data-testid={`collapsible-section-${title.toLowerCase().replace(/s+/g, '-')}`}
+    >
       <ColoredBorder color={borderColor} />
-      
+
       {/* Header */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between hover:bg-gray-800/50 transition-colors ${
+        type="button"
+        onClick={handleToggle}
+        onKeyDown={handleKeyDown}
+        aria-expanded={isOpen}
+        aria-controls={`collapsible-content-${title.toLowerCase().replace(/s+/g, '-')}`}
+        data-testid={`collapsible-header-${title.toLowerCase().replace(/s+/g, '-')}`}
+        className={`w-full flex items-center justify-between hover:bg-gray-800/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
           compact ? 'px-3 py-2' : 'px-4 py-3'
         }`}
       >
@@ -65,13 +84,17 @@ export function CollapsibleSection({
       </button>
 
       {/* Content */}
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
+            id={`collapsible-content-${title.toLowerCase().replace(/s+/g, '-')}`}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
+            transition={{
+              height: { duration: 0.3, ease: "easeInOut" },
+              opacity: { duration: 0.25, ease: "easeInOut" }
+            }}
             className="overflow-hidden"
           >
             <div className={`border-t border-gray-700/30 ${compact ? 'px-3 py-2' : 'px-4 py-3'}`}>
@@ -83,4 +106,3 @@ export function CollapsibleSection({
     </div>
   );
 }
-

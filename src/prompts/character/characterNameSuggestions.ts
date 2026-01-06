@@ -1,4 +1,15 @@
 import { PromptTemplate } from '../index';
+import type { CharacterNameSuggestionsContext } from '../types';
+
+interface CharacterRelationshipInfo {
+  type: string;
+  characterName: string;
+}
+
+interface ExistingCharacterInfo {
+  name: string;
+  role?: string;
+}
 
 /**
  * Character Name Suggestions Prompt
@@ -32,6 +43,7 @@ NAMING PATTERNS:
 Consider character traits, role, relationships, and story world when suggesting names.`,
 
   user: (context) => {
+    const ctx = context as CharacterNameSuggestionsContext;
     const {
       partialName,
       projectTitle,
@@ -45,7 +57,7 @@ Consider character traits, role, relationships, and story world when suggesting 
       characterAge,
       faction,
       relationships,
-    } = context;
+    } = ctx;
 
     let prompt = `Generate 5 contextually relevant character name suggestions.\n\n`;
 
@@ -95,7 +107,7 @@ Consider character traits, role, relationships, and story world when suggesting 
     // Relationships
     if (relationships && relationships.length > 0) {
       prompt += `=== KEY RELATIONSHIPS ===\n`;
-      relationships.slice(0, 5).forEach((rel: any) => {
+      relationships.slice(0, 5).forEach((rel: CharacterRelationshipInfo) => {
         prompt += `- ${rel.type} with ${rel.characterName}\n`;
       });
       prompt += `Consider names that complement these relationships.\n\n`;
@@ -104,7 +116,7 @@ Consider character traits, role, relationships, and story world when suggesting 
     // Existing characters for context
     if (existingCharacters && existingCharacters.length > 0) {
       prompt += `=== EXISTING CHARACTERS ===\n`;
-      existingCharacters.slice(0, 15).forEach((char: any) => {
+      existingCharacters.slice(0, 15).forEach((char: ExistingCharacterInfo) => {
         prompt += `- ${char.name}`;
         if (char.role) {
           prompt += ` (${char.role})`;

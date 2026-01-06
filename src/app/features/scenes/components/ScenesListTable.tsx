@@ -36,11 +36,12 @@ export default function ScenesListTable({ scenes, refetch }: ScenesListTableProp
         type: 'text',
         editable: true,
         className: 'font-medium',
-        validate: (value) => {
-          if (!value || value.trim() === '') {
+        validate: (value: unknown) => {
+          const strValue = String(value || '');
+          if (!strValue || strValue.trim() === '') {
             return 'Scene name is required';
           }
-          if (value.length > 50) {
+          if (strValue.length > 50) {
             return 'Scene name must be 50 characters or less';
           }
           return null;

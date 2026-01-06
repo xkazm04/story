@@ -1,4 +1,10 @@
 import { PromptTemplate } from '../index';
+import type { SceneInfo } from '../types';
+
+interface ExistingScene {
+  title: string;
+  location?: string;
+}
 
 /**
  * Scene Name Suggestions Prompt
@@ -26,7 +32,22 @@ SCENE NAMING CONVENTIONS:
 
 Consider the scene's purpose, location, participants, emotional tone, and story context when suggesting names.`,
 
-  user: (context) => {
+  user: (context: {
+    partialName?: string;
+    projectTitle?: string;
+    projectDescription?: string;
+    genre?: string;
+    actName?: string;
+    actDescription?: string;
+    existingScenes?: ExistingScene[];
+    characters?: string[];
+    location?: string;
+    timeOfDay?: string;
+    mood?: string;
+    previousScene?: SceneInfo;
+    nextScene?: SceneInfo;
+    sceneType?: string;
+  }) => {
     const {
       partialName,
       projectTitle,
@@ -115,7 +136,7 @@ Consider the scene's purpose, location, participants, emotional tone, and story 
     // Existing scenes for context
     if (existingScenes && existingScenes.length > 0) {
       prompt += `=== EXISTING SCENES IN ACT ===\n`;
-      existingScenes.slice(0, 12).forEach((scene: any) => {
+      existingScenes.slice(0, 12).forEach((scene) => {
         prompt += `- ${scene.title}`;
         if (scene.location) {
           prompt += ` (${scene.location})`;

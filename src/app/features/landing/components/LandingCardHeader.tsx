@@ -89,6 +89,7 @@ const LandingCardHeader = ({ project, isRenaming, setIsRenaming, setShowOverlay,
                         }}
                         className="p-2 rounded-full transition-all duration-200 hover:bg-gray-700/30 group"
                         title="Rename Project"
+                        data-testid={`rename-project-btn-${project.id}`}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400 group-hover:scale-110 transition-transform">
                             <path d="M12 20h9"></path>
@@ -104,6 +105,7 @@ const LandingCardHeader = ({ project, isRenaming, setIsRenaming, setShowOverlay,
                         }}
                         className="p-2 rounded-full transition-all duration-200 hover:bg-gray-700/30 group"
                         title="Delete Project"
+                        data-testid={`delete-project-btn-${project.id}`}
                     >
                         <Trash2 className="w-4 h-4 text-red-400 group-hover:scale-110 transition-transform" />
                     </button>
@@ -130,7 +132,7 @@ const LandingCardHeader = ({ project, isRenaming, setIsRenaming, setShowOverlay,
 
     {/* Delete Confirmation Modal */}
     {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowDeleteModal(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowDeleteModal(false)} data-testid="delete-confirmation-modal">
             <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 max-w-md" onClick={(e) => e.stopPropagation()}>
                 <h3 className="text-xl font-semibold text-white mb-4">Delete Project</h3>
                 <p className="text-gray-300 mb-6">
@@ -143,6 +145,7 @@ const LandingCardHeader = ({ project, isRenaming, setIsRenaming, setShowOverlay,
                             setShowDeleteModal(false);
                         }}
                         className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition"
+                        data-testid="cancel-delete-btn"
                     >
                         Cancel
                     </button>
@@ -152,6 +155,7 @@ const LandingCardHeader = ({ project, isRenaming, setIsRenaming, setShowOverlay,
                             handleDelete();
                         }}
                         className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                        data-testid="confirm-delete-btn"
                     >
                         Delete
                     </button>

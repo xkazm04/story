@@ -73,7 +73,14 @@ const FactionBrandingPanel: React.FC<FactionBrandingPanelProps> = ({
       queryClient.invalidateQueries({ queryKey: ['factions'] });
       onUpdate();
     } catch (err) {
-      setError('Failed to save color scheme');
+      // Enhanced error handling for validation errors
+      if (err instanceof Error) {
+        setError(err.message.includes('Invalid branding colors')
+          ? err.message
+          : 'Failed to save color scheme. Please check that all colors are in valid hex format (#RRGGBB).');
+      } else {
+        setError('Failed to save color scheme');
+      }
       console.error('Error saving colors:', err);
     } finally {
       setIsSaving(false);

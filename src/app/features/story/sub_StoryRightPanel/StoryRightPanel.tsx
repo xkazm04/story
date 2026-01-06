@@ -9,8 +9,8 @@ import { AIAssistantPanel } from '@/app/features/assistant/AIAssistantPanel';
 import type { Beat } from '@/app/types/Beat';
 
 const StoryRightPanel: React.FC = () => {
-  const { activeProjectId } = useProjectStore();
-  const { data: beats, isLoading } = beatApi.useGetBeats(activeProjectId || '');
+  const { selectedProject } = useProjectStore();
+  const { data: beats, isLoading } = beatApi.useGetBeats(selectedProject?.id || '');
 
   const [showCompleted, setShowCompleted] = useState(true);
   const [completedBeats, setCompletedBeats] = useState<Record<string, boolean>>({});
@@ -36,18 +36,18 @@ const StoryRightPanel: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-sm text-gray-500">Loading beats...</div>
+      <div className="flex items-center justify-center h-full text-sm text-slate-400">
+        Loading beats...
       </div>
     );
   }
 
   if (!beats || beats.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-500 p-4">
-        <BookOpen className="w-12 h-12 mb-2 opacity-50" />
-        <p className="text-sm text-center">No beats yet</p>
-        <p className="text-xs text-center mt-1">Create beats in the Story tab</p>
+      <div className="flex flex-col items-center justify-center h-full text-slate-500 p-4 text-sm">
+        <BookOpen className="w-10 h-10 mb-2 opacity-60" />
+        <p className="text-center text-slate-300">No beats yet</p>
+        <p className="text-xs text-center mt-1">Create beats in the Story tab.</p>
       </div>
     );
   }
@@ -90,40 +90,40 @@ const StoryRightPanel: React.FC = () => {
     open: {
       y: 0,
       opacity: 1,
-      transition: { type: 'spring', stiffness: 300, damping: 24 },
+      transition: { type: 'spring' as const, stiffness: 300, damping: 24 },
     },
     closed: { y: 20, opacity: 0 },
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full text-sm text-slate-200">
       {/* Header */}
-      <div className="p-4 border-b border-gray-700">
-        <div className="flex justify-between items-center mb-3">
-          <h2 className="text-lg font-semibold text-white">Beats</h2>
+      <div className="p-3 border-b border-slate-800/70 bg-slate-950/95">
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-sm font-semibold text-slate-50 tracking-tight">Beats</h2>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowCompleted(!showCompleted)}
               className={`
-                text-xs px-2 py-1 rounded transition-colors
+                text-[11px] px-2 py-1 rounded-lg border transition-colors
                 ${showCompleted
-                  ? 'bg-gray-700 text-white'
-                  : 'bg-gray-800 text-gray-400'
+                  ? 'bg-slate-900/80 text-slate-50 border-cyan-500/40'
+                  : 'bg-slate-950/80 text-slate-400 border-slate-800 hover:bg-slate-900'
                 }
               `}
             >
               {showCompleted ? 'Hide Done' : 'Show Done'}
             </button>
-            <button className="p-2 bg-amber-600 hover:bg-amber-700 rounded-lg text-white shadow-lg transition-colors">
+            <button className="p-1.5 bg-cyan-600/20 hover:bg-cyan-600/30 rounded-lg text-slate-50 border border-cyan-500/40 shadow-sm shadow-cyan-500/30">
               <PlusIcon size={16} />
             </button>
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+        <div className="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-amber-600 rounded-full"
+            className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"
             initial={{ width: '0%' }}
             animate={{ width: `${completionPercentage}%` }}
             transition={{ duration: 0.6 }}
@@ -131,7 +131,7 @@ const StoryRightPanel: React.FC = () => {
         </div>
 
         <div className="flex justify-end mt-1">
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-slate-500">
             {completedCount}/{totalCount} completed
           </span>
         </div>
@@ -143,17 +143,17 @@ const StoryRightPanel: React.FC = () => {
         {actBeats.length > 0 && (
           <div className="mb-3">
             <button
-              className="w-full px-3 py-2 flex justify-between items-center text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
+              className="w-full px-3 py-2 flex justify-between items-center text-xs font-medium rounded-lg hover:bg-slate-900 transition-colors text-slate-200"
               onClick={() => toggleSection('act')}
             >
               <span className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
                 Act Beats ({actBeats.length})
               </span>
               {expandedSections.act ? (
-                <ChevronUp className="h-4 w-4 text-gray-400" />
+                <ChevronUp className="h-3.5 w-3.5 text-slate-500" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-gray-400" />
+                <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
               )}
             </button>
 
@@ -171,9 +171,9 @@ const StoryRightPanel: React.FC = () => {
                       key={beat.id}
                       variants={itemVariants}
                       className={`
-                        pl-6 pr-2 py-2 my-1 mx-1 rounded-lg group hover:bg-gray-800 flex items-start
+                        pl-6 pr-2 py-1.5 my-1 mx-1 rounded-lg group hover:bg-slate-900 flex items-start
                         transition-all cursor-pointer
-                        ${completedBeats[beat.id] ? 'opacity-50' : ''}
+                        ${completedBeats[beat.id] ? 'opacity-60' : ''}
                       `}
                     >
                       <button
@@ -184,27 +184,27 @@ const StoryRightPanel: React.FC = () => {
                         className="mt-0.5 mr-2 shrink-0"
                       >
                         {completedBeats[beat.id] ? (
-                          <motion.div
+                            <motion.div
                             initial={{ scale: 0.8 }}
                             animate={{ scale: 1 }}
-                            className="text-amber-500"
+                            className="text-cyan-400"
                           >
                             <CheckCircle className="h-4 w-4" />
                           </motion.div>
                         ) : (
-                          <Circle className="h-4 w-4 text-gray-500" />
+                          <Circle className="h-4 w-4 text-slate-600" />
                         )}
                       </button>
                       <div className="flex-1 min-w-0">
                         <div
-                          className={`text-sm font-medium ${
-                            completedBeats[beat.id] ? 'line-through text-gray-500' : 'text-white'
+                          className={`text-xs font-medium ${
+                            completedBeats[beat.id] ? 'line-through text-slate-500' : 'text-slate-100'
                           }`}
                         >
                           {beat.name}
                         </div>
                         {beat.description && (
-                          <div className="text-xs text-gray-400 line-clamp-2 mt-1">
+                          <div className="text-[11px] text-slate-400 line-clamp-2 mt-1">
                             {beat.description}
                           </div>
                         )}
@@ -221,17 +221,17 @@ const StoryRightPanel: React.FC = () => {
         {storyBeats.length > 0 && (
           <div className="mb-3">
             <button
-              className="w-full px-3 py-2 flex justify-between items-center text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
+              className="w-full px-3 py-2 flex justify-between items-center text-xs font-medium rounded-lg hover:bg-slate-900 transition-colors text-slate-200"
               onClick={() => toggleSection('story')}
             >
               <span className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
                 Story Beats ({storyBeats.length})
               </span>
               {expandedSections.story ? (
-                <ChevronUp className="h-4 w-4 text-gray-400" />
+                <ChevronUp className="h-3.5 w-3.5 text-slate-500" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-gray-400" />
+                <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
               )}
             </button>
 
@@ -249,9 +249,9 @@ const StoryRightPanel: React.FC = () => {
                       key={beat.id}
                       variants={itemVariants}
                       className={`
-                        pl-6 pr-2 py-2 my-1 mx-1 rounded-lg group hover:bg-gray-800 flex items-start
+                        pl-6 pr-2 py-1.5 my-1 mx-1 rounded-lg group hover:bg-slate-900 flex items-start
                         transition-all cursor-pointer
-                        ${completedBeats[beat.id] ? 'opacity-50' : ''}
+                        ${completedBeats[beat.id] ? 'opacity-60' : ''}
                       `}
                     >
                       <button
@@ -262,7 +262,7 @@ const StoryRightPanel: React.FC = () => {
                         className="mt-0.5 mr-2 shrink-0"
                       >
                         {completedBeats[beat.id] ? (
-                          <motion.div
+                            <motion.div
                             initial={{ scale: 0.8 }}
                             animate={{ scale: 1 }}
                             className="text-purple-500"
@@ -270,19 +270,19 @@ const StoryRightPanel: React.FC = () => {
                             <CheckCircle className="h-4 w-4" />
                           </motion.div>
                         ) : (
-                          <Circle className="h-4 w-4 text-gray-500" />
+                          <Circle className="h-4 w-4 text-slate-600" />
                         )}
                       </button>
                       <div className="flex-1 min-w-0">
                         <div
-                          className={`text-sm font-medium ${
-                            completedBeats[beat.id] ? 'line-through text-gray-500' : 'text-white'
+                          className={`text-xs font-medium ${
+                            completedBeats[beat.id] ? 'line-through text-slate-500' : 'text-slate-100'
                           }`}
                         >
                           {beat.name}
                         </div>
                         {beat.description && (
-                          <div className="text-xs text-gray-400 line-clamp-2 mt-1">
+                          <div className="text-[11px] text-slate-400 line-clamp-2 mt-1">
                             {beat.description}
                           </div>
                         )}
@@ -298,17 +298,17 @@ const StoryRightPanel: React.FC = () => {
         {/* AI Assistant Section */}
         <div className="mb-3">
           <button
-            className="w-full px-3 py-2 flex justify-between items-center text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
+            className="w-full px-3 py-2 flex justify-between items-center text-xs font-medium rounded-lg hover:bg-slate-900 transition-colors text-slate-200"
             onClick={() => toggleSection('assistant')}
           >
             <span className="flex items-center gap-2">
-              <Sparkles className="w-3 h-3 text-purple-400" />
+              <Sparkles className="w-3 h-3 text-cyan-400" />
               AI Assistant
             </span>
             {expandedSections.assistant ? (
-              <ChevronUp className="h-4 w-4 text-gray-400" />
+              <ChevronUp className="h-3.5 w-3.5 text-slate-500" />
             ) : (
-              <ChevronDown className="h-4 w-4 text-gray-400" />
+              <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
             )}
           </button>
 
@@ -323,7 +323,7 @@ const StoryRightPanel: React.FC = () => {
               >
                 <div className="mt-2">
                   <AIAssistantPanel
-                    projectId={activeProjectId || undefined}
+                    projectId={selectedProject?.id}
                     contextType="beat"
                   />
                 </div>

@@ -1,4 +1,5 @@
 import { PromptTemplate } from '../index';
+import type { ActDescriptionRecommendationContext, ActInfo, BeatInfo } from '../types';
 
 /**
  * Act Description Recommendation Prompt
@@ -60,6 +61,7 @@ IMPORTANT:
 - Be conservative - it's better to suggest no changes than unnecessary ones`,
 
   user: (context) => {
+    const ctx = context as ActDescriptionRecommendationContext;
     const {
       newBeat,
       targetAct,
@@ -67,7 +69,7 @@ IMPORTANT:
       projectDescription,
       storyBeats,
       allScenes
-    } = context;
+    } = ctx;
 
     let prompt = `=== NEW BEAT ADDED ===\n`;
     prompt += `Beat Name: "${newBeat.name}"\n`;
@@ -83,30 +85,30 @@ IMPORTANT:
 
     // Project context
     prompt += `\n=== PROJECT CONTEXT ===\n`;
-    prompt += `Project: "${context.projectTitle || 'Untitled'}"\n`;
+    prompt += `Project: "${ctx.projectTitle || 'Untitled'}"\n`;
     if (projectDescription) {
       prompt += `Synopsis: ${projectDescription}\n`;
     }
 
     // All acts for context
     prompt += `\n=== ALL ACTS (Story Structure) ===\n`;
-    allActs.forEach((act: any, idx: number) => {
+    allActs.forEach((act: ActInfo, idx: number) => {
       prompt += `\nAct ${idx + 1}: "${act.name}"\n`;
       if (act.description) {
         prompt += `Description: ${act.description}\n`;
       }
 
       // Include existing beats for this act
-      const actBeats = context.existingActBeats?.[act.id] || [];
+      const actBeats = ctx.existingActBeats?.[act.id] || [];
       if (actBeats.length > 0) {
-        prompt += `Existing Beats: ${actBeats.map((b: any) => b.name).join(', ')}\n`;
+        prompt += `Existing Beats: ${actBeats.map((b: BeatInfo) => b.name).join(', ')}\n`;
       }
     });
 
     // Story-level beats for thematic context
     if (storyBeats && storyBeats.length > 0) {
       prompt += `\n=== STORY-LEVEL BEATS ===\n`;
-      storyBeats.forEach((beat: any, idx: number) => {
+      storyBeats.forEach((beat: BeatInfo, idx: number) => {
         prompt += `${idx + 1}. ${beat.name}`;
         if (beat.description) prompt += `: ${beat.description}`;
         prompt += `\n`;
@@ -116,9 +118,9 @@ IMPORTANT:
     // Key scenes for concrete context
     if (allScenes && allScenes.length > 0) {
       prompt += `\n=== SCENES IN TARGET ACT ===\n`;
-      const targetActScenes = allScenes.filter((s: any) => s.act_id === targetAct.id);
+      const targetActScenes = allScenes.filter((s) => s.act_id === targetAct.id);
       if (targetActScenes.length > 0) {
-        targetActScenes.forEach((scene: any) => {
+        targetActScenes.forEach((scene) => {
           prompt += `- ${scene.name}`;
           if (scene.description) prompt += `: ${scene.description.substring(0, 100)}${scene.description.length > 100 ? '...' : ''}`;
           prompt += `\n`;

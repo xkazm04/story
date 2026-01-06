@@ -1,61 +1,39 @@
 import { Scene, SceneCreateInput, SceneUpdateInput } from '../../types/Scene';
-import { apiFetch, useApiGet, API_BASE_URL, USE_MOCK_DATA } from '../../utils/api';
-import { useQuery } from '@tanstack/react-query';
-import { mockScenes, simulateApiCall } from '../../../../db/mockData';
+import { apiFetch, API_BASE_URL } from '../../utils/api';
+import { mockScenes } from '../../../../db/mockData';
+import { createMockableQuery, createFilteredMockQueryFn, createSingleMockQueryFn } from './queryHelpers';
 
 const SCENES_URL = `${API_BASE_URL}/scenes`;
 
 export const sceneApi = {
   // Get all scenes for a project
   useProjectScenes: (projectId: string, enabled: boolean = true) => {
-    if (USE_MOCK_DATA) {
-      return useQuery<Scene[]>({
-        queryKey: ['scenes', 'project', projectId],
-        queryFn: async () => {
-          const filtered = mockScenes.filter(s => s.project_id === projectId);
-          return simulateApiCall(filtered);
-        },
-        enabled: enabled && !!projectId,
-        staleTime: 5 * 60 * 1000,
-      });
-    }
-    const url = `${SCENES_URL}?projectId=${projectId}`;
-    return useApiGet<Scene[]>(url, enabled && !!projectId);
+    return createMockableQuery<Scene[]>(
+      ['scenes', 'project', projectId],
+      () => createFilteredMockQueryFn(mockScenes, s => s.project_id === projectId),
+      `${SCENES_URL}?projectId=${projectId}`,
+      enabled && !!projectId
+    );
   },
 
   // Get scenes by project and act
   useScenesByProjectAndAct: (projectId: string, actId: string, enabled: boolean = true) => {
-    if (USE_MOCK_DATA) {
-      return useQuery<Scene[]>({
-        queryKey: ['scenes', 'project', projectId, 'act', actId],
-        queryFn: async () => {
-          const filtered = mockScenes.filter(s => s.project_id === projectId && s.act_id === actId);
-          return simulateApiCall(filtered);
-        },
-        enabled: enabled && !!projectId && !!actId,
-        staleTime: 5 * 60 * 1000,
-      });
-    }
-    const url = `${SCENES_URL}?projectId=${projectId}&actId=${actId}`;
-    return useApiGet<Scene[]>(url, enabled && !!projectId && !!actId);
+    return createMockableQuery<Scene[]>(
+      ['scenes', 'project', projectId, 'act', actId],
+      () => createFilteredMockQueryFn(mockScenes, s => s.project_id === projectId && s.act_id === actId),
+      `${SCENES_URL}?projectId=${projectId}&actId=${actId}`,
+      enabled && !!projectId && !!actId
+    );
   },
 
   // Get a single scene
   useScene: (id: string, enabled: boolean = true) => {
-    if (USE_MOCK_DATA) {
-      return useQuery<Scene>({
-        queryKey: ['scenes', id],
-        queryFn: async () => {
-          const scene = mockScenes.find(s => s.id === id);
-          if (!scene) throw new Error('Scene not found');
-          return simulateApiCall(scene);
-        },
-        enabled: enabled && !!id,
-        staleTime: 5 * 60 * 1000,
-      });
-    }
-    const url = `${SCENES_URL}/${id}`;
-    return useApiGet<Scene>(url, enabled && !!id);
+    return createMockableQuery<Scene>(
+      ['scenes', id],
+      () => createSingleMockQueryFn(mockScenes, s => s.id === id, 'Scene not found'),
+      `${SCENES_URL}/${id}`,
+      enabled && !!id
+    );
   },
 
   // Create scene

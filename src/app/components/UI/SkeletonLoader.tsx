@@ -9,6 +9,55 @@ interface SkeletonLoaderProps {
   count?: number;
 }
 
+// Reusable color configuration
+const colorClasses = {
+  blue: {
+    shimmer: 'from-blue-500/10 via-blue-400/30 to-blue-500/10',
+    border: 'from-transparent via-blue-500/50 to-transparent',
+    glow: 'shadow-blue-500/20',
+  },
+  green: {
+    shimmer: 'from-green-500/10 via-green-400/30 to-green-500/10',
+    border: 'from-transparent via-green-500/50 to-transparent',
+    glow: 'shadow-green-500/20',
+  },
+  purple: {
+    shimmer: 'from-purple-500/10 via-purple-400/30 to-purple-500/10',
+    border: 'from-transparent via-purple-500/50 to-transparent',
+    glow: 'shadow-purple-500/20',
+  },
+};
+
+// Reusable shimmer animation component
+const ShimmerAnimation: React.FC<{ shimmerClass: string; duration?: number }> = ({
+  shimmerClass,
+  duration = 2,
+}) => (
+  <div className="absolute inset-0 -translate-x-full">
+    <motion.div
+      className={`absolute inset-0 bg-gradient-to-r ${shimmerClass}`}
+      animate={{
+        translateX: ['0%', '200%'],
+      }}
+      transition={{
+        duration,
+        repeat: Infinity,
+        ease: 'linear',
+      }}
+    />
+  </div>
+);
+
+// Reusable colored borders component
+const ColoredBorders: React.FC<{ borderClass: string }> = ({ borderClass }) => (
+  <>
+    <div className={`absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r ${borderClass}`} />
+    <div className={`absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r ${borderClass} opacity-60`} />
+    <div className={`absolute top-0 left-0 h-full w-[1px] bg-gradient-to-b ${borderClass}`} />
+    <div className={`absolute top-0 right-0 h-full w-[1px] bg-gradient-to-b ${borderClass} opacity-60`} />
+  </>
+);
+
 /**
  * SkeletonLoader component with shimmer animation matching ColoredBorder design pattern
  * Provides animated skeleton states for different UI patterns
@@ -18,24 +67,6 @@ const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
   color = 'blue',
   count = 1,
 }) => {
-  const colorClasses = {
-    blue: {
-      shimmer: 'from-blue-500/10 via-blue-400/30 to-blue-500/10',
-      border: 'from-transparent via-blue-500/50 to-transparent',
-      glow: 'shadow-blue-500/20',
-    },
-    green: {
-      shimmer: 'from-green-500/10 via-green-400/30 to-green-500/10',
-      border: 'from-transparent via-green-500/50 to-transparent',
-      glow: 'shadow-green-500/20',
-    },
-    purple: {
-      shimmer: 'from-purple-500/10 via-purple-400/30 to-purple-500/10',
-      border: 'from-transparent via-purple-500/50 to-transparent',
-      glow: 'shadow-purple-500/20',
-    },
-  };
-
   const colors = colorClasses[color];
 
   // Skeleton Card (for FactionCard, CharacterCard)
@@ -45,26 +76,8 @@ const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
       animate={{ opacity: 1, scale: 1 }}
       className="relative bg-gray-900 rounded-lg border border-gray-800 p-6 overflow-hidden"
     >
-      {/* Animated shimmer overlay */}
-      <div className="absolute inset-0 -translate-x-full">
-        <motion.div
-          className={`absolute inset-0 bg-gradient-to-r ${colors.shimmer}`}
-          animate={{
-            translateX: ['0%', '200%'],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: 'linear',
-          }}
-        />
-      </div>
-
-      {/* Colored borders */}
-      <div className={`absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r ${colors.border}`} />
-      <div className={`absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r ${colors.border} opacity-60`} />
-      <div className={`absolute top-0 left-0 h-full w-[1px] bg-gradient-to-b ${colors.border}`} />
-      <div className={`absolute top-0 right-0 h-full w-[1px] bg-gradient-to-b ${colors.border} opacity-60`} />
+      <ShimmerAnimation shimmerClass={colors.shimmer} duration={2} />
+      <ColoredBorders borderClass={colors.border} />
 
       {/* Content skeleton */}
       <div className="relative space-y-3">
@@ -85,20 +98,7 @@ const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
       animate={{ opacity: 1, x: 0 }}
       className="relative bg-gray-900/50 rounded-lg border border-gray-800 p-4 overflow-hidden"
     >
-      {/* Animated shimmer */}
-      <div className="absolute inset-0 -translate-x-full">
-        <motion.div
-          className={`absolute inset-0 bg-gradient-to-r ${colors.shimmer}`}
-          animate={{
-            translateX: ['0%', '200%'],
-          }}
-          transition={{
-            duration: 1.5,
-            repeat: Infinity,
-            ease: 'linear',
-          }}
-        />
-      </div>
+      <ShimmerAnimation shimmerClass={colors.shimmer} duration={1.5} />
 
       <div className="relative flex items-center gap-4">
         <div className="w-12 h-12 bg-gray-800 rounded-lg animate-pulse" />
@@ -117,20 +117,7 @@ const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
       animate={{ opacity: 1, y: 0 }}
       className="relative bg-gray-900 rounded-lg border border-gray-800 p-6 overflow-hidden"
     >
-      {/* Animated shimmer */}
-      <div className="absolute inset-0 -translate-x-full">
-        <motion.div
-          className={`absolute inset-0 bg-gradient-to-r ${colors.shimmer}`}
-          animate={{
-            translateX: ['0%', '200%'],
-          }}
-          transition={{
-            duration: 2.5,
-            repeat: Infinity,
-            ease: 'linear',
-          }}
-        />
-      </div>
+      <ShimmerAnimation shimmerClass={colors.shimmer} duration={2.5} />
 
       <div className="relative space-y-4">
         {/* Form title */}
@@ -162,26 +149,8 @@ const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
     >
       {/* Header Card */}
       <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6 overflow-hidden">
-        {/* Animated shimmer */}
-        <div className="absolute inset-0 -translate-x-full">
-          <motion.div
-            className={`absolute inset-0 bg-gradient-to-r ${colors.shimmer}`}
-            animate={{
-              translateX: ['0%', '200%'],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: 'linear',
-            }}
-          />
-        </div>
-
-        {/* Colored borders */}
-        <div className={`absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r ${colors.border}`} />
-        <div className={`absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r ${colors.border} opacity-60`} />
-        <div className={`absolute top-0 left-0 h-full w-[1px] bg-gradient-to-b ${colors.border}`} />
-        <div className={`absolute top-0 right-0 h-full w-[1px] bg-gradient-to-b ${colors.border} opacity-60`} />
+        <ShimmerAnimation shimmerClass={colors.shimmer} duration={2} />
+        <ColoredBorders borderClass={colors.border} />
 
         <div className="relative flex gap-6">
           {/* Avatar skeleton */}
@@ -208,20 +177,7 @@ const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
 
       {/* Content skeleton */}
       <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6 overflow-hidden">
-        <div className="absolute inset-0 -translate-x-full">
-          <motion.div
-            className={`absolute inset-0 bg-gradient-to-r ${colors.shimmer}`}
-            animate={{
-              translateX: ['0%', '200%'],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: 'linear',
-              delay: 0.3,
-            }}
-          />
-        </div>
+        <ShimmerAnimation shimmerClass={colors.shimmer} duration={2} />
 
         <div className="relative space-y-3">
           {[1, 2, 3, 4].map((i) => (

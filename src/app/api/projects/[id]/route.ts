@@ -1,6 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
 import { Project } from '@/app/types/Project';
+import { logger } from '@/app/utils/logger';
+import { HTTP_STATUS, createErrorResponse } from '@/app/utils/apiErrorHandling';
+
+/**
+ * Fetches a project by ID from the database
+ */
+async function fetchProject(id: string) {
+  const { data, error } = await supabaseServer
+    .from('projects')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  return { data, error };
+}
+
+/**
+ * Updates a project in the database
+ */
+async function updateProject(id: string, updateData: Partial<Project>) {
+  const { data, error } = await supabaseServer
+    .from('projects')
+    .update(updateData)
+    .eq('id', id)
+    .select()
+    .single();
+
+  return { data, error };
+}
+
+/**
+ * Deletes a project from the database
+ */
+async function deleteProject(id: string) {
+  const { error } = await supabaseServer
+    .from('projects')
+    .delete()
+    .eq('id', id);
+
+  return { error };
+}
 
 /**
  * GET /api/projects/[id]
@@ -13,27 +54,17 @@ export async function GET(
   try {
     const { id } = await params;
 
-    const { data, error } = await supabaseServer
-      .from('projects')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const { data, error } = await fetchProject(id);
 
     if (error) {
-      console.error('Error fetching project:', error);
-      return NextResponse.json(
-        { error: 'Project not found' },
-        { status: 404 }
-      );
+      logger.apiError('GET /api/projects/[id]', error, { projectId: id });
+      return createErrorResponse('Project not found', HTTP_STATUS.NOT_FOUND);
     }
 
     return NextResponse.json(data as Project);
   } catch (error) {
-    console.error('Unexpected error in GET /api/projects/[id]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.apiError('GET /api/projects/[id]', error);
+    return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }
 
@@ -54,28 +85,17 @@ export async function PUT(
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
 
-    const { data, error } = await supabaseServer
-      .from('projects')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
+    const { data, error } = await updateProject(id, updateData);
 
     if (error) {
-      console.error('Error updating project:', error);
-      return NextResponse.json(
-        { error: 'Failed to update project' },
-        { status: 500 }
-      );
+      logger.apiError('PUT /api/projects/[id]', error, { projectId: id });
+      return createErrorResponse('Failed to update project', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
     return NextResponse.json(data as Project);
   } catch (error) {
-    console.error('Unexpected error in PUT /api/projects/[id]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.apiError('PUT /api/projects/[id]', error);
+    return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }
 
@@ -90,27 +110,16 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    const { error } = await supabaseServer
-      .from('projects')
-      .delete()
-      .eq('id', id);
+    const { error } = await deleteProject(id);
 
     if (error) {
-      console.error('Error deleting project:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete project' },
-        { status: 500 }
-      );
+      logger.apiError('DELETE /api/projects/[id]', error, { projectId: id });
+      return createErrorResponse('Failed to delete project', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    return NextResponse.json({ success: true }, { status: HTTP_STATUS.OK });
   } catch (error) {
-    console.error('Unexpected error in DELETE /api/projects/[id]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.apiError('DELETE /api/projects/[id]', error);
+    return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }
-
-

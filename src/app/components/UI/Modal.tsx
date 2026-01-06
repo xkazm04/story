@@ -155,10 +155,10 @@ export function Modal({
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 260, mass: 0.8 }}
             className={clsx(
-              'relative w-full max-h-[90vh] bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900',
-              'border-2 border-cyan-500/30 rounded-xl shadow-2xl shadow-cyan-500/20',
+              'relative w-full max-h-[90vh] bg-slate-950/90',
+              'border border-slate-800/80 rounded-xl shadow-xl shadow-black/40',
               'flex flex-col',
               sizeClasses[size],
               className
@@ -168,7 +168,7 @@ export function Modal({
             {/* Header */}
             {(title || showCloseButton) && (
               <div
-                className="flex items-center justify-between px-4 py-3 border-b border-gray-700/50 flex-shrink-0"
+                className="flex items-center justify-between px-4 py-3 border-b border-slate-800/70 flex-shrink-0"
                 data-testid="modal-header"
               >
                 <div className="flex items-center gap-2.5">
@@ -186,14 +186,14 @@ export function Modal({
                     <div>
                       <h2
                         id="modal-title"
-                        className="text-base font-semibold text-white"
+                          className="text-sm font-semibold text-slate-50"
                         data-testid="modal-title"
                       >
                         {title}
                       </h2>
                       {subtitle && (
                         <p
-                          className="text-xs text-gray-400 mt-0.5"
+                          className="text-xs text-slate-400 mt-0.5"
                           data-testid="modal-subtitle"
                         >
                           {subtitle}
@@ -217,7 +217,7 @@ export function Modal({
 
             {/* Scrollable Content */}
             <div
-              className="flex-1 overflow-y-auto p-4"
+              className="flex-1 overflow-y-auto p-4 text-sm text-slate-200"
               data-testid="modal-content"
             >
               {children}
@@ -226,7 +226,7 @@ export function Modal({
             {/* Footer */}
             {footer && (
               <div
-                className="flex items-center justify-between px-4 py-3 border-t border-gray-700/50 bg-gray-800/50 flex-shrink-0"
+                className="flex items-center justify-between px-4 py-3 border-t border-slate-800/70 bg-slate-900/60 flex-shrink-0"
                 data-testid="modal-footer"
               >
                 {footer}

@@ -6,8 +6,12 @@ import StepperNav from "./StepperNav";
 import { narratorMaleSelection, narratorFemaleSelection, projectTypes, templateSelection } from "@/app/constants/landingCards";
 import StepperOverview from "./StepperOverview";
 import StepperItem from "./StepperItem";
+import StepperAITemplate from "./StepperAITemplate";
 import { projectApi } from "@/app/hooks/integration/useProjects";
 import { MOCK_USER_ID } from "@/app/config/mockUser";
+import { ProjectTemplate } from "@/app/constants/templateCorpus";
+import { ConfettiCelebration } from "@/app/components/UI/ConfettiCelebration";
+import { useToast } from "@/app/components/UI/ToastContainer";
 
 type Objective = {
   id: string;
@@ -45,6 +49,7 @@ type Props = {
 
 const StepperLayout = ({ setShowGuide, userId = MOCK_USER_ID }: Props) => {
   const createProjectMutation = projectApi.useCreateProject();
+  const { showToast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
@@ -63,6 +68,9 @@ const StepperLayout = ({ setShowGuide, userId = MOCK_USER_ID }: Props) => {
   const [characters, setCharacters] = useState<Character[]>([
     { id: "char-1", name: "", type: "protagonist" }
   ]);
+  const [useAITemplate, setUseAITemplate] = useState(false);
+  const [aiTemplateGenerated, setAiTemplateGenerated] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
 
   useEffect(() => {
@@ -83,7 +91,7 @@ const StepperLayout = ({ setShowGuide, userId = MOCK_USER_ID }: Props) => {
     { id: 1, title: "Select type", items: projectTypes },
     { id: 2, title: "Narrator", items: narratorSelection },
     { id: 3, title: "Template", items: templateSelection },
-    { id: 4, title: "Project overview", items: [] }
+    { id: 4, title: useAITemplate ? "AI Template Generator" : "Project overview", items: [] }
   ];
 
   // Get current step data
@@ -101,6 +109,39 @@ const StepperLayout = ({ setShowGuide, userId = MOCK_USER_ID }: Props) => {
     }
   };
 
+  const handleTemplateGenerated = (template: ProjectTemplate) => {
+    // Apply template to project
+    setProjectName(template.name);
+    setProjectDescription(template.description);
+
+    // Convert template characters to project characters
+    const templateChars = template.characters.map((char, idx) => ({
+      id: `char-${idx + 1}`,
+      name: char.name,
+      type: char.type
+    }));
+    if (templateChars.length > 0) {
+      setCharacters(templateChars);
+    }
+
+    // Convert template objectives to project objectives
+    const templateObjs = template.objectives.map((obj, idx) => ({
+      id: `obj-${idx + 1}`,
+      name: obj.name
+    }));
+    if (templateObjs.length > 0) {
+      setObjectives(templateObjs);
+    }
+
+    setAiTemplateGenerated(true);
+    setCurrentStep(5); // Move to overview step (will be created as step 5)
+  };
+
+  const handleSkipAITemplate = () => {
+    setUseAITemplate(false);
+    setCurrentStep(5); // Move to overview step
+  };
+
   const handleProjectCreate = () => {
     createProjectMutation.mutate(
       {
@@ -112,10 +153,21 @@ const StepperLayout = ({ setShowGuide, userId = MOCK_USER_ID }: Props) => {
       {
         onSuccess: () => {
           console.log('Project created successfully!');
-          setShowGuide(false);
+
+          // Trigger confetti celebration
+          setShowConfetti(true);
+
+          // Show success toast with celebration message
+          showToast('New adventure unlocked!', 'success', 3000);
+
+          // Close guide after a brief delay to allow confetti to display
+          setTimeout(() => {
+            setShowGuide(false);
+          }, 1500);
         },
         onError: () => {
           console.error('Error creating project:');
+          showToast('Failed to create project. Please try again.', 'error', 4000);
         }
       }
     );
@@ -124,6 +176,9 @@ const StepperLayout = ({ setShowGuide, userId = MOCK_USER_ID }: Props) => {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-2 flex flex-col" style={{ height: '100vh' }}>
+      {/* Confetti Celebration */}
+      <ConfettiCelebration trigger={showConfetti} />
+
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStep}

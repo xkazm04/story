@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
 import { Act } from '@/app/types/Act';
+import { logger } from '@/app/utils/logger';
+import { HTTP_STATUS } from '@/app/utils/apiErrorHandling';
 
 /**
  * GET /api/acts/[id]
@@ -20,19 +22,19 @@ export async function GET(
       .single();
 
     if (error) {
-      console.error('Error fetching act:', error);
+      logger.apiError('GET /api/acts/[id]', error, { actId: id });
       return NextResponse.json(
         { error: 'Act not found' },
-        { status: 404 }
+        { status: HTTP_STATUS.NOT_FOUND }
       );
     }
 
     return NextResponse.json(data as Act);
   } catch (error) {
-    console.error('Unexpected error in GET /api/acts/[id]:', error);
+    logger.apiError('GET /api/acts/[id]', error, { actId: await context.params.then(p => p.id) });
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -57,19 +59,19 @@ export async function PUT(
       .single();
 
     if (error) {
-      console.error('Error updating act:', error);
+      logger.apiError('PUT /api/acts/[id]', error, { actId: id });
       return NextResponse.json(
         { error: 'Failed to update act' },
-        { status: 500 }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
       );
     }
 
     return NextResponse.json(data as Act);
   } catch (error) {
-    console.error('Unexpected error in PUT /api/acts/[id]:', error);
+    logger.apiError('PUT /api/acts/[id]', error, { actId: await context.params.then(p => p.id) });
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
@@ -91,19 +93,19 @@ export async function DELETE(
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting act:', error);
+      logger.apiError('DELETE /api/acts/[id]', error, { actId: id });
       return NextResponse.json(
         { error: 'Failed to delete act' },
-        { status: 500 }
+        { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
       );
     }
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    return NextResponse.json({ success: true }, { status: HTTP_STATUS.OK });
   } catch (error) {
-    console.error('Unexpected error in DELETE /api/acts/[id]:', error);
+    logger.apiError('DELETE /api/acts/[id]', error, { actId: await context.params.then(p => p.id) });
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }

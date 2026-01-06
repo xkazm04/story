@@ -130,12 +130,12 @@ const CharacterConsistencyPanel: React.FC<CharacterConsistencyPanelProps> = ({
     return 'text-red-400';
   };
 
-  const getScoreBorderColor = (score: number) => {
+  const getScoreBorderColor = (score: number): 'blue' | 'green' | 'purple' | 'yellow' | 'pink' | 'orange' | 'gray' => {
     if (score >= 90) return 'green';
     if (score >= 70) return 'blue';
     if (score >= 50) return 'yellow';
     if (score >= 30) return 'orange';
-    return 'red';
+    return 'gray';
   };
 
   return (
@@ -235,7 +235,7 @@ const CharacterConsistencyPanel: React.FC<CharacterConsistencyPanelProps> = ({
                     className={`relative bg-gray-900 rounded-lg border ${severityColors[issue.severity]} overflow-hidden`}
                     data-testid={`consistency-issue-${issue.id}`}
                   >
-                    <ColoredBorder color={issue.severity === 'critical' ? 'red' : issue.severity === 'high' ? 'orange' : issue.severity === 'medium' ? 'yellow' : 'blue'} />
+                    <ColoredBorder color={issue.severity === 'critical' ? 'gray' : issue.severity === 'high' ? 'orange' : issue.severity === 'medium' ? 'yellow' : 'blue'} />
 
                     {/* Issue Header */}
                     <button

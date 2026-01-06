@@ -5,7 +5,7 @@ import { Modal } from '@/app/components/UI/Modal';
 import { Input } from '@/app/components/UI/Input';
 import { Textarea } from '@/app/components/UI/Textarea';
 import { Button } from '@/app/components/UI/Button';
-import { Edit, Sparkles, Loader2, Save } from 'lucide-react';
+import { Edit, Sparkles, Loader2, Save, BookOpen } from 'lucide-react';
 import { Project } from '@/app/types/Project';
 import { projectApi } from '@/app/hooks/integration/useProjects';
 import { useLLM } from '@/app/hooks/useLLM';
@@ -14,6 +14,8 @@ import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { actApi } from '@/app/hooks/integration/useActs';
 import { sceneApi } from '@/app/hooks/integration/useScenes';
 import { useQueryClient } from '@tanstack/react-query';
+import { TypewriterLoading } from '@/app/components/UI/TypewriterLoading';
+import { motion } from 'framer-motion';
 
 interface ProjectEditModalProps {
   isOpen: boolean;
@@ -181,9 +183,29 @@ const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen, onClose, pr
               size="sm"
               onClick={handleGenerateInspiration}
               disabled={isSaving || isGenerating}
-              icon={isGenerating ? <Loader2 className="animate-spin" size={14} /> : <Sparkles size={14} />}
+              icon={
+                isGenerating ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: 'linear'
+                    }}
+                  >
+                    <BookOpen size={14} />
+                  </motion.div>
+                ) : (
+                  <Sparkles size={14} />
+                )
+              }
+              data-testid="ai-inspire-btn"
             >
-              {isGenerating ? 'Generating...' : 'AI Inspire'}
+              {isGenerating ? (
+                <TypewriterLoading text="Gathering ideas..." className="text-xs" />
+              ) : (
+                'AI Inspire'
+              )}
             </Button>
           </div>
 

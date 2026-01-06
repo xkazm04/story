@@ -32,17 +32,21 @@ export type FieldType =
 
 /**
  * Validation rule for a schema field
+ * Note: Uses `any` for value parameter to support dynamic schema validation
  */
 export interface ValidationRule {
   type: 'required' | 'min' | 'max' | 'pattern' | 'custom';
-  value?: any;
+  value?: string | number | boolean | RegExp;
   message: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   validator?: (value: any, entity: any) => boolean;
 }
 
 /**
  * Schema field definition with metadata for UI generation
+ * Note: Uses `any` for generic factory patterns that handle arbitrary data types
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface SchemaField<T = any> {
   key: keyof T & string;
   label: string;
@@ -51,6 +55,7 @@ export interface SchemaField<T = any> {
   // Metadata
   description?: string;
   placeholder?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   defaultValue?: any;
 
   // Validation
@@ -65,14 +70,19 @@ export interface SchemaField<T = any> {
 
   // Display
   width?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   format?: (value: any, entity: T) => string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   render?: (value: any, entity: T) => ReactNode;
 
   // Select options (for select/multiselect types)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   options?: Array<{ label: string; value: any; color?: string }>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   optionsProvider?: () => Promise<Array<{ label: string; value: any }>>;
 
   // Custom rendering
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   renderEdit?: (value: any, onChange: (value: any) => void, entity: T) => ReactNode;
 
   // Conditional display
@@ -86,6 +96,7 @@ export interface SchemaField<T = any> {
 /**
  * Entity action definition (CRUD operations)
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface EntityAction<T = any> {
   id: string;
   label: string;
@@ -93,6 +104,7 @@ export interface EntityAction<T = any> {
   variant?: 'default' | 'primary' | 'danger' | 'success';
 
   // Action handler
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handler: (entity: T, context?: any) => Promise<void> | void;
 
   // Conditional display
@@ -379,7 +391,9 @@ export interface GeneratedGridProps<T = any> extends GeneratedComponentProps<T> 
  * Context provided to custom renderers and validators
  */
 export interface FactoryContext {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   schemas: Map<string, EntitySchema<any>>;
   getSchema: <T>(name: string) => EntitySchema<T> | undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getRelatedData: <T>(entityName: string, foreignKey: string, value: any) => Promise<T[]>;
 }

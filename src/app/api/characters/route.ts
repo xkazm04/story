@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
 import { Character } from '@/app/types/Character';
+import {
+  handleDatabaseError,
+  handleUnexpectedError,
+  createErrorResponse,
+  validateRequiredParams,
+} from '@/app/utils/apiErrorHandling';
 
 /**
  * GET /api/characters?projectId=xxx
@@ -12,10 +18,7 @@ export async function GET(request: NextRequest) {
     const projectId = searchParams.get('projectId');
 
     if (!projectId) {
-      return NextResponse.json(
-        { error: 'projectId is required' },
-        { status: 400 }
-      );
+      return createErrorResponse('projectId is required', 400);
     }
 
     const { data, error } = await supabaseServer
@@ -25,20 +28,12 @@ export async function GET(request: NextRequest) {
       .order('name', { ascending: true });
 
     if (error) {
-      console.error('Error fetching characters:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch characters' },
-        { status: 500 }
-      );
+      return handleDatabaseError('fetch characters', error, 'GET /api/characters');
     }
 
     return NextResponse.json(data as Character[]);
   } catch (error) {
-    console.error('Unexpected error in GET /api/characters:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleUnexpectedError('GET /api/characters', error);
   }
 }
 
@@ -49,14 +44,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, project_id, type, faction_id, voice, avatar_url } = body;
+    const { name, project_id, type, faction_id, faction_role, faction_rank, voice, avatar_url } = body;
 
-    if (!name || !project_id) {
-      return NextResponse.json(
-        { error: 'name and project_id are required' },
-        { status: 400 }
-      );
-    }
+    // Validate required parameters
+    const paramValidation = validateRequiredParams(
+      { name, project_id },
+      ['name', 'project_id']
+    );
+    if (paramValidation) return paramValidation;
 
     const { data, error } = await supabaseServer
       .from('characters')
@@ -65,6 +60,8 @@ export async function POST(request: NextRequest) {
         project_id,
         type,
         faction_id,
+        faction_role,
+        faction_rank: faction_rank ?? 0,
         voice,
         avatar_url,
       })
@@ -72,21 +69,11 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating character:', error);
-      return NextResponse.json(
-        { error: 'Failed to create character' },
-        { status: 500 }
-      );
+      return handleDatabaseError('create character', error, 'POST /api/characters');
     }
 
     return NextResponse.json(data as Character, { status: 201 });
   } catch (error) {
-    console.error('Unexpected error in POST /api/characters:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleUnexpectedError('POST /api/characters', error);
   }
 }
-
-

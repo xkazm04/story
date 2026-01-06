@@ -1,4 +1,12 @@
 import { PromptTemplate } from '../index';
+import type { SmartFactionCreationContext, ActInfo, FactionInfo } from '../types';
+
+interface FactionCharacter {
+  name: string;
+  role?: string;
+  faction?: string;
+  traits?: string[];
+}
 
 /**
  * Smart Faction Creation (Context-Aware)
@@ -24,6 +32,7 @@ Draw on principles from:
 - Worldbuilding theory: Every faction should have a reason to exist in the narrative ecosystem`,
 
   user: (context) => {
+    const ctx = context as SmartFactionCreationContext;
     const {
       factionName,
       factionRole,
@@ -32,7 +41,7 @@ Draw on principles from:
       existingFactions,
       characters,
       themes
-    } = context;
+    } = ctx;
 
     let prompt = `Create a comprehensive faction profile for:\n`;
     prompt += `Name: ${factionName}\n`;
@@ -51,8 +60,8 @@ Draw on principles from:
     // Story structure
     if (storyContext) {
       prompt += `\n=== STORY STRUCTURE ===\n`;
-      if (storyContext.acts?.length > 0) {
-        prompt += `Acts: ${storyContext.acts.map((a: any) => a.name).join(', ')}\n`;
+      if (storyContext.acts && storyContext.acts.length > 0) {
+        prompt += `Acts: ${storyContext.acts.map((a: ActInfo) => a.name).join(', ')}\n`;
       }
       if (storyContext.mainConflict) {
         prompt += `Central Conflict: ${storyContext.mainConflict}\n`;
@@ -62,7 +71,7 @@ Draw on principles from:
     // Existing factions - crucial for differentiation
     if (existingFactions && existingFactions.length > 0) {
       prompt += `\n=== EXISTING FACTIONS ===\n`;
-      existingFactions.forEach((faction: any) => {
+      existingFactions.forEach((faction: FactionInfo) => {
         prompt += `\n${faction.name}\n`;
         if (faction.description) prompt += `  ${faction.description.substring(0, 150)}...\n`;
         if (faction.values) prompt += `  Values: ${faction.values}\n`;
@@ -74,12 +83,12 @@ Draw on principles from:
     // Characters context
     if (characters && characters.length > 0) {
       prompt += `\n=== EXISTING CHARACTERS ===\n`;
-      const affiliated = characters.filter((c: any) => c.faction === factionName);
-      const unaffiliated = characters.filter((c: any) => !c.faction || c.faction === 'none');
+      const affiliated = characters.filter((c: FactionCharacter) => c.faction === factionName);
+      const unaffiliated = characters.filter((c: FactionCharacter) => !c.faction || c.faction === 'none');
 
       if (affiliated.length > 0) {
         prompt += `Members of ${factionName}:\n`;
-        affiliated.forEach((char: any) => {
+        affiliated.forEach((char: FactionCharacter) => {
           prompt += `- ${char.name}${char.role ? ` (${char.role})` : ''}\n`;
           if (char.traits) prompt += `  Traits: ${char.traits.slice(0, 3).join(', ')}\n`;
         });
@@ -87,7 +96,7 @@ Draw on principles from:
 
       if (unaffiliated.length > 0) {
         prompt += `\nUnaffiliated characters who might connect to this faction:\n`;
-        unaffiliated.slice(0, 5).forEach((char: any) => {
+        unaffiliated.slice(0, 5).forEach((char: FactionCharacter) => {
           prompt += `- ${char.name}\n`;
         });
       }

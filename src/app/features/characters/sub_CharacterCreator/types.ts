@@ -9,7 +9,7 @@ export interface ImageExtractionConfig {
 
 export interface ExtractionResult {
   model: string;
-  data: any;
+  data: Record<string, unknown>;
   processingTime?: number;
   error?: string;
   confidence?: number;

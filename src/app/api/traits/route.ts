@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
 import { Trait } from '@/app/types/Character';
+import { validateRequiredParams, handleDatabaseError, handleUnexpectedError } from '@/app/utils/apiErrorHandling';
 
 /**
  * GET /api/traits?characterId=xxx
@@ -11,12 +12,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const characterId = searchParams.get('characterId');
 
-    if (!characterId) {
-      return NextResponse.json(
-        { error: 'characterId is required' },
-        { status: 400 }
-      );
-    }
+    const validationError = validateRequiredParams({ characterId }, ['characterId']);
+    if (validationError) return validationError;
 
     const { data, error } = await supabaseServer
       .from('traits')
@@ -24,20 +21,12 @@ export async function GET(request: NextRequest) {
       .eq('character_id', characterId);
 
     if (error) {
-      console.error('Error fetching traits:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch traits' },
-        { status: 500 }
-      );
+      return handleDatabaseError('fetch traits', error);
     }
 
     return NextResponse.json(data as Trait[]);
   } catch (error) {
-    console.error('Unexpected error in GET /api/traits:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleUnexpectedError('GET /api/traits', error);
   }
 }
 
@@ -50,12 +39,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { character_id, type, description } = body;
 
-    if (!character_id || !type || !description) {
-      return NextResponse.json(
-        { error: 'character_id, type, and description are required' },
-        { status: 400 }
-      );
-    }
+    const validationError = validateRequiredParams(
+      { character_id, type, description },
+      ['character_id', 'type', 'description']
+    );
+    if (validationError) return validationError;
 
     const { data, error } = await supabaseServer
       .from('traits')
@@ -68,20 +56,12 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating trait:', error);
-      return NextResponse.json(
-        { error: 'Failed to create trait' },
-        { status: 500 }
-      );
+      return handleDatabaseError('create trait', error);
     }
 
     return NextResponse.json(data as Trait, { status: 201 });
   } catch (error) {
-    console.error('Unexpected error in POST /api/traits:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleUnexpectedError('POST /api/traits', error);
   }
 }
 

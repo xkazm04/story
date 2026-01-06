@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
 import { CharRelationship } from '@/app/types/Character';
+import { validateRequiredParams, handleDatabaseError, handleUnexpectedError } from '@/app/utils/apiErrorHandling';
 
 /**
  * GET /api/relationships?characterId=xxx
@@ -11,12 +12,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const characterId = searchParams.get('characterId');
 
-    if (!characterId) {
-      return NextResponse.json(
-        { error: 'characterId is required' },
-        { status: 400 }
-      );
-    }
+    const validationError = validateRequiredParams({ characterId }, ['characterId']);
+    if (validationError) return validationError;
 
     const { data, error } = await supabaseServer
       .from('character_relationships')
@@ -24,20 +21,12 @@ export async function GET(request: NextRequest) {
       .or(`character_a_id.eq.${characterId},character_b_id.eq.${characterId}`);
 
     if (error) {
-      console.error('Error fetching relationships:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch relationships' },
-        { status: 500 }
-      );
+      return handleDatabaseError('fetch relationships', error);
     }
 
     return NextResponse.json(data as CharRelationship[]);
   } catch (error) {
-    console.error('Unexpected error in GET /api/relationships:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleUnexpectedError('GET /api/relationships', error);
   }
 }
 
@@ -50,12 +39,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { character_a_id, character_b_id, description, relationship_type, act_id, event_date } = body;
 
-    if (!character_a_id || !character_b_id || !description) {
-      return NextResponse.json(
-        { error: 'character_a_id, character_b_id, and description are required' },
-        { status: 400 }
-      );
-    }
+    const validationError = validateRequiredParams(
+      { character_a_id, character_b_id, description },
+      ['character_a_id', 'character_b_id', 'description']
+    );
+    if (validationError) return validationError;
 
     const { data, error } = await supabaseServer
       .from('character_relationships')
@@ -71,20 +59,12 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating relationship:', error);
-      return NextResponse.json(
-        { error: 'Failed to create relationship' },
-        { status: 500 }
-      );
+      return handleDatabaseError('create relationship', error);
     }
 
     return NextResponse.json(data as CharRelationship, { status: 201 });
   } catch (error) {
-    console.error('Unexpected error in POST /api/relationships:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleUnexpectedError('POST /api/relationships', error);
   }
 }
 

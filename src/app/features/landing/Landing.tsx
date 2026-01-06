@@ -5,7 +5,6 @@ import { Inter } from 'next/font/google';
 import BackgroundPattern from '@/app/components/animation/BackgroundPattern';
 import LandingMenu from './components/LandingMenu';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
-import { PlusIcon } from 'lucide-react';
 import { LogoSvg } from '@/app/components/icons/Logo';
 import LandingProjectCreate from './components/LandingProjectCreate';
 import { MOCK_USER_ID } from '@/app/config/mockUser';
@@ -46,7 +45,7 @@ const Landing: React.FC<Props> = ({
 
 
   return (
-    <div className={`bg-dark-base text-gray-200 min-h-screen overflow-x-hidden z-10 ${inter.className}`}>
+    <div className={`bg-dark-base text-gray-200 min-h-screen overflow-x-hidden z-10 ${inter.className}`} data-testid="landing-page">
       <BackgroundPattern numLines={15} colorScheme="mixed" />
       <div className='absolute top-0 opacity-10 z-0'>
         <LogoSvg size={244} color={'white'} />
@@ -62,6 +61,7 @@ const Landing: React.FC<Props> = ({
             <button
               onClick={() => setShowSettingsPopover(!showSettingsPopover)}
               className="w-10 h-10 bg-white/5 border border-white/10 text-white rounded-lg flex items-center justify-center transition hover:bg-white/10 hover:border-white/20"
+              data-testid="landing-settings-btn"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="3"></circle>
@@ -99,7 +99,7 @@ const Landing: React.FC<Props> = ({
         />
       )}
         {/* Projects grid */}
-        {!showGuide && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {!showGuide && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" data-testid="projects-grid">
           <Suspense fallback={
             <div className="col-span-1 sm:col-span-2 lg:col-span-3 xl:col-span-4 text-center py-8">
               <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>

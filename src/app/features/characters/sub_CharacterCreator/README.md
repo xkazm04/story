@@ -1,105 +1,136 @@
 # Character Creator Module
 
 ## Overview
-Modular character appearance creation system with AI-powered image extraction.
+Modular character appearance creation system with AI-powered image extraction and stepped form navigation.
 
 ## Features
+- **Stepped Form**: Focus on each form section separately with stepper navigation
 - **Image Upload**: Upload character portraits with automatic compression
 - **AI Extraction**: Extract appearance details using Gemini/Groq vision models
 - **Manual Input**: Traditional form-based input for all appearance fields
 - **Live Preview**: Real-time generated description from appearance data
-- **Modular Design**: Each section is a separate, reusable component
+- **Randomizer**: AI-powered random character generation
+- **Modular Design**: Each component is independent and reusable
+
+## File Structure
+
+```
+sub_CharacterCreator/
+├── CharacterAppearanceForm.tsx         # Main form (all sections visible)
+├── CharacterAppearanceWithArchetypes.tsx # Form with archetype library + stepper
+├── index.ts                            # Module exports
+├── types.ts                            # TypeScript types
+├── README.md                           # This file
+│
+├── components/                         # UI Components
+│   ├── index.ts                        # Component exports
+│   ├── FormStepper.tsx                 # Step navigation component
+│   ├── SteppedAppearanceForm.tsx       # Stepped form version
+│   ├── FormSection.tsx                 # Collapsible form section
+│   ├── FormField.tsx                   # Form field renderer
+│   ├── FormSubComponents.tsx           # Reusable form sub-components
+│   ├── GenderSelector.tsx              # Gender selection widget
+│   ├── PromptGenerator.tsx             # Section prompt generator
+│   ├── CharacterImageUpload.tsx        # Image upload with drag & drop
+│   ├── CharacterImageExtraction.tsx    # AI extraction workflow
+│   ├── ImageGenerationPreview.tsx      # Image generation preview slots
+│   └── AppearancePreview.tsx           # Generated description preview
+│
+└── lib/                                # Library functions
+    ├── index.ts                        # Library exports
+    ├── formConfig.ts                   # Form field configuration
+    ├── promptGenerators.ts             # Prompt generation functions
+    ├── randomizer.ts                   # AI character randomizer
+    └── useAppearanceForm.ts            # Form state management hook
+```
 
 ## Components
 
-### CharacterAppearanceForm
-Main container component that orchestrates all sub-components.
+### Main Forms
+- **CharacterAppearanceForm**: Non-stepped version showing all sections at once
+- **CharacterAppearanceWithArchetypes**: Stepped form with archetype library integration
 
-### CharacterImageExtraction
-Handles image upload and AI extraction workflow.
+### Form Navigation
+- **FormStepper**: Step indicators and navigation buttons
+- **SteppedAppearanceForm**: Multi-step form with animated transitions
 
-### CharacterImageUpload
-Reusable image upload component with drag & drop support.
+### Form Sections
+Form is divided into 4 sections:
+1. **Basic Attributes**: Gender, age, skin, body type, height
+2. **Facial Features**: Face shape, eyes, hair, facial hair
+3. **Clothing & Style**: Clothing style, colors, accessories
+4. **Additional Details**: Custom distinctive features
 
-### Appearance Sections
-- **AppearanceBasicAttributes**: Gender, age, skin, body type, height
-- **AppearanceFacialFeatures**: Face shape, eyes, hair, facial hair
-- **AppearanceClothing**: Clothing style, colors, accessories
-- **AppearanceCustomFeatures**: Additional distinctive features
-- **AppearancePreview**: Generated description preview
+### AI Features
+- **CharacterImageExtraction**: Upload image and extract appearance with AI
+- **Randomizer**: Generate random character using Ollama LLM
 
-## Universal Image Extraction Library
+## Usage
 
-Located at: `story/src/app/lib/services/imageExtraction.ts`
-
-### Features
-- Multi-model support (Gemini, Groq)
-- Schema-based extraction
-- Automatic result merging
-- Confidence-based selection
-- Reusable across different use cases
-
-### Usage Example
-
+### Stepped Form (Recommended)
 ```typescript
-import { extractFromImage } from '@/app/lib/services/imageExtraction';
-import { characterAppearanceSchema } from '@/app/lib/schemas/extractionSchemas';
+import { CharacterAppearanceWithArchetypes } from './sub_CharacterCreator';
 
-const results = await extractFromImage(
-  imageFile,
-  characterAppearanceSchema,
-  { gemini: { enabled: true }, groq: { enabled: true } }
-);
-
-const mergedData = mergeExtractionResults(results, 'gemini');
+<CharacterAppearanceWithArchetypes
+  characterId={characterId}
+  onArchetypeApplied={(archetype) => console.log('Applied:', archetype)}
+/>
 ```
 
-## Extraction Schemas
-
-Located at: `story/src/app/lib/schemas/extractionSchemas.ts`
-
-### Available Schemas
-1. **assetExtractionSchema**: For game asset analysis
-2. **characterAppearanceSchema**: For character appearance extraction
-
-### Creating Custom Schemas
-
+### Non-Stepped Form
 ```typescript
-const customSchema: ExtractionSchema = {
-  name: 'Custom Extraction',
-  description: 'Extract custom data from images',
-  fields: [
-    {
-      name: 'fieldName',
-      type: 'string',
-      description: 'Field description',
-      required: true,
-      options: ['option1', 'option2'], // Optional
-    },
-  ],
-};
+import { CharacterAppearanceForm } from './sub_CharacterCreator';
+
+<CharacterAppearanceForm characterId={characterId} />
 ```
 
-## Integration with Asset Analysis
-
-The universal library can be used for both:
-1. **Character Appearance** (this module)
-2. **Asset Analysis** (existing feature)
-
-### Refactoring Asset Analysis
-
-To use the universal library in asset analysis:
-
+### Standalone Components
 ```typescript
-// In AssetAnalysisUpload.tsx
-import { extractFromImage } from '@/app/lib/services/imageExtraction';
-import { assetExtractionSchema } from '@/app/lib/schemas/extractionSchemas';
+import {
+  FormStepper,
+  CharacterImageExtraction,
+  GenderSelector
+} from './sub_CharacterCreator';
 
-const results = await extractFromImage(
-  selectedFile,
-  assetExtractionSchema,
-  config
-);
+// Use individual components as needed
+```
+
+## Library Functions
+
+### Form Configuration
+```typescript
+import { appearanceFormConfig, getFieldValue, setFieldValue } from './sub_CharacterCreator';
+
+// Get form sections configuration
+const sections = appearanceFormConfig;
+
+// Get nested field value
+const eyeColor = getFieldValue(appearance, 'face.eyeColor');
+
+// Set nested field value
+const updated = setFieldValue(appearance, 'face.eyeColor', 'blue');
+```
+
+### Prompt Generation
+```typescript
+import { generateFullPrompt, generateFacialFeaturesPrompt } from './sub_CharacterCreator';
+
+const prompt = generateFullPrompt(appearance);
+const facialPrompt = generateFacialFeaturesPrompt(appearance);
+```
+
+### Form State Hook
+```typescript
+import { useAppearanceForm } from './sub_CharacterCreator';
+
+const {
+  appearance,
+  prompt,
+  isLoading,
+  handleChange,
+  handleSave,
+  handleRandomize,
+} = useAppearanceForm({ characterId });
 ```
 
 ## API Endpoints Required
@@ -107,95 +138,29 @@ const results = await extractFromImage(
 ### /api/image-extraction/gemini
 ```typescript
 POST /api/image-extraction/gemini
-Body: {
-  image: string (base64),
-  prompt: string,
-  schema: ExtractionSchema
-}
-Response: {
-  data: any,
-  confidence: number
-}
+Body: { image: string (base64), prompt: string, schema: ExtractionSchema }
+Response: { data: any, confidence: number }
 ```
 
 ### /api/image-extraction/groq
 ```typescript
 POST /api/image-extraction/groq
-Body: {
-  image: string (base64),
-  prompt: string,
-  schema: ExtractionSchema
-}
-Response: {
-  data: any,
-  confidence: number
-}
+Body: { image: string (base64), prompt: string, schema: ExtractionSchema }
+Response: { data: any, confidence: number }
 ```
 
-## File Structure
-
-```
-sub_CharacterCreator/
-├── CharacterAppearanceForm.tsx      # Main container
-├── CharacterImageExtraction.tsx     # Image extraction workflow
-├── CharacterImageUpload.tsx         # Image upload component
-├── AppearanceBasicAttributes.tsx    # Basic attributes section
-├── AppearanceFacialFeatures.tsx     # Facial features section
-├── AppearanceClothing.tsx           # Clothing section
-├── AppearanceCustomFeatures.tsx     # Custom features section
-├── AppearancePreview.tsx            # Description preview
-├── types.ts                         # TypeScript types
-├── index.ts                         # Exports
-└── README.md                        # This file
-```
-
-## Usage
-
-### Replace Old Component
-
-In `CharacterAppearance.tsx`:
-
+### /api/llm (for randomizer)
 ```typescript
-// Old
-import CharacterAppearance from './components/CharacterAppearance';
-
-// New
-import { CharacterAppearanceForm } from './sub_CharacterCreator';
-
-// Use
-<CharacterAppearanceForm characterId={characterId} />
-```
-
-### Standalone Usage
-
-```typescript
-import { CharacterImageExtraction } from './sub_CharacterCreator';
-
-<CharacterImageExtraction
-  onExtracted={(appearance) => {
-    console.log('Extracted:', appearance);
-  }}
-  config={{
-    gemini: { enabled: true },
-    groq: { enabled: true }
-  }}
-/>
+POST /api/llm
+Body: { prompt: string, systemPrompt: string, temperature: number }
+Response: { content: string }
 ```
 
 ## Benefits
 
-1. **Modular**: Each component is independent and reusable
-2. **Universal Library**: Same extraction logic for all use cases
-3. **Type-Safe**: Full TypeScript support
-4. **Extensible**: Easy to add new extraction schemas
-5. **Multi-Model**: Support for multiple AI models with automatic merging
-6. **Maintainable**: Clear separation of concerns
-
-## Next Steps
-
-1. Implement API endpoints for Gemini and Groq
-2. Test extraction with real images
-3. Refactor AssetAnalysisUpload to use universal library
-4. Add more extraction schemas as needed
-5. Add confidence visualization
-6. Add manual correction workflow
+1. **Modular**: Each component under 200 lines for maintainability
+2. **Focused Editing**: Stepper allows focus on one section at a time
+3. **Type-Safe**: Full TypeScript support with strict typing
+4. **Reusable**: Components can be used independently
+5. **AI-Powered**: Image extraction and randomization features
+6. **Accessible**: Keyboard navigation and proper ARIA labels

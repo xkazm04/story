@@ -6,12 +6,14 @@ import { X, ChevronDown, ChevronRight, Database, Users, FolderOpen } from 'lucid
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { useCharacterStore } from '@/app/store/slices/characterSlice';
 
+type StoreValue = string | number | boolean | null | undefined | object | unknown[];
+
 interface StoreChange {
   timestamp: number;
   store: 'project' | 'character';
   key: string;
-  oldValue: any;
-  newValue: any;
+  oldValue: StoreValue;
+  newValue: StoreValue;
 }
 
 interface StoreDevtoolsProps {
@@ -36,17 +38,46 @@ interface StoreDevtoolsProps {
  * Usage:
  * <StoreDevtools isOpen={true} />
  */
+type StoreState = Record<string, StoreValue | ((...args: unknown[]) => unknown)>;
+
+// Helper to track store state changes
+const detectStoreChanges = (
+  currentState: StoreState,
+  previousState: StoreState | null,
+  storeName: 'project' | 'character'
+): StoreChange[] => {
+  if (!previousState) return [];
+
+  const changes: StoreChange[] = [];
+  Object.keys(currentState).forEach((key) => {
+    if (typeof currentState[key] !== 'function') {
+      const oldValue = previousState[key];
+      const newValue = currentState[key];
+      if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+        changes.push({
+          timestamp: Date.now(),
+          store: storeName,
+          key,
+          oldValue: oldValue as StoreValue,
+          newValue: newValue as StoreValue,
+        });
+      }
+    }
+  });
+  return changes;
+};
+
 const StoreDevtools: React.FC<StoreDevtoolsProps> = ({ isOpen = false, onClose }) => {
   const [visible, setVisible] = useState(isOpen);
   const [expandedStores, setExpandedStores] = useState<Set<string>>(new Set(['project', 'character']));
   const [changeHistory, setChangeHistory] = useState<StoreChange[]>([]);
   const [maxHistory] = useState(50);
-  const prevProjectState = useRef<any>(null);
-  const prevCharacterState = useRef<any>(null);
+  const prevProjectState = useRef<StoreState | null>(null);
+  const prevCharacterState = useRef<StoreState | null>(null);
 
   // Subscribe to store changes
-  const projectState = useProjectStore();
-  const characterState = useCharacterStore();
+  const projectState = useProjectStore() as unknown as StoreState;
+  const characterState = useCharacterStore() as unknown as StoreState;
 
   useEffect(() => {
     setVisible(isOpen);
@@ -54,52 +85,18 @@ const StoreDevtools: React.FC<StoreDevtoolsProps> = ({ isOpen = false, onClose }
 
   // Track project store changes
   useEffect(() => {
-    if (prevProjectState.current) {
-      const changes: StoreChange[] = [];
-      Object.keys(projectState).forEach((key) => {
-        if (typeof (projectState as any)[key] !== 'function') {
-          const oldValue = (prevProjectState.current as any)[key];
-          const newValue = (projectState as any)[key];
-          if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
-            changes.push({
-              timestamp: Date.now(),
-              store: 'project',
-              key,
-              oldValue,
-              newValue,
-            });
-          }
-        }
-      });
-      if (changes.length > 0) {
-        setChangeHistory((prev) => [...changes, ...prev].slice(0, maxHistory));
-      }
+    const changes = detectStoreChanges(projectState, prevProjectState.current, 'project');
+    if (changes.length > 0) {
+      setChangeHistory((prev) => [...changes, ...prev].slice(0, maxHistory));
     }
     prevProjectState.current = { ...projectState };
   }, [projectState, maxHistory]);
 
   // Track character store changes
   useEffect(() => {
-    if (prevCharacterState.current) {
-      const changes: StoreChange[] = [];
-      Object.keys(characterState).forEach((key) => {
-        if (typeof (characterState as any)[key] !== 'function') {
-          const oldValue = (prevCharacterState.current as any)[key];
-          const newValue = (characterState as any)[key];
-          if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
-            changes.push({
-              timestamp: Date.now(),
-              store: 'character',
-              key,
-              oldValue,
-              newValue,
-            });
-          }
-        }
-      });
-      if (changes.length > 0) {
-        setChangeHistory((prev) => [...changes, ...prev].slice(0, maxHistory));
-      }
+    const changes = detectStoreChanges(characterState, prevCharacterState.current, 'character');
+    if (changes.length > 0) {
+      setChangeHistory((prev) => [...changes, ...prev].slice(0, maxHistory));
     }
     prevCharacterState.current = { ...characterState };
   }, [characterState, maxHistory]);
@@ -116,7 +113,7 @@ const StoreDevtools: React.FC<StoreDevtoolsProps> = ({ isOpen = false, onClose }
     });
   };
 
-  const renderValue = (value: any): string => {
+  const renderValue = (value: StoreValue): string => {
     if (value === null) return 'null';
     if (value === undefined) return 'undefined';
     if (typeof value === 'object') {
@@ -136,6 +133,55 @@ const StoreDevtools: React.FC<StoreDevtoolsProps> = ({ isOpen = false, onClose }
       default:
         return <Database size={16} className="text-gray-400" />;
     }
+  };
+
+  // Reusable store section component
+  const StoreSection: React.FC<{
+    storeName: 'project' | 'character';
+    storeState: StoreState;
+    colorClass: string;
+  }> = ({ storeName, storeState, colorClass }) => {
+    const storeDisplayName = storeName.charAt(0).toUpperCase() + storeName.slice(1) + ' Store';
+    const keyCount = Object.keys(storeState).filter((k) => typeof storeState[k] !== 'function').length;
+
+    return (
+      <div className="bg-gray-800/50 rounded-lg overflow-hidden">
+        <button
+          onClick={() => toggleStore(storeName)}
+          className="w-full flex items-center gap-2 p-3 hover:bg-gray-800 transition-colors"
+        >
+          {expandedStores.has(storeName) ? (
+            <ChevronDown size={14} className="text-gray-400" />
+          ) : (
+            <ChevronRight size={14} className="text-gray-400" />
+          )}
+          {getStoreIcon(storeName)}
+          <span className="text-sm font-medium text-white">{storeDisplayName}</span>
+          <span className="text-xs text-gray-500 ml-auto">{keyCount} keys</span>
+        </button>
+        <AnimatePresence>
+          {expandedStores.has(storeName) && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="px-3 pb-3 space-y-1"
+            >
+              {Object.entries(storeState)
+                .filter(([_, value]) => typeof value !== 'function')
+                .map(([key, value]) => (
+                  <div key={key} className="flex items-start gap-2 text-xs">
+                    <span className={`${colorClass} font-mono`}>{key}:</span>
+                    <span className="text-gray-300 flex-1 break-all font-mono">
+                      {renderValue(value as StoreValue)}
+                    </span>
+                  </div>
+                ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
   };
 
   if (!visible) return null;
@@ -171,84 +217,18 @@ const StoreDevtools: React.FC<StoreDevtoolsProps> = ({ isOpen = false, onClose }
         </div>
 
         {/* Project Store */}
-        <div className="bg-gray-800/50 rounded-lg overflow-hidden">
-          <button
-            onClick={() => toggleStore('project')}
-            className="w-full flex items-center gap-2 p-3 hover:bg-gray-800 transition-colors"
-          >
-            {expandedStores.has('project') ? (
-              <ChevronDown size={14} className="text-gray-400" />
-            ) : (
-              <ChevronRight size={14} className="text-gray-400" />
-            )}
-            {getStoreIcon('project')}
-            <span className="text-sm font-medium text-white">Project Store</span>
-            <span className="text-xs text-gray-500 ml-auto">
-              {Object.keys(projectState).filter((k) => typeof (projectState as any)[k] !== 'function').length} keys
-            </span>
-          </button>
-          <AnimatePresence>
-            {expandedStores.has('project') && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="px-3 pb-3 space-y-1"
-              >
-                {Object.entries(projectState)
-                  .filter(([_, value]) => typeof value !== 'function')
-                  .map(([key, value]) => (
-                    <div key={key} className="flex items-start gap-2 text-xs">
-                      <span className="text-blue-300 font-mono">{key}:</span>
-                      <span className="text-gray-300 flex-1 break-all font-mono">
-                        {renderValue(value)}
-                      </span>
-                    </div>
-                  ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        <StoreSection
+          storeName="project"
+          storeState={projectState}
+          colorClass="text-blue-300"
+        />
 
         {/* Character Store */}
-        <div className="bg-gray-800/50 rounded-lg overflow-hidden">
-          <button
-            onClick={() => toggleStore('character')}
-            className="w-full flex items-center gap-2 p-3 hover:bg-gray-800 transition-colors"
-          >
-            {expandedStores.has('character') ? (
-              <ChevronDown size={14} className="text-gray-400" />
-            ) : (
-              <ChevronRight size={14} className="text-gray-400" />
-            )}
-            {getStoreIcon('character')}
-            <span className="text-sm font-medium text-white">Character Store</span>
-            <span className="text-xs text-gray-500 ml-auto">
-              {Object.keys(characterState).filter((k) => typeof (characterState as any)[k] !== 'function').length} keys
-            </span>
-          </button>
-          <AnimatePresence>
-            {expandedStores.has('character') && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="px-3 pb-3 space-y-1"
-              >
-                {Object.entries(characterState)
-                  .filter(([_, value]) => typeof value !== 'function')
-                  .map(([key, value]) => (
-                    <div key={key} className="flex items-start gap-2 text-xs">
-                      <span className="text-purple-300 font-mono">{key}:</span>
-                      <span className="text-gray-300 flex-1 break-all font-mono">
-                        {renderValue(value)}
-                      </span>
-                    </div>
-                  ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        <StoreSection
+          storeName="character"
+          storeState={characterState}
+          colorClass="text-purple-300"
+        />
 
         {/* Change History */}
         <div className="pt-3 border-t border-gray-700">

@@ -6,6 +6,35 @@ import StepperOverviewObjectives from "./StepperOverviewObjectives";
 import StepperOverviewCharacters from "./StepperOverviewCharacters";
 import StepperOverviewResearch from "./StepperOverviewResearch";
 
+/**
+ * Selection option type (project type, narrator, template)
+ */
+interface SelectionOption {
+    id: string;
+    title: string;
+    image?: string;
+    description?: string;
+}
+
+/**
+ * Objective type for story projects
+ */
+interface Objective {
+    id: string;
+    name: string;
+}
+
+/**
+ * Character type for protagonist/antagonist/neutral characters
+ */
+type CharacterType = "protagonist" | "antagonist" | "neutral";
+
+interface StoryCharacter {
+    id: string;
+    name: string;
+    type: CharacterType;
+}
+
 type ProjectOverviewFormProps = {
     selections: {
         projectType: string | null;
@@ -13,21 +42,21 @@ type ProjectOverviewFormProps = {
         template: string | null;
         genre: string | null;
     };
-    projectTypes: any[];
-    narratorSelection: any[];
-    templateSelection: any[];
+    projectTypes: SelectionOption[];
+    narratorSelection: SelectionOption[];
+    templateSelection: SelectionOption[];
     projectName: string;
     setProjectName: (name: string) => void;
     projectDescription: string;
     setProjectDescription: (description: string) => void;
-    objectives: any[];
-    setObjectives: (objectives: any[]) => void;
-    characters: { id: string; name: string; type: "protagonist" | "antagonist" | "neutral" }[]; 
-    setCharacters: (characters: { id: string; name: string; type: "protagonist" | "antagonist" | "neutral" }[]) => void; 
+    objectives: Objective[];
+    setObjectives: (objectives: Objective[]) => void;
+    characters: StoryCharacter[];
+    setCharacters: (characters: StoryCharacter[]) => void;
 };
 
 type SelectionItemProps = {
-    item: any;
+    item: SelectionOption | undefined;
     label: string;
 };
 

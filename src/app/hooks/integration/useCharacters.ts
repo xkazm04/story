@@ -1,61 +1,39 @@
 import { Character } from '../../types/Character';
-import { apiFetch, useApiGet, API_BASE_URL, USE_MOCK_DATA } from '../../utils/api';
-import { useQuery } from '@tanstack/react-query';
-import { mockCharacters, simulateApiCall } from '../../../../db/mockData';
+import { apiFetch, API_BASE_URL } from '../../utils/api';
+import { mockCharacters } from '../../../../db/mockData';
+import { createMockableQuery, createFilteredMockQueryFn, createSingleMockQueryFn } from './queryHelpers';
 
 const CHARACTERS_URL = `${API_BASE_URL}/characters`;
 
 export const characterApi = {
   // Get all characters for a project
   useProjectCharacters: (projectId: string, enabled: boolean = true) => {
-    if (USE_MOCK_DATA) {
-      return useQuery<Character[]>({
-        queryKey: ['characters', 'project', projectId],
-        queryFn: async () => {
-          const filtered = mockCharacters.filter(c => c.project_id === projectId);
-          return simulateApiCall(filtered);
-        },
-        enabled: enabled && !!projectId,
-        staleTime: 5 * 60 * 1000,
-      });
-    }
-    const url = `${CHARACTERS_URL}?projectId=${projectId}`;
-    return useApiGet<Character[]>(url, enabled && !!projectId);
+    return createMockableQuery<Character[]>(
+      ['characters', 'project', projectId],
+      () => createFilteredMockQueryFn(mockCharacters, c => c.project_id === projectId),
+      `${CHARACTERS_URL}?projectId=${projectId}`,
+      enabled && !!projectId
+    );
   },
 
   // Get a single character
   useGetCharacter: (id: string, enabled: boolean = true) => {
-    if (USE_MOCK_DATA) {
-      return useQuery<Character>({
-        queryKey: ['characters', id],
-        queryFn: async () => {
-          const character = mockCharacters.find(c => c.id === id);
-          if (!character) throw new Error('Character not found');
-          return simulateApiCall(character);
-        },
-        enabled: enabled && !!id,
-        staleTime: 5 * 60 * 1000,
-      });
-    }
-    const url = `${CHARACTERS_URL}/${id}`;
-    return useApiGet<Character>(url, enabled && !!id);
+    return createMockableQuery<Character>(
+      ['characters', id],
+      () => createSingleMockQueryFn(mockCharacters, c => c.id === id, 'Character not found'),
+      `${CHARACTERS_URL}/${id}`,
+      enabled && !!id
+    );
   },
 
   // Get characters by faction
   useCharactersByFaction: (factionId: string, enabled: boolean = true) => {
-    if (USE_MOCK_DATA) {
-      return useQuery<Character[]>({
-        queryKey: ['characters', 'faction', factionId],
-        queryFn: async () => {
-          const filtered = mockCharacters.filter(c => c.faction_id === factionId);
-          return simulateApiCall(filtered);
-        },
-        enabled: enabled && !!factionId,
-        staleTime: 5 * 60 * 1000,
-      });
-    }
-    const url = `${CHARACTERS_URL}/faction/${factionId}`;
-    return useApiGet<Character[]>(url, enabled && !!factionId);
+    return createMockableQuery<Character[]>(
+      ['characters', 'faction', factionId],
+      () => createFilteredMockQueryFn(mockCharacters, c => c.faction_id === factionId),
+      `${CHARACTERS_URL}/faction/${factionId}`,
+      enabled && !!factionId
+    );
   },
 
   // Create character

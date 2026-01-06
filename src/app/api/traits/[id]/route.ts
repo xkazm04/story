@@ -1,6 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
 import { Trait } from '@/app/types/Character';
+import { logger } from '@/app/utils/logger';
+import { HTTP_STATUS, createErrorResponse } from '@/app/utils/apiErrorHandling';
+
+/**
+ * Updates a trait in the database
+ */
+async function updateTrait(id: string, body: Partial<Trait>) {
+  const { data, error } = await supabaseServer
+    .from('traits')
+    .update(body)
+    .eq('id', id)
+    .select()
+    .single();
+
+  return { data, error };
+}
+
+/**
+ * Deletes a trait from the database
+ */
+async function deleteTrait(id: string) {
+  const { error } = await supabaseServer
+    .from('traits')
+    .delete()
+    .eq('id', id);
+
+  return { error };
+}
 
 /**
  * PUT /api/traits/[id]
@@ -14,28 +42,17 @@ export async function PUT(
     const { id } = await context.params;
     const body = await request.json();
 
-    const { data, error } = await supabaseServer
-      .from('traits')
-      .update(body)
-      .eq('id', id)
-      .select()
-      .single();
+    const { data, error } = await updateTrait(id, body);
 
     if (error) {
-      console.error('Error updating trait:', error);
-      return NextResponse.json(
-        { error: 'Failed to update trait' },
-        { status: 500 }
-      );
+      logger.apiError('PUT /api/traits/[id]', error, { traitId: id });
+      return createErrorResponse('Failed to update trait', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
     return NextResponse.json(data as Trait);
   } catch (error) {
-    console.error('Unexpected error in PUT /api/traits/[id]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.apiError('PUT /api/traits/[id]', error);
+    return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }
 
@@ -50,27 +67,16 @@ export async function DELETE(
   try {
     const { id } = await context.params;
 
-    const { error } = await supabaseServer
-      .from('traits')
-      .delete()
-      .eq('id', id);
+    const { error } = await deleteTrait(id);
 
     if (error) {
-      console.error('Error deleting trait:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete trait' },
-        { status: 500 }
-      );
+      logger.apiError('DELETE /api/traits/[id]', error, { traitId: id });
+      return createErrorResponse('Failed to delete trait', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    return NextResponse.json({ success: true }, { status: HTTP_STATUS.OK });
   } catch (error) {
-    console.error('Unexpected error in DELETE /api/traits/[id]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.apiError('DELETE /api/traits/[id]', error);
+    return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }
-
-

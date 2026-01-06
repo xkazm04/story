@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Save, Check } from 'lucide-react';
+import { Save, Check, Sparkles } from 'lucide-react';
 import { PromptSection } from '@/app/constants/promptSections';
 import { traitApi } from '@/app/api/traits';
 import { Character } from '@/app/types/Character';
@@ -18,6 +18,10 @@ import {
 } from '@/prompts';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { useCharacters } from '@/app/hooks/useCharacters';
+import { useAISuggestionStream } from '@/app/hooks/useAISuggestionStream';
+import { AISuggestion } from '@/app/services/aiSuggestionService';
+import AISuggestionSidebar from '../components/AISuggestionSidebar';
+import { IconButton } from '@/app/components/UI/Button';
 
 interface TraitPromptSectionProps {
   section: PromptSection;
@@ -37,10 +41,29 @@ const TraitPromptSection: React.FC<TraitPromptSectionProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const { selectedProject } = useProjectStore();
   const { data: allCharacters = [] } = useCharacters(selectedProject?.id || '');
   const { generateFromTemplate, isLoading: isGenerating } = useLLM();
+
+  // AI Suggestion Stream Hook
+  const {
+    suggestions,
+    isLoading: isSuggestionsLoading,
+    isStreaming,
+    streamProgress,
+    triggerSuggestions,
+    clearSuggestions,
+  } = useAISuggestionStream({
+    projectId: selectedProject?.id || '',
+    characterId,
+    contextType: 'trait',
+    fieldType: section.id,
+    enabled: showSuggestions,
+    debounceMs: 1500,
+    minTextLength: 10,
+  });
 
   const hasChanges = value !== originalValue;
   const maxLength = 2500;
@@ -52,6 +75,13 @@ const TraitPromptSection: React.FC<TraitPromptSectionProps> = ({
       setValue(initialValue);
     }
   }, [initialValue, originalValue]);
+
+  // Trigger suggestions on text change
+  useEffect(() => {
+    if (showSuggestions && value.trim().length >= 10) {
+      triggerSuggestions(value);
+    }
+  }, [value, showSuggestions, triggerSuggestions]);
 
   const handleSave = async () => {
     if (!hasChanges || isOverLimit) return;
@@ -171,35 +201,70 @@ const TraitPromptSection: React.FC<TraitPromptSectionProps> = ({
     }
   };
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-4"
-    >
-      {/* Section Header */}
-      <div>
-        <div className="flex items-start justify-between mb-2">
-          <div>
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-1">
-              {section.icon}
-              {section.title}
-            </h3>
-            <p className="text-sm text-gray-400">{section.description}</p>
-          </div>
+  const handleApplySuggestion = (suggestion: AISuggestion) => {
+    // Append or replace based on suggestion type
+    if (value.trim().length === 0) {
+      setValue(suggestion.suggestion);
+    } else {
+      // Smart insertion - add to end with proper spacing
+      setValue(prev => {
+        const trimmed = prev.trim();
+        return `${trimmed}\n\n${suggestion.suggestion}`;
+      });
+    }
+  };
 
-          {/* Smart Generate Button */}
-          <SmartGenerateButton
-            onClick={handleSmartGenerate}
-            isLoading={isGenerating}
-            disabled={isGenerating}
-            label="Auto-fill"
-            size="sm"
-            variant="ghost"
-          />
+  const handleToggleSuggestions = () => {
+    if (showSuggestions) {
+      clearSuggestions();
+    }
+    setShowSuggestions(prev => !prev);
+  };
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="space-y-4"
+      >
+        {/* Section Header */}
+        <div>
+          <div className="flex items-start justify-between mb-2">
+            <div>
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-1">
+                {section.icon}
+                {section.title}
+              </h3>
+              <p className="text-sm text-gray-400">{section.description}</p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2">
+              {/* AI Suggestions Toggle */}
+              <IconButton
+                icon={<Sparkles size={16} />}
+                size="sm"
+                variant={showSuggestions ? 'primary' : 'ghost'}
+                onClick={handleToggleSuggestions}
+                aria-label="Toggle AI suggestions"
+                data-testid="toggle-ai-suggestions-btn"
+                className={showSuggestions ? 'animate-pulse' : ''}
+              />
+
+              {/* Smart Generate Button */}
+              <SmartGenerateButton
+                onClick={handleSmartGenerate}
+                isLoading={isGenerating}
+                disabled={isGenerating}
+                label="Auto-fill"
+                size="sm"
+                variant="ghost"
+              />
+            </div>
+          </div>
         </div>
-      </div>
 
       {/* Rich Text Editor */}
       <RichTextEditor
@@ -254,6 +319,22 @@ const TraitPromptSection: React.FC<TraitPromptSectionProps> = ({
         </AnimatePresence>
       </div>
     </motion.div>
+
+    {/* AI Suggestion Sidebar */}
+    <AnimatePresence>
+      {showSuggestions && (
+        <AISuggestionSidebar
+          suggestions={suggestions}
+          isLoading={isSuggestionsLoading}
+          isStreaming={isStreaming}
+          streamProgress={streamProgress}
+          onApplySuggestion={handleApplySuggestion}
+          onDismiss={handleToggleSuggestions}
+          position="right"
+        />
+      )}
+    </AnimatePresence>
+  </>
   );
 };
 

@@ -3,13 +3,17 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { User, BookOpen, Palette, Heart, Shield } from 'lucide-react';
+import { User, BookOpen, Palette, Heart, Shield, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { characterApi } from '@/app/api/characters';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
 import CharacterAbout from '../sub_CharacterTraits/CharacterAbout';
 import CharacterRelationships from './CharacterRelationships';
-import CharacterAppearance from './CharacterAppearance';
+import { CharacterAppearanceForm } from '../sub_CharacterCreator';
 import CharacterConsistencyPanel from './CharacterConsistencyPanel';
+import { ImageGenerator } from '../sub_ImageGenerator';
+import { AvatarGenerator } from '../sub_AvatarGenerator';
+import { defaultAppearance, Appearance } from '@/app/types/Character';
 
 interface CharacterDetailsProps {
   characterId: string;
@@ -17,7 +21,21 @@ interface CharacterDetailsProps {
 
 const CharacterDetails: React.FC<CharacterDetailsProps> = ({ characterId }) => {
   const { data: character, isLoading } = characterApi.useGetCharacter(characterId);
-  const [activeTab, setActiveTab] = useState<'info' | 'about' | 'appearance' | 'relationships' | 'consistency'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'about' | 'appearance' | 'relationships' | 'consistency' | 'image_gen' | 'avatar_gen'>('info');
+
+  // Fetch appearance data for image/avatar generation
+  const { data: appearanceData } = useQuery<Appearance | null>({
+    queryKey: ['character-appearance', characterId],
+    queryFn: async () => {
+      const response = await fetch(`/api/char-appearance?character_id=${characterId}`);
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data || defaultAppearance;
+    },
+    enabled: !!characterId,
+  });
+
+  const appearance = appearanceData || defaultAppearance;
 
   if (isLoading) {
     return (
@@ -36,81 +54,32 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ characterId }) => {
   }
 
   const tabs = [
-    { id: 'info' as const, label: 'Info', icon: <User size={16} /> },
-    { id: 'about' as const, label: 'About', icon: <BookOpen size={16} /> },
-    { id: 'appearance' as const, label: 'Appearance', icon: <Palette size={16} /> },
-    { id: 'relationships' as const, label: 'Relationships', icon: <Heart size={16} /> },
-    { id: 'consistency' as const, label: 'Consistency', icon: <Shield size={16} /> },
+    { id: 'info' as const, label: 'info', icon: <User size={14} /> },
+    { id: 'about' as const, label: 'about', icon: <BookOpen size={14} /> },
+    { id: 'appearance' as const, label: 'appearance', icon: <Palette size={14} /> },
+    { id: 'relationships' as const, label: 'relations', icon: <Heart size={14} /> },
+    { id: 'consistency' as const, label: 'consistency', icon: <Shield size={14} /> },
+    { id: 'image_gen' as const, label: 'image_gen', icon: <ImageIcon size={14} /> },
+    { id: 'avatar_gen' as const, label: 'avatar_gen', icon: <Sparkles size={14} /> },
   ];
 
   return (
     <div className="space-y-4">
-      {/* Character Header */}
-      <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
-        <ColoredBorder color="blue" />
-        <div className="flex gap-6">
-          {/* Avatar */}
-          <div className="w-32 h-32 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0">
-            {character.avatar_url ? (
-              <Image
-                src={character.avatar_url}
-                alt={character.name}
-                width={128}
-                height={128}
-                className="object-cover w-full h-full"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-600 text-4xl font-bold">
-                {character.name.charAt(0).toUpperCase()}
-              </div>
-            )}
-          </div>
-
-          {/* Basic Info */}
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold text-white mb-2">{character.name}</h2>
-            {character.type && (
-              <span className="inline-block px-3 py-1 bg-blue-600 text-white text-sm rounded-lg mb-4">
-                {character.type}
-              </span>
-            )}
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-400">ID:</span>
-                <span className="ml-2 text-gray-200">{character.id.slice(0, 8)}...</span>
-              </div>
-              {character.faction_id && (
-                <div>
-                  <span className="text-gray-400">Faction:</span>
-                  <span className="ml-2 text-gray-200">{character.faction_id.slice(0, 8)}...</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs Navigation */}
-      <div className="flex gap-2 p-2 bg-gray-900/50 rounded-lg border border-gray-800">
+      {/* Tabs Navigation - Clean Manuscript style */}
+      <div className="flex flex-wrap gap-1.5 p-3 bg-slate-900/50 rounded-lg border border-slate-800/50">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md font-mono text-xs transition-all duration-200 ${
               activeTab === tab.id
-                ? 'bg-blue-500/20 text-white'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
+                : 'text-slate-400 border border-transparent hover:text-slate-200 hover:bg-slate-800/50'
             }`}
+            data-testid={`character-detail-tab-${tab.id}`}
           >
             {tab.icon}
-            {tab.label}
-            {activeTab === tab.id && (
-              <motion.div
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-full"
-                layoutId="activeTabIndicator"
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              />
-            )}
+            <span className="uppercase tracking-wide">{tab.label}</span>
           </button>
         ))}
       </div>
@@ -123,24 +92,24 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ characterId }) => {
         transition={{ duration: 0.2 }}
       >
         {activeTab === 'info' && (
-          <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
+          <div className="relative bg-slate-900/60 rounded-lg border border-slate-800/50 p-6">
             <ColoredBorder color="blue" />
-            <h3 className="text-lg font-semibold text-white mb-4">Character Information</h3>
+            <h3 className="font-mono text-sm uppercase tracking-wide text-slate-300 mb-4">// character_information</h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-400">Name:</span>
-                <span className="text-gray-200">{character.name}</span>
+                <span className="font-mono text-xs text-slate-500">name:</span>
+                <span className="text-slate-200">{character.name}</span>
               </div>
               {character.type && (
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Type:</span>
-                  <span className="text-gray-200">{character.type}</span>
+                  <span className="font-mono text-xs text-slate-500">type:</span>
+                  <span className="text-slate-200">{character.type}</span>
                 </div>
               )}
               {character.voice && (
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Voice:</span>
-                  <span className="text-gray-200">{character.voice}</span>
+                  <span className="font-mono text-xs text-slate-500">voice:</span>
+                  <span className="text-slate-200">{character.voice}</span>
                 </div>
               )}
             </div>
@@ -148,31 +117,48 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ characterId }) => {
         )}
 
         {activeTab === 'about' && (
-          <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
+          <div className="relative bg-slate-900/60 rounded-lg border border-slate-800/50 p-6">
             <ColoredBorder color="purple" />
             <CharacterAbout characterId={characterId} />
           </div>
         )}
 
         {activeTab === 'appearance' && (
-          <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
+          <div className="relative bg-slate-900/60 rounded-lg border border-slate-800/50 p-6">
             <ColoredBorder color="green" />
-            <CharacterAppearance characterId={characterId} />
+            <CharacterAppearanceForm characterId={characterId} />
           </div>
         )}
 
         {activeTab === 'relationships' && (
-          <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
+          <div className="relative bg-slate-900/60 rounded-lg border border-slate-800/50 p-6">
             <ColoredBorder color="pink" />
             <CharacterRelationships characterId={characterId} />
           </div>
         )}
 
         {activeTab === 'consistency' && (
-          <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
+          <div className="relative bg-slate-900/60 rounded-lg border border-slate-800/50 p-6">
             <ColoredBorder color="blue" />
             <CharacterConsistencyPanel characterId={characterId} characterName={character?.name || ''} />
           </div>
+        )}
+
+        {activeTab === 'image_gen' && (
+          <ImageGenerator
+            characterId={characterId}
+            characterName={character?.name || ''}
+            appearance={appearance}
+          />
+        )}
+
+        {activeTab === 'avatar_gen' && (
+          <AvatarGenerator
+            characterId={characterId}
+            characterName={character?.name || ''}
+            appearance={appearance}
+            currentAvatarUrl={character?.avatar_url}
+          />
         )}
       </motion.div>
     </div>

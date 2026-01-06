@@ -1,8 +1,9 @@
 'use client';
 
-import { forwardRef, SelectHTMLAttributes } from 'react';
+import { forwardRef, SelectHTMLAttributes, useId } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useFocusRing } from '@/app/utils/focusRing';
 
 export type SelectSize = 'sm' | 'md' | 'lg';
 
@@ -44,8 +45,10 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     },
     ref
   ) => {
-    const selectId = id || `select-${Math.random().toString(36).substr(2, 9)}`;
+    const reactId = useId();
+    const selectId = id || `select-${reactId}`;
     const hasError = !!error;
+    const focusClasses = useFocusRing(hasError, "input");
 
     return (
       <div className={clsx('flex flex-col gap-1', fullWidth && 'w-full')}>
@@ -58,21 +61,26 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             {props.required && <span className="text-red-400 ml-1">*</span>}
           </label>
         )}
-        <div className="relative">
+        <div
+          className={clsx(
+            'relative rounded-lg border bg-slate-950/60',
+            'transition-all outline-none text-white',
+            'focus-within:border-cyan-500/60 focus-within:ring-1 focus-within:ring-cyan-500/60',
+            'disabled:opacity-50 disabled:cursor-not-allowed',
+            hasError
+              ? 'border-red-500/60 focus-within:border-red-500/60 focus-within:ring-red-500/60'
+              : 'border-slate-700/70',
+            fullWidth && 'w-full'
+          )}
+        >
           <select
             ref={ref}
             id={selectId}
             className={clsx(
-              'bg-gray-900/50 border rounded-lg text-white',
-              'transition-all outline-none appearance-none',
-              'focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
-              'pr-8', // Space for chevron icon
-              hasError
-                ? 'border-red-500/50 focus:border-red-500/50 focus:ring-red-500/50'
-                : 'border-gray-600/50',
+              'bg-transparent border-none outline-none appearance-none',
+              'pr-8',
               sizeClasses[size],
-              fullWidth && 'w-full',
+              'w-full',
               className
             )}
             {...props}
@@ -93,7 +101,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             ))}
           </select>
           <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-            <ChevronDown className="w-4 h-4 text-gray-400" />
+            <ChevronDown className="w-4 h-4 text-slate-400" />
           </div>
         </div>
         {(error || helperText) && (

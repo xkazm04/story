@@ -1,29 +1,26 @@
+/**
+ * CharactersFeature - Main character management module
+ * Design: Clean Manuscript style - monospace accents with cyan theme
+ */
+
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
+import { Users, Shield, Network, FileText } from 'lucide-react';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { useCharacterStore } from '@/app/store/slices/characterSlice';
 import { characterApi } from '@/app/hooks/integration/useCharacters';
-import TabMenu from '@/app/components/UI/TabMenu';
 import CharactersList from './components/CharactersList';
 import DynamicComponentLoader from '@/app/components/UI/DynamicComponentLoader';
 import SkeletonLoader from '@/app/components/UI/SkeletonLoader';
-
-/**
- * Dynamic imports for heavy character/faction components
- * Benefits:
- * - Improved bundle size by lazy loading heavy visualization and detail components
- * - Preloads on hover for better perceived performance
- * - Consistent error handling and retry logic
- * - Performance monitoring for load times
- * - Skeleton loaders matching ColoredBorder design pattern
- */
+import { CharacterCardSkeletonGrid } from './components/CharacterCardSkeleton';
+import { motion } from 'framer-motion';
 
 const CharactersFeature: React.FC = () => {
   const { selectedProject } = useProjectStore();
-  // Use selector to prevent unnecessary re-renders
   const selectedCharacter = useCharacterStore((state) => state.selectedCharacter);
-  const { data: characters = [] } = characterApi.useProjectCharacters(
+  const [activeTab, setActiveTab] = useState(0);
+  const { data: characters = [], isLoading: charactersLoading } = characterApi.useProjectCharacters(
     selectedProject?.id || '',
     !!selectedProject
   );
@@ -31,12 +28,18 @@ const CharactersFeature: React.FC = () => {
   const tabs = [
     {
       id: 'characters',
-      label: 'Characters',
-      content: <CharactersList characters={characters} />,
+      label: 'characters',
+      icon: Users,
+      content: charactersLoading ? (
+        <CharacterCardSkeletonGrid count={8} />
+      ) : (
+        <CharactersList characters={characters} isLoading={charactersLoading} />
+      ),
     },
     {
       id: 'factions',
-      label: 'Factions',
+      label: 'factions',
+      icon: Shield,
       content: (
         <DynamicComponentLoader
           importFn={() => import('./sub_CharFactions/FactionsList')}
@@ -53,7 +56,8 @@ const CharactersFeature: React.FC = () => {
     },
     {
       id: 'relationship-map',
-      label: 'Relationship Map',
+      label: 'relationships',
+      icon: Network,
       content: selectedProject ? (
         <div className="h-[calc(100vh-200px)]">
           <DynamicComponentLoader
@@ -63,21 +67,23 @@ const CharactersFeature: React.FC = () => {
             preloadOnHover
             loadingHeight="h-full"
             loadingComponent={
-              <div className="h-full flex items-center justify-center text-gray-400">
-                Loading Relationship Map...
+              <div className="h-full flex items-center justify-center font-mono text-xs text-slate-500">
+                loading_relationship_map...
               </div>
             }
           />
         </div>
       ) : (
-        <div className="flex items-center justify-center h-64 text-gray-500">
-          Select a project to view relationship map
+        <div className="flex flex-col items-center justify-center h-64 gap-2">
+          <Network className="w-8 h-8 text-slate-600" />
+          <span className="font-mono text-xs text-slate-500">// select_project_to_view</span>
         </div>
       ),
     },
     {
       id: 'details',
-      label: 'Details',
+      label: 'details',
+      icon: FileText,
       content: selectedCharacter ? (
         <DynamicComponentLoader
           importFn={() => import('./components/CharacterDetails')}
@@ -87,20 +93,61 @@ const CharactersFeature: React.FC = () => {
           loadingComponent={<SkeletonLoader variant="details" color="blue" />}
         />
       ) : (
-        <div className="flex items-center justify-center h-64 text-gray-500">
-          Select a character to view details
+        <div className="flex flex-col items-center justify-center h-64 gap-2">
+          <FileText className="w-8 h-8 text-slate-600" />
+          <span className="font-mono text-xs text-slate-500">// select_character_to_view</span>
+          <p className="text-xs text-slate-600 text-center max-w-xs">
+            select a character to view details, generate images, or create avatars
+          </p>
         </div>
       ),
     },
   ];
 
   return (
-    <div className="h-full w-full p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-white mb-2">Characters</h1>
-        <p className="text-gray-400">Manage your story characters and factions</p>
+    <div className="h-full w-full flex flex-col ms-surface">
+      {/* Tab Navigation - Clean Manuscript style */}
+      <div className="flex items-center gap-2 px-4 pt-3 pb-2 border-b border-slate-800/50 bg-slate-950/80">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-slate-600 mr-2">
+          // module
+        </span>
+        {tabs.map((tab, index) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === index;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(index)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200 font-mono text-xs ${
+                isActive
+                  ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
+                  : 'text-slate-400 border border-transparent hover:text-slate-200 hover:bg-slate-800/50'
+              }`}
+              data-testid={`character-tab-${tab.id}`}
+            >
+              <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-400' : ''}`} />
+              <span className="uppercase tracking-wide">{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
-      <TabMenu tabs={tabs} />
+
+      {/* Content Area */}
+      <div className="flex-1 overflow-auto px-4 py-4 text-sm text-slate-200 ms-scrollbar">
+        {tabs.length > 0 && (
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+          >
+            {tabs[activeTab]?.content || (
+              <div className="font-mono text-xs text-slate-500 italic">// no_content_available</div>
+            )}
+          </motion.div>
+        )}
+      </div>
     </div>
   );
 };

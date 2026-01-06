@@ -18,16 +18,15 @@ const SceneAdd: React.FC = () => {
     selectedAct?.id || '',
     !!selectedProject && !!selectedAct
   );
-  const { data: characters = [] } = characterApi.useCharacters(
+  const { data: characters = [] } = characterApi.useProjectCharacters(
     selectedProject?.id || '',
     !!selectedProject
   );
 
   // Build context for name suggestions
   const nameContext = useMemo(() => ({
-    projectTitle: selectedProject?.title,
+    projectTitle: selectedProject?.name,
     projectDescription: selectedProject?.description,
-    genre: selectedProject?.genre,
     actName: selectedAct?.name,
     actDescription: selectedAct?.description,
     existingScenes: scenes.map(s => ({ title: s.name, location: s.location })),

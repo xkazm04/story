@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, Image as ImageIcon, FileText, Shield, Camera, Trash2, X } from 'lucide-react';
+import { Upload, Image as ImageIcon, FileText, Shield, Camera, Trash2 } from 'lucide-react';
 import { FactionMedia } from '@/app/types/Faction';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
+import MediaGallery, { MediaItem } from '@/app/components/UI/MediaGallery';
 
 interface FactionMediaGalleryProps {
   media: FactionMedia[];
@@ -40,7 +41,6 @@ const FactionMediaGallery: React.FC<FactionMediaGalleryProps> = ({
   onDeleteMedia,
 }) => {
   const [selectedFilter, setSelectedFilter] = useState<MediaTypeFilter>('all');
-  const [selectedMedia, setSelectedMedia] = useState<FactionMedia | null>(null);
 
   // Filter media by type
   const filteredMedia = selectedFilter === 'all'
@@ -56,11 +56,27 @@ const FactionMediaGallery: React.FC<FactionMediaGalleryProps> = ({
     return acc;
   }, {} as Record<string, number>);
 
-  const handleDeleteClick = (e: React.MouseEvent, mediaId: string) => {
-    e.stopPropagation();
+  const handleDeleteClick = (mediaId: string) => {
     if (confirm('Delete this media? This cannot be undone.')) {
       onDeleteMedia(mediaId);
     }
+  };
+
+  // Convert FactionMedia to MediaItem format
+  const convertToMediaItems = (factionMedia: FactionMedia[]): MediaItem[] => {
+    return factionMedia.map(m => ({
+      id: m.id,
+      url: m.url,
+      type: 'image' as const, // Faction media is primarily images
+      alt: m.description || m.type,
+      description: m.description,
+      metadata: {
+        factionId: m.faction_id,
+        uploadedAt: m.uploaded_at,
+        uploaderId: m.uploader_id,
+        mediaType: m.type,
+      },
+    }));
   };
 
   return (
@@ -120,6 +136,7 @@ const FactionMediaGallery: React.FC<FactionMediaGalleryProps> = ({
           <button
             onClick={onUploadClick}
             className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+            data-testid="upload-media-btn"
           >
             <Upload size={16} />
             Upload Media
@@ -136,6 +153,7 @@ const FactionMediaGallery: React.FC<FactionMediaGalleryProps> = ({
               ? 'bg-purple-600 text-white'
               : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
           }`}
+          data-testid="filter-all-btn"
         >
           All ({media.length})
         </button>
@@ -151,6 +169,7 @@ const FactionMediaGallery: React.FC<FactionMediaGalleryProps> = ({
                   ? 'bg-purple-600 text-white'
                   : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
               }`}
+              data-testid={`filter-${type}-btn`}
             >
               <Icon size={14} />
               {label} ({count})
@@ -159,154 +178,29 @@ const FactionMediaGallery: React.FC<FactionMediaGalleryProps> = ({
         })}
       </div>
 
-      {/* Media Grid */}
-      {filteredMedia.length > 0 ? (
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-          layout
-        >
-          <AnimatePresence mode="popLayout">
-            {filteredMedia.map((mediaItem, index) => {
-              const Icon = MEDIA_TYPE_ICONS[mediaItem.type];
-              return (
-                <motion.div
-                  key={mediaItem.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ delay: index * 0.05 }}
-                  onClick={() => setSelectedMedia(mediaItem)}
-                  className="relative group cursor-pointer"
+      {/* Reusable MediaGallery Component */}
+      <MediaGallery
+        media={convertToMediaItems(filteredMedia)}
+        columns={4}
+        spacing={4}
+        color="purple"
+        pagination={filteredMedia.length > 12}
+        itemsPerPage={12}
+        emptyMessage={`No ${selectedFilter === 'all' ? '' : selectedFilter} media uploaded yet`}
+        renderActions={
+          isLeader
+            ? (item) => (
+                <button
+                  onClick={() => handleDeleteClick(item.id)}
+                  className="p-1 bg-red-600 hover:bg-red-700 rounded text-white transition-colors"
+                  data-testid={`delete-media-${item.id}`}
                 >
-                  <div className="relative bg-gray-900 rounded-lg border border-gray-800 overflow-hidden aspect-square hover:border-purple-500 transition-colors">
-                    {/* Skeleton/Placeholder */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                      {mediaItem.url ? (
-                        <img
-                          src={mediaItem.url}
-                          alt={mediaItem.description || mediaItem.type}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <Icon size={48} className="text-gray-600" />
-                      )}
-                    </div>
-
-                    {/* Glass-morphism hover overlay */}
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      whileHover={{ opacity: 1 }}
-                      className="absolute inset-0 bg-black/60 backdrop-blur-sm p-4 flex flex-col justify-between"
-                    >
-                      <div className="flex items-start justify-between">
-                        <span className="text-xs px-2 py-1 bg-purple-600 text-white rounded-full">
-                          {mediaItem.type}
-                        </span>
-                        {isLeader && (
-                          <button
-                            onClick={(e) => handleDeleteClick(e, mediaItem.id)}
-                            className="p-1 bg-red-600 hover:bg-red-700 rounded text-white transition-colors"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                      </div>
-                      <div>
-                        {mediaItem.description && (
-                          <p className="text-white text-sm font-medium mb-1 line-clamp-2">
-                            {mediaItem.description}
-                          </p>
-                        )}
-                        <p className="text-gray-300 text-xs">
-                          {new Date(mediaItem.uploaded_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </motion.div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </motion.div>
-      ) : (
-        <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-12">
-          <ColoredBorder color="gray" />
-          <div className="text-center text-gray-400">
-            <ImageIcon size={48} className="mx-auto mb-4 opacity-30" />
-            <p>No {selectedFilter === 'all' ? '' : selectedFilter} media uploaded yet</p>
-            {isLeader && (
-              <button
-                onClick={onUploadClick}
-                className="mt-4 text-purple-400 hover:text-purple-300 transition-colors"
-              >
-                Upload your first media
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Media Detail Modal */}
-      <AnimatePresence>
-        {selectedMedia && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSelectedMedia(null)}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-gray-900 rounded-lg border border-gray-800 max-w-4xl w-full max-h-[90vh] overflow-auto"
-            >
-              <div className="relative p-6">
-                <ColoredBorder color="purple" />
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-2">
-                      {selectedMedia.description || `${selectedMedia.type} media`}
-                    </h3>
-                    <div className="flex items-center gap-4 text-sm text-gray-400">
-                      <span className="flex items-center gap-1">
-                        {React.createElement(MEDIA_TYPE_ICONS[selectedMedia.type], { size: 14 })}
-                        {selectedMedia.type}
-                      </span>
-                      <span>{new Date(selectedMedia.uploaded_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setSelectedMedia(null)}
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    <X size={24} />
-                  </button>
-                </div>
-                <div className="bg-gray-800 rounded-lg overflow-hidden">
-                  {selectedMedia.url ? (
-                    <img
-                      src={selectedMedia.url}
-                      alt={selectedMedia.description || selectedMedia.type}
-                      className="w-full max-h-[60vh] object-contain"
-                    />
-                  ) : (
-                    <div className="h-96 flex items-center justify-center">
-                      {React.createElement(MEDIA_TYPE_ICONS[selectedMedia.type], {
-                        size: 96,
-                        className: 'text-gray-600',
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                  <Trash2 size={14} />
+                </button>
+              )
+            : undefined
+        }
+      />
     </div>
   );
 };

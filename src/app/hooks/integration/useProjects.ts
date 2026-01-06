@@ -1,44 +1,30 @@
 import { Project } from '../../types/Project';
-import { apiFetch, useApiGet, API_BASE_URL, USE_MOCK_DATA } from '../../utils/api';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { mockProjects, simulateApiCall } from '../../../../db/mockData';
+import { apiFetch, API_BASE_URL } from '../../utils/api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { mockProjects } from '../../../../db/mockData';
+import { createMockableQuery, createFilteredMockQueryFn, createSingleMockQueryFn } from './queryHelpers';
 
 const PROJECTS_URL = `${API_BASE_URL}/projects`;
 
 export const projectApi = {
   // Get all projects for a user
   useUserProjects: (userId: string, enabled: boolean = true) => {
-    if (USE_MOCK_DATA) {
-      return useQuery<Project[]>({
-        queryKey: ['projects', 'user', userId],
-        queryFn: async () => {
-          const filtered = mockProjects.filter(p => p.user_id === userId);
-          return simulateApiCall(filtered);
-        },
-        enabled: enabled && !!userId,
-        staleTime: 5 * 60 * 1000,
-      });
-    }
-    const url = `${PROJECTS_URL}?userId=${userId}`;
-    return useApiGet<Project[]>(url, enabled && !!userId);
+    return createMockableQuery<Project[]>(
+      ['projects', 'user', userId],
+      () => createFilteredMockQueryFn(mockProjects, p => p.user_id === userId),
+      `${PROJECTS_URL}?userId=${userId}`,
+      enabled && !!userId
+    );
   },
 
   // Get a single project
   useProject: (id: string, enabled: boolean = true) => {
-    if (USE_MOCK_DATA) {
-      return useQuery<Project>({
-        queryKey: ['projects', id],
-        queryFn: async () => {
-          const project = mockProjects.find(p => p.id === id);
-          if (!project) throw new Error('Project not found');
-          return simulateApiCall(project);
-        },
-        enabled: enabled && !!id,
-        staleTime: 5 * 60 * 1000,
-      });
-    }
-    const url = `${PROJECTS_URL}/${id}`;
-    return useApiGet<Project>(url, enabled && !!id);
+    return createMockableQuery<Project>(
+      ['projects', id],
+      () => createSingleMockQueryFn(mockProjects, p => p.id === id, 'Project not found'),
+      `${PROJECTS_URL}/${id}`,
+      enabled && !!id
+    );
   },
 
   // Create project

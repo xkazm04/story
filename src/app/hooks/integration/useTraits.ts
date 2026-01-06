@@ -1,44 +1,29 @@
 import { Trait } from '../../types/Character';
-import { apiFetch, useApiGet, API_BASE_URL, USE_MOCK_DATA } from '../../utils/api';
-import { useQuery } from '@tanstack/react-query';
-import { mockTraits, simulateApiCall } from '../../../../db/mockData';
+import { apiFetch, API_BASE_URL } from '../../utils/api';
+import { mockTraits } from '../../../../db/mockData';
+import { createMockableQuery, createFilteredMockQueryFn, createSingleMockQueryFn } from './queryHelpers';
 
 const TRAITS_URL = `${API_BASE_URL}/traits`;
 
 export const traitApi = {
   // Get all traits for a character
   useCharacterTraits: (characterId: string, enabled: boolean = true) => {
-    if (USE_MOCK_DATA) {
-      return useQuery<Trait[]>({
-        queryKey: ['traits', 'character', characterId],
-        queryFn: async () => {
-          const filtered = mockTraits.filter(t => t.character_id === characterId);
-          return simulateApiCall(filtered);
-        },
-        enabled: enabled && !!characterId,
-        staleTime: 5 * 60 * 1000,
-      });
-    }
-    const url = `${TRAITS_URL}?characterId=${characterId}`;
-    return useApiGet<Trait[]>(url, enabled && !!characterId);
+    return createMockableQuery<Trait[]>(
+      ['traits', 'character', characterId],
+      () => createFilteredMockQueryFn(mockTraits, t => t.character_id === characterId),
+      `${TRAITS_URL}?characterId=${characterId}`,
+      enabled && !!characterId
+    );
   },
 
   // Get a single trait
   useTrait: (id: string, enabled: boolean = true) => {
-    if (USE_MOCK_DATA) {
-      return useQuery<Trait>({
-        queryKey: ['traits', id],
-        queryFn: async () => {
-          const trait = mockTraits.find(t => t.id === id);
-          if (!trait) throw new Error('Trait not found');
-          return simulateApiCall(trait);
-        },
-        enabled: enabled && !!id,
-        staleTime: 5 * 60 * 1000,
-      });
-    }
-    const url = `${TRAITS_URL}/${id}`;
-    return useApiGet<Trait>(url, enabled && !!id);
+    return createMockableQuery<Trait>(
+      ['traits', id],
+      () => createSingleMockQueryFn(mockTraits, t => t.id === id, 'Trait not found'),
+      `${TRAITS_URL}/${id}`,
+      enabled && !!id
+    );
   },
 
   // Create trait

@@ -1,10 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
+import { logger } from '@/app/utils/logger';
+import { HTTP_STATUS } from '@/app/utils/apiErrorHandling';
 
 /**
  * Character Appearance API
  * CRUD operations for character appearance data
  */
+
+/**
+ * Validates character_id parameter
+ */
+function validateCharacterId(characterId: string | null): NextResponse | null {
+  if (!characterId) {
+    return NextResponse.json(
+      { error: 'character_id is required' },
+      { status: HTTP_STATUS.BAD_REQUEST }
+    );
+  }
+  return null;
+}
+
+/**
+ * Creates error response
+ */
+function createLocalErrorResponse(message: string, error: unknown): NextResponse {
+  logger.apiError('/api/char-appearance', error);
+  return NextResponse.json(
+    { error: message },
+    { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+  );
+}
 
 // GET - Fetch appearance for a character
 export async function GET(request: NextRequest) {
@@ -12,19 +38,15 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const characterId = searchParams.get('character_id');
 
-    if (!characterId) {
-      return NextResponse.json(
-        { error: 'character_id is required' },
-        { status: 400 }
-      );
-    }
+    const validationError = validateCharacterId(characterId);
+    if (validationError) return validationError;
 
     const supabase = supabaseServer;
 
     const { data, error } = await supabase
       .from('char_appearance')
       .select('*')
-      .eq('character_id', characterId)
+      .eq('character_id', characterId!)
       .single();
 
     if (error && error.code !== 'PGRST116') {
@@ -34,11 +56,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data || null);
   } catch (error) {
-    console.error('Error fetching character appearance:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch character appearance' },
-      { status: 500 }
-    );
+    return createLocalErrorResponse('Failed to fetch character appearance', error);
   }
 }
 
@@ -48,12 +66,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { character_id, ...appearanceData } = body;
 
-    if (!character_id) {
-      return NextResponse.json(
-        { error: 'character_id is required' },
-        { status: 400 }
-      );
-    }
+    const validationError = validateCharacterId(character_id);
+    if (validationError) return validationError;
 
     const supabase = supabaseServer;
 
@@ -74,11 +88,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error saving character appearance:', error);
-    return NextResponse.json(
-      { error: 'Failed to save character appearance' },
-      { status: 500 }
-    );
+    return createLocalErrorResponse('Failed to save character appearance', error);
   }
 }
 
@@ -88,19 +98,15 @@ export async function DELETE(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const characterId = searchParams.get('character_id');
 
-    if (!characterId) {
-      return NextResponse.json(
-        { error: 'character_id is required' },
-        { status: 400 }
-      );
-    }
+    const validationError = validateCharacterId(characterId);
+    if (validationError) return validationError;
 
     const supabase = supabaseServer;
 
     const { error } = await supabase
       .from('char_appearance')
       .delete()
-      .eq('character_id', characterId);
+      .eq('character_id', characterId!);
 
     if (error) {
       throw error;
@@ -108,11 +114,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting character appearance:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete character appearance' },
-      { status: 500 }
-    );
+    return createLocalErrorResponse('Failed to delete character appearance', error);
   }
 }
-

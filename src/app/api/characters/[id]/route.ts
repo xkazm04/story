@@ -1,6 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
 import { Character } from '@/app/types/Character';
+import { logger } from '@/app/utils/logger';
+import { createErrorResponse, HTTP_STATUS } from '@/app/utils/apiErrorHandling';
+
+/**
+ * Fetches a character by ID from the database
+ */
+async function fetchCharacter(id: string) {
+  const { data, error } = await supabaseServer
+    .from('characters')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  return { data, error };
+}
+
+/**
+ * Updates a character in the database
+ */
+async function updateCharacter(id: string, body: Partial<Character>) {
+  const { data, error } = await supabaseServer
+    .from('characters')
+    .update(body)
+    .eq('id', id)
+    .select()
+    .single();
+
+  return { data, error };
+}
+
+/**
+ * Deletes a character from the database
+ */
+async function deleteCharacter(id: string) {
+  const { error } = await supabaseServer
+    .from('characters')
+    .delete()
+    .eq('id', id);
+
+  return { error };
+}
 
 /**
  * GET /api/characters/[id]
@@ -13,27 +54,17 @@ export async function GET(
   try {
     const { id } = await context.params;
 
-    const { data, error } = await supabaseServer
-      .from('characters')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const { data, error } = await fetchCharacter(id);
 
     if (error) {
-      console.error('Error fetching character:', error);
-      return NextResponse.json(
-        { error: 'Character not found' },
-        { status: 404 }
-      );
+      logger.error('Error fetching character', error, { id });
+      return createErrorResponse('Character not found', HTTP_STATUS.NOT_FOUND);
     }
 
     return NextResponse.json(data as Character);
   } catch (error) {
-    console.error('Unexpected error in GET /api/characters/[id]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.error('Unexpected error in GET /api/characters/[id]', error);
+    return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }
 
@@ -49,28 +80,17 @@ export async function PUT(
     const { id } = await context.params;
     const body = await request.json();
 
-    const { data, error } = await supabaseServer
-      .from('characters')
-      .update(body)
-      .eq('id', id)
-      .select()
-      .single();
+    const { data, error } = await updateCharacter(id, body);
 
     if (error) {
-      console.error('Error updating character:', error);
-      return NextResponse.json(
-        { error: 'Failed to update character' },
-        { status: 500 }
-      );
+      logger.error('Error updating character', error, { id });
+      return createErrorResponse('Failed to update character', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
     return NextResponse.json(data as Character);
   } catch (error) {
-    console.error('Unexpected error in PUT /api/characters/[id]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.error('Unexpected error in PUT /api/characters/[id]', error);
+    return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }
 
@@ -85,27 +105,16 @@ export async function DELETE(
   try {
     const { id } = await context.params;
 
-    const { error } = await supabaseServer
-      .from('characters')
-      .delete()
-      .eq('id', id);
+    const { error } = await deleteCharacter(id);
 
     if (error) {
-      console.error('Error deleting character:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete character' },
-        { status: 500 }
-      );
+      logger.error('Error deleting character', error, { id });
+      return createErrorResponse('Failed to delete character', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    return NextResponse.json({ success: true }, { status: HTTP_STATUS.OK });
   } catch (error) {
-    console.error('Unexpected error in DELETE /api/characters/[id]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.error('Unexpected error in DELETE /api/characters/[id]', error);
+    return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }
-
-

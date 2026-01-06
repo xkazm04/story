@@ -9,6 +9,82 @@ import {
   AnalyzedAsset,
 } from '@/app/lib/services/imageAnalysis';
 import { cleanupTempImage } from '@/app/lib/services/imageProcessing';
+import { logger } from '@/app/utils/logger';
+import { HTTP_STATUS, API_CONSTANTS, createErrorResponse } from '@/app/utils/apiErrorHandling';
+
+/**
+ * Validates file upload from form data
+ */
+function validateFileUpload(file: File | null, configJson: string | null): NextResponse | null {
+  if (!file) {
+    return createErrorResponse('No file uploaded', HTTP_STATUS.BAD_REQUEST);
+  }
+
+  if (!configJson) {
+    return createErrorResponse('Analysis config is required', HTTP_STATUS.BAD_REQUEST);
+  }
+
+  return null;
+}
+
+/**
+ * Parses and validates analysis configuration
+ */
+function parseAnalysisConfig(configJson: string): { config: AnalysisConfig | null; error: NextResponse | null } {
+  let config: AnalysisConfig;
+
+  try {
+    config = JSON.parse(configJson);
+  } catch {
+    return {
+      config: null,
+      error: createErrorResponse('Invalid config JSON', HTTP_STATUS.BAD_REQUEST)
+    };
+  }
+
+  // Validate that at least one model is enabled
+  const hasEnabledModel =
+    config.openai?.enabled || config.gemini?.enabled || config.groq?.enabled;
+
+  if (!hasEnabledModel) {
+    return {
+      config: null,
+      error: createErrorResponse('At least one AI model must be enabled', HTTP_STATUS.BAD_REQUEST)
+    };
+  }
+
+  return { config, error: null };
+}
+
+/**
+ * Saves uploaded file to temporary location
+ */
+async function saveTempFile(file: File): Promise<string> {
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+
+  // Create temp file path
+  const tempDir = os.tmpdir();
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(7);
+  const ext = path.extname(file.name) || '.jpg';
+  const tempFilePath = path.join(tempDir, `upload_${timestamp}_${random}${ext}`);
+
+  await writeFile(tempFilePath, buffer);
+  return tempFilePath;
+}
+
+/**
+ * Runs analysis with timeout
+ */
+async function runAnalysisWithTimeout(tempFilePath: string, config: AnalysisConfig) {
+  const analysisPromise = analyzeImageMultiModel(tempFilePath, config);
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('Analysis timeout')), API_CONSTANTS.ANALYSIS_TIMEOUT_MS)
+  );
+
+  return await Promise.race([analysisPromise, timeoutPromise]);
+}
 
 /**
  * POST /api/asset-analysis
@@ -24,63 +100,19 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
     const configJson = formData.get('config') as string;
 
-    if (!file) {
-      return NextResponse.json(
-        { error: 'No file uploaded' },
-        { status: 400 }
-      );
-    }
+    // Validate file upload
+    const fileValidationError = validateFileUpload(file, configJson);
+    if (fileValidationError) return fileValidationError;
 
-    if (!configJson) {
-      return NextResponse.json(
-        { error: 'Analysis config is required' },
-        { status: 400 }
-      );
-    }
-
-    // Parse analysis configuration
-    let config: AnalysisConfig;
-    try {
-      config = JSON.parse(configJson);
-    } catch {
-      return NextResponse.json(
-        { error: 'Invalid config JSON' },
-        { status: 400 }
-      );
-    }
-
-    // Validate that at least one model is enabled
-    const hasEnabledModel =
-      config.openai?.enabled || config.gemini?.enabled || config.groq?.enabled;
-
-    if (!hasEnabledModel) {
-      return NextResponse.json(
-        { error: 'At least one AI model must be enabled' },
-        { status: 400 }
-      );
-    }
+    // Parse and validate config
+    const { config, error: configError } = parseAnalysisConfig(configJson);
+    if (configError) return configError;
 
     // Save uploaded file to temporary location
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    tempFilePath = await saveTempFile(file);
 
-    // Create temp file path
-    const tempDir = os.tmpdir();
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(7);
-    const ext = path.extname(file.name) || '.jpg';
-    tempFilePath = path.join(tempDir, `upload_${timestamp}_${random}${ext}`);
-
-    await writeFile(tempFilePath, buffer);
-
-    // Run parallel analysis with enabled models
-    // Set timeout to 120 seconds (same as FastAPI version)
-    const analysisPromise = analyzeImageMultiModel(tempFilePath, config);
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Analysis timeout')), 120000)
-    );
-
-    const results = await Promise.race([analysisPromise, timeoutPromise]);
+    // Run parallel analysis with enabled models with timeout
+    const results = await runAnalysisWithTimeout(tempFilePath, config!);
 
     // Clean up temp file
     if (tempFilePath) {
@@ -96,22 +128,20 @@ export async function POST(request: NextRequest) {
       await cleanupTempImage(tempFilePath);
     }
 
-    console.error('Image analysis failed:', error);
+    logger.apiError('POST /api/asset-analysis', error);
 
     // Check for timeout
     if (error instanceof Error && error.message === 'Analysis timeout') {
-      return NextResponse.json(
-        { error: 'Analysis timeout - operation took longer than 120 seconds' },
-        { status: 504 }
+      return createErrorResponse(
+        `Analysis timeout - operation took longer than ${API_CONSTANTS.ANALYSIS_TIMEOUT_MS / 1000} seconds`,
+        API_CONSTANTS.GATEWAY_TIMEOUT
       );
     }
 
-    return NextResponse.json(
-      {
-        error: 'Image analysis failed',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
+    return createErrorResponse(
+      'Image analysis failed',
+      HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      error instanceof Error ? error.message : 'Unknown error'
     );
   }
 }

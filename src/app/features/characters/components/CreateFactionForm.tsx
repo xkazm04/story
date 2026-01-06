@@ -2,11 +2,13 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, AlertCircle } from 'lucide-react';
+import { X, Save, AlertCircle, Sparkles } from 'lucide-react';
 import { factionApi } from '@/app/api/factions';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
 import { useOptimisticMutation } from '@/app/hooks/useOptimisticMutation';
+import FactionWizard from '../sub_CharFactions/FactionWizard';
+import { validateFactionColor, sanitizeHexColor } from '@/app/utils/colorValidation';
 
 interface CreateFactionFormProps {
   onClose: () => void;
@@ -28,6 +30,8 @@ const CreateFactionForm: React.FC<CreateFactionFormProps> = ({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState(PRESET_COLORS[0]);
+  const [showWizard, setShowWizard] = useState(false);
+  const [colorError, setColorError] = useState<string | null>(null);
 
   // Use optimistic mutation hook with automatic query invalidation
   const { mutate, isLoading, isError, error, rollbackError } = useOptimisticMutation({
@@ -62,13 +66,46 @@ const CreateFactionForm: React.FC<CreateFactionFormProps> = ({
     e.preventDefault();
     if (!name.trim() || !selectedProject) return;
 
+    // Validate color before submission
+    const colorValidation = validateFactionColor(color, {
+      required: false,
+      fieldName: 'Faction color',
+    });
+
+    if (!colorValidation.isValid) {
+      setColorError(colorValidation.error || 'Invalid color');
+      return;
+    }
+
+    setColorError(null);
+    const sanitizedColor = colorValidation.sanitized || color;
+
     await mutate({
       name: name.trim(),
       description: description.trim() || undefined,
       project_id: selectedProject.id,
-      color,
+      color: sanitizedColor,
     });
   };
+
+  const handleColorChange = (newColor: string) => {
+    setColor(newColor);
+    setColorError(null); // Clear error when color changes
+  };
+
+  // If wizard is active, show it instead
+  if (showWizard) {
+    return (
+      <FactionWizard
+        onClose={() => {
+          setShowWizard(false);
+          onClose();
+        }}
+        onSuccess={onSuccess}
+        projectId={selectedProject?.id || ''}
+      />
+    );
+  }
 
   return (
     <motion.div
@@ -77,6 +114,7 @@ const CreateFactionForm: React.FC<CreateFactionFormProps> = ({
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={onClose}
+      data-testid="create-faction-modal"
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
@@ -86,16 +124,50 @@ const CreateFactionForm: React.FC<CreateFactionFormProps> = ({
         className="relative bg-gray-900 rounded-lg border border-gray-800 p-6 max-w-lg w-full"
       >
         <ColoredBorder color="blue" />
-        
+
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-semibold text-white">Create New Faction</h3>
           <button
             type="button"
             onClick={onClose}
             className="text-gray-400 hover:text-white transition-colors"
+            data-testid="close-form-btn"
           >
             <X size={20} />
           </button>
+        </div>
+
+        {/* AI Wizard Option */}
+        <div className="mb-6 p-4 bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-purple-500/30 rounded-lg">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="text-white" size={20} />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-white mb-1">Try the AI Faction Builder</p>
+              <p className="text-xs text-gray-400 mb-3">
+                Describe your faction and let AI generate a complete profile with lore, timeline, achievements, and branding.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowWizard(true)}
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-sm rounded-lg font-medium transition-all flex items-center gap-2"
+                data-testid="open-ai-wizard-btn"
+              >
+                <Sparkles size={14} />
+                Use AI Wizard
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative mb-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-700"></div>
+          </div>
+          <div className="relative flex justify-center text-xs">
+            <span className="px-2 bg-gray-900 text-gray-500">or create manually</span>
+          </div>
         </div>
 
         {/* Error notifications with rollback info */}
@@ -142,6 +214,7 @@ const CreateFactionForm: React.FC<CreateFactionFormProps> = ({
               placeholder="Enter faction name"
               className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
+              data-testid="faction-name-input"
             />
           </div>
 
@@ -155,6 +228,7 @@ const CreateFactionForm: React.FC<CreateFactionFormProps> = ({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe the faction's purpose, values, or history..."
               className="w-full min-h-[100px] px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              data-testid="faction-description-input"
             />
           </div>
 
@@ -168,16 +242,27 @@ const CreateFactionForm: React.FC<CreateFactionFormProps> = ({
                 <button
                   key={presetColor}
                   type="button"
-                  onClick={() => setColor(presetColor)}
+                  onClick={() => handleColorChange(presetColor)}
                   className={`w-8 h-8 rounded-lg transition-all ${
                     color === presetColor
                       ? 'ring-2 ring-white ring-offset-2 ring-offset-gray-900 scale-110'
                       : 'hover:scale-105'
                   }`}
                   style={{ backgroundColor: presetColor }}
+                  data-testid={`color-preset-${presetColor}`}
                 />
               ))}
             </div>
+            {colorError && (
+              <motion.div
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-2 text-xs text-red-400 flex items-center gap-1"
+              >
+                <AlertCircle size={12} />
+                {colorError}
+              </motion.div>
+            )}
           </div>
 
           {/* Preview */}
@@ -212,6 +297,7 @@ const CreateFactionForm: React.FC<CreateFactionFormProps> = ({
               type="submit"
               disabled={isLoading || !name.trim()}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg font-medium transition-colors"
+              data-testid="submit-faction-btn"
             >
               <Save size={16} />
               {isLoading ? 'Creating...' : 'Create Faction'}

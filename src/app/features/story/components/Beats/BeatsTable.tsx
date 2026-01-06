@@ -39,7 +39,8 @@ export default function BeatsTable({ beats, setBeats, isReordering }: BeatsTable
         editable: true,
         className: 'font-semibold',
         validate: (value) => {
-          if (!value || value.trim() === '') {
+          const strValue = String(value || '');
+          if (!strValue || strValue.trim() === '') {
             return 'Name is required';
           }
           return null;
@@ -52,7 +53,7 @@ export default function BeatsTable({ beats, setBeats, isReordering }: BeatsTable
         type: 'text',
         editable: true,
         className: 'text-xs text-gray-400',
-        render: (value) => value || '-',
+        render: (value: unknown) => (value as string) || '-',
       },
       {
         key: 'type',

@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useAIAssistant } from '@/app/hooks/useAIAssistant';
 import { SuggestionCard } from './components/SuggestionCard';
-import type { SuggestionType, SuggestionDepth } from '@/app/types/AIAssistant';
+import type { SuggestionType, SuggestionDepth, AISuggestion } from '@/app/types/AIAssistant';
 import { SectionWrapper } from '@/app/components/UI';
 
 interface AIAssistantPanelProps {
@@ -70,7 +70,13 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
 
   // Auto-generate on mount if enabled and auto-suggest is on
   useEffect(() => {
-    if (isEnabled && settings.auto_suggest && projectId && isHealthy) {
+    const canAutoGenerate = isEnabled && settings.auto_suggest;
+    const hasValidProject = Boolean(projectId);
+    const serviceAvailable = isHealthy;
+
+    const shouldAutoGenerate = canAutoGenerate && hasValidProject && serviceAvailable;
+
+    if (shouldAutoGenerate) {
       handleGenerate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -81,7 +87,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
     await generateSuggestions(contextType, contextId);
   };
 
-  const handleInsert = (suggestion: any) => {
+  const handleInsert = (suggestion: AISuggestion) => {
     if (onInsertSuggestion) {
       onInsertSuggestion(suggestion.content);
     }
@@ -309,7 +315,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
             className="flex-1 overflow-y-auto p-3 space-y-2"
           >
             {isError && (
-              <SectionWrapper borderColor="red" padding="md" className="text-center">
+              <SectionWrapper padding="md" className="text-center border border-red-500/30">
                 <AlertCircle className="w-6 h-6 text-red-400 mx-auto mb-2" />
                 <p className="text-xs text-red-300">
                   {error instanceof Error ? error.message : 'Failed to generate suggestions'}

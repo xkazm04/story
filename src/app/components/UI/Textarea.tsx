@@ -1,7 +1,8 @@
 'use client';
 
-import { forwardRef, TextareaHTMLAttributes } from 'react';
+import { forwardRef, TextareaHTMLAttributes, useId } from 'react';
 import { clsx } from 'clsx';
+import { useFocusRing } from '@/app/utils/focusRing';
 
 export type TextareaSize = 'sm' | 'md' | 'lg';
 
@@ -38,8 +39,10 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     },
     ref
   ) => {
-    const textareaId = id || `textarea-${Math.random().toString(36).substr(2, 9)}`;
+    const reactId = useId();
     const hasError = !!error;
+    const focusClasses = useFocusRing(hasError, "input");
+    const textareaId = id || `textarea-${reactId}`;
     const charCount = value ? String(value).length : 0;
     const showCount = showCharCount || maxCharCount;
 
@@ -62,24 +65,30 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             )}
           </div>
         )}
-        <textarea
-          ref={ref}
-          id={textareaId}
-          value={value}
+        <div
           className={clsx(
-            'bg-gray-900/50 border rounded-lg text-white placeholder-gray-500',
-            'transition-all outline-none resize-y',
-            'focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50',
+            'rounded-lg border bg-slate-950/60',
+            'transition-all outline-none text-white placeholder-gray-500',
+            'focus-within:border-cyan-500/60 focus-within:ring-1 focus-within:ring-cyan-500/60',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             hasError
-              ? 'border-red-500/50 focus:border-red-500/50 focus:ring-red-500/50'
-              : 'border-gray-600/50',
-            sizeClasses[size],
-            fullWidth && 'w-full',
-            className
+              ? 'border-red-500/60 focus-within:border-red-500/60 focus-within:ring-red-500/60'
+              : 'border-slate-700/70',
+            fullWidth && 'w-full'
           )}
-          {...props}
-        />
+        >
+          <textarea
+            ref={ref}
+            id={textareaId}
+            value={value}
+            className={clsx(
+              'bg-transparent border-none outline-none resize-y w-full',
+              sizeClasses[size],
+              className
+            )}
+            {...props}
+          />
+        </div>
         {(error || helperText) && (
           <span
             className={clsx(

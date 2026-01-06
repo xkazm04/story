@@ -1,127 +1,43 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { Save, Check, Palette } from 'lucide-react';
-import { characterApi } from '@/app/api/characters';
-import { Appearance, defaultAppearance } from '@/app/types/Character';
+import { Save, Check, Palette, Sparkles, Loader2 } from 'lucide-react';
 import { SectionWrapper } from '@/app/components/UI';
-import { 
-  saveCharacterAppearance, 
-  fetchCharacterAppearance 
-} from '@/app/lib/services/characterAppearanceService';
-import { CharacterImageExtraction } from './CharacterImageExtraction';
-import { AppearanceBasicAttributes } from './AppearanceBasicAttributes';
-import { AppearanceFacialFeatures } from './AppearanceFacialFeatures';
-import { AppearanceClothing } from './AppearanceClothing';
-import { AppearanceCustomFeatures } from './AppearanceCustomFeatures';
-import { AppearancePreview } from './AppearancePreview';
+import { useAppearanceForm, appearanceFormConfig } from './lib';
+import {
+  CharacterImageExtraction,
+  FormSection,
+  ImageGenerationPreview,
+  AppearancePreview,
+} from './components';
 
 interface CharacterAppearanceFormProps {
   characterId: string;
 }
 
 /**
- * Refactored Character Appearance Form
- * Modular structure with image extraction capability
+ * Character Appearance Form
+ * Non-stepped version showing all sections at once
  */
 const CharacterAppearanceForm: React.FC<CharacterAppearanceFormProps> = ({
   characterId,
 }) => {
-  const { data: character } = characterApi.useGetCharacter(characterId);
-  const [appearance, setAppearance] = useState<Appearance>(defaultAppearance);
-  const [prompt, setPrompt] = useState<string>('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Load existing appearance data on mount
-  React.useEffect(() => {
-    const loadAppearance = async () => {
-      if (!characterId) return;
-      
-      try {
-        setIsLoading(true);
-        const { appearance: loadedAppearance, prompt: loadedPrompt } = 
-          await fetchCharacterAppearance(characterId);
-        
-        if (loadedAppearance && Object.keys(loadedAppearance).length > 0) {
-          setAppearance({
-            ...defaultAppearance,
-            ...loadedAppearance,
-            face: {
-              ...defaultAppearance.face,
-              ...loadedAppearance.face,
-            },
-            clothing: {
-              ...defaultAppearance.clothing,
-              ...loadedAppearance.clothing,
-            },
-          });
-        }
-        
-        if (loadedPrompt) {
-          setPrompt(loadedPrompt);
-        }
-      } catch (error) {
-        console.error('Failed to load appearance:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadAppearance();
-  }, [characterId]);
-
-  const handleChange = (field: string, value: string) => {
-    // Handle nested fields (e.g., "face.eyeColor", "clothing.style")
-    if (field.includes('.')) {
-      const [category, subField] = field.split('.');
-      setAppearance((prev) => ({
-        ...prev,
-        [category]: {
-          ...(prev[category as keyof Appearance] as any),
-          [subField]: value,
-        },
-      }));
-    } else {
-      setAppearance((prev) => ({
-        ...prev,
-        [field]: value,
-      }));
-    }
-  };
-
-  const handleExtractedAppearance = (extractedData: Partial<Appearance>, extractedPrompt: string) => {
-    setAppearance((prev) => ({
-      ...prev,
-      ...extractedData,
-      face: {
-        ...prev.face,
-        ...extractedData.face,
-      },
-      clothing: {
-        ...prev.clothing,
-        ...extractedData.clothing,
-      },
-    }));
-    setPrompt(extractedPrompt);
-  };
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await saveCharacterAppearance(characterId, appearance, prompt);
-
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } catch (error) {
-      console.error('Failed to save appearance:', error);
-      alert('Failed to save appearance. Please try again.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const {
+    appearance,
+    prompt,
+    isLoading,
+    isSaving,
+    saved,
+    isRandomizing,
+    handleChange,
+    handleSectionPromptGenerated,
+    handleGenerateFullPrompt,
+    handleRandomize,
+    handleExtractedAppearance,
+    handleSave,
+    setPrompt,
+  } = useAppearanceForm({ characterId });
 
   if (isLoading) {
     return (
@@ -145,30 +61,74 @@ const CharacterAppearanceForm: React.FC<CharacterAppearanceFormProps> = ({
 
       {/* Image Extraction Section */}
       <SectionWrapper borderColor="purple" padding="md">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h4 className="font-semibold text-white mb-1">AI Image Extraction</h4>
+            <p className="text-xs text-gray-400">Extract character traits from an image</p>
+          </div>
+          <button
+            onClick={handleRandomize}
+            disabled={isRandomizing}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg font-medium transition-colors text-sm"
+            title="Generate random character attributes"
+          >
+            {isRandomizing ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Randomizing...
+              </>
+            ) : (
+              <>
+                <Sparkles size={16} />
+                Randomize
+              </>
+            )}
+          </button>
+        </div>
         <CharacterImageExtraction onExtracted={handleExtractedAppearance} />
       </SectionWrapper>
 
       {/* Manual Input Sections */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <AppearanceBasicAttributes appearance={appearance} onChange={handleChange} />
-        <AppearanceFacialFeatures appearance={appearance} onChange={handleChange} />
-        <AppearanceClothing appearance={appearance} onChange={handleChange} />
-        <AppearanceCustomFeatures appearance={appearance} onChange={handleChange} />
+        {appearanceFormConfig.map((section) => (
+          <FormSection
+            key={section.id}
+            section={section}
+            appearance={appearance}
+            onChange={handleChange}
+            onPromptGenerated={handleSectionPromptGenerated}
+          />
+        ))}
       </div>
 
       {/* AI Generation Prompt */}
       <SectionWrapper borderColor="orange" padding="md">
-        <h4 className="font-semibold text-white mb-2">AI Generation Prompt</h4>
-        <p className="text-xs text-gray-400 mb-3">
-          A prompt to regenerate this character in different styles (focuses on the character only, not background or image style)
-        </p>
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h4 className="font-semibold text-white mb-1">AI Generation Prompt</h4>
+            <p className="text-xs text-gray-400">
+              Auto-generated from form inputs. Edit manually or regenerate from template.
+            </p>
+          </div>
+          <button
+            onClick={handleGenerateFullPrompt}
+            className="flex items-center gap-2 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors text-xs"
+            title="Regenerate prompt from all form inputs"
+          >
+            <Sparkles size={14} />
+            Regenerate
+          </button>
+        </div>
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="e.g., A tall athletic male adult with fair skin, short brown hair, blue eyes, clean-shaven, wearing black and silver armor..."
+          placeholder="Prompt will be auto-generated as you fill the form..."
           className="w-full min-h-[100px] px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none text-sm"
         />
       </SectionWrapper>
+
+      {/* Image Generation Preview */}
+      <ImageGenerationPreview prompt={prompt} />
 
       {/* Generated Description Preview */}
       <AppearancePreview appearance={appearance} />

@@ -138,40 +138,46 @@ function validateRule<T>(
       break;
 
     case 'min':
-      if (typeof value === 'number') {
-        if (value < rule.value) {
-          return rule.message;
-        }
-      } else if (typeof value === 'string') {
-        if (value.length < rule.value) {
-          return rule.message;
-        }
-      } else if (Array.isArray(value)) {
-        if (value.length < rule.value) {
-          return rule.message;
+      if (typeof rule.value === 'number') {
+        const minVal = rule.value;
+        if (typeof value === 'number') {
+          if (value < minVal) {
+            return rule.message;
+          }
+        } else if (typeof value === 'string') {
+          if (value.length < minVal) {
+            return rule.message;
+          }
+        } else if (Array.isArray(value)) {
+          if (value.length < minVal) {
+            return rule.message;
+          }
         }
       }
       break;
 
     case 'max':
-      if (typeof value === 'number') {
-        if (value > rule.value) {
-          return rule.message;
-        }
-      } else if (typeof value === 'string') {
-        if (value.length > rule.value) {
-          return rule.message;
-        }
-      } else if (Array.isArray(value)) {
-        if (value.length > rule.value) {
-          return rule.message;
+      if (typeof rule.value === 'number') {
+        const maxVal = rule.value;
+        if (typeof value === 'number') {
+          if (value > maxVal) {
+            return rule.message;
+          }
+        } else if (typeof value === 'string') {
+          if (value.length > maxVal) {
+            return rule.message;
+          }
+        } else if (Array.isArray(value)) {
+          if (value.length > maxVal) {
+            return rule.message;
+          }
         }
       }
       break;
 
     case 'pattern':
-      if (typeof value === 'string') {
-        const regex = new RegExp(rule.value);
+      if (typeof value === 'string' && (typeof rule.value === 'string' || rule.value instanceof RegExp)) {
+        const regex = rule.value instanceof RegExp ? rule.value : new RegExp(rule.value);
         if (!regex.test(value)) {
           return rule.message;
         }

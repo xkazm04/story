@@ -83,15 +83,15 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
   };
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-4 text-sm text-slate-200">
       {/* Final Prompt Preview */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-300 mb-2">
+        <label className="block text-xs font-medium text-slate-200 mb-2 tracking-tight">
           Combined Prompt Preview
         </label>
-        <div className="bg-gray-800 rounded-lg p-3 min-h-[60px] text-gray-300 text-sm">
+        <div className="bg-slate-950/80 rounded-lg p-3 min-h-[60px] text-slate-200 text-xs border border-slate-900/70">
           {getCombinedPrompt() || (
-            <span className="text-gray-500">Your prompt will appear here...</span>
+            <span className="text-slate-500">Your prompt will appear here...</span>
           )}
         </div>
       </div>
@@ -104,17 +104,17 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
         return (
           <div
             key={section.key}
-            className="border border-gray-800 rounded-lg overflow-hidden"
+            className="border border-slate-900/70 rounded-lg overflow-hidden bg-slate-950/95"
           >
             {/* Section Header */}
             <button
               onClick={() => toggleSection(section.key)}
-              className="w-full flex items-center justify-between p-3 bg-gray-800 hover:bg-gray-750 transition-colors"
+              className="w-full flex items-center justify-between p-3 bg-slate-950/95 hover:bg-slate-900 transition-colors"
             >
               <div className="flex items-center gap-2">
-                <Icon className="w-4 h-4 text-gray-400" />
-                <span className="font-medium text-white">{section.label}</span>
-                <span className="text-xs text-gray-500">{section.description}</span>
+                <Icon className="w-4 h-4 text-slate-500" />
+                <span className="text-xs font-medium text-slate-100 tracking-tight">{section.label}</span>
+                <span className="text-[11px] text-slate-500">{section.description}</span>
               </div>
               {promptComponents[section.key] && (
                 <span className="text-xs text-green-500">✓ Filled</span>
@@ -127,7 +127,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
                 initial={{ height: 0 }}
                 animate={{ height: 'auto' }}
                 exit={{ height: 0 }}
-                className="bg-gray-850"
+                className="bg-slate-950/95"
               >
                 <div className="p-3 space-y-3">
                   <textarea
@@ -135,7 +135,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
                     onChange={(e) => handlePromptChange(section.key, e.target.value)}
                     placeholder={section.placeholder}
                     rows={3}
-                    className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-transparent border border-slate-800 rounded-lg p-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/60"
                   />
 
                   {/* AI Enhancement */}
@@ -152,19 +152,19 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
       })}
 
       {/* Negative Prompt Section */}
-      <div className="border border-gray-800 rounded-lg overflow-hidden">
+      <div className="border border-slate-900/70 rounded-lg overflow-hidden bg-slate-950/95">
         <button
           onClick={() => toggleSection('negative')}
-          className="w-full flex items-center justify-between p-3 bg-gray-800 hover:bg-gray-750 transition-colors"
+          className="w-full flex items-center justify-between p-3 bg-slate-950/95 hover:bg-slate-900 transition-colors"
         >
           <div className="flex items-center gap-2">
-            {expandedSections.has('negative') ? (
-              <ChevronDown className="w-4 h-4 text-gray-400" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-gray-400" />
-            )}
-            <span className="font-medium text-white">Negative Prompt</span>
-            <span className="text-xs text-gray-500">Things to avoid</span>
+              {expandedSections.has('negative') ? (
+                <ChevronDown className="w-4 h-4 text-slate-500" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-slate-500" />
+              )}
+            <span className="text-xs font-medium text-slate-100 tracking-tight">Negative Prompt</span>
+            <span className="text-[11px] text-slate-500">Things to avoid</span>
           </div>
           {negativePrompt && <span className="text-xs text-green-500">✓ Filled</span>}
         </button>
@@ -174,7 +174,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
             initial={{ height: 0 }}
             animate={{ height: 'auto' }}
             exit={{ height: 0 }}
-            className="bg-gray-850"
+            className="bg-slate-950/95"
           >
             <div className="p-3 space-y-3">
               <textarea
@@ -182,7 +182,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
                 onChange={(e) => setNegativePrompt(e.target.value)}
                 placeholder="e.g., blurry, low quality, watermark, deformed..."
                 rows={3}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-transparent border border-slate-800 rounded-lg p-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/60"
               />
 
               <NegativePromptGenerator

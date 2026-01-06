@@ -28,17 +28,30 @@ export interface TypeGuardResult<T> {
 }
 
 /**
+ * Generic helper for creating simple type guards
+ * @param schema - Zod schema to validate against
+ * @param value - Value to check
+ * @returns True if value passes schema validation
+ */
+function createTypeGuard<T>(
+  schema: { parse: (data: unknown) => T },
+  value: unknown
+): value is T {
+  try {
+    schema.parse(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Type guard for RelationshipType enum
  * @param value - Value to check
  * @returns True if value is a valid RelationshipType
  */
 export function isRelationshipType(value: unknown): value is RelationshipType {
-  try {
-    RelationshipTypeSchema.parse(value);
-    return true;
-  } catch {
-    return false;
-  }
+  return createTypeGuard(RelationshipTypeSchema, value);
 }
 
 /**
@@ -47,12 +60,7 @@ export function isRelationshipType(value: unknown): value is RelationshipType {
  * @returns TypeGuardResult with validation details
  */
 export function isCharacterNodeData(value: unknown): value is CharacterNodeData {
-  try {
-    CharacterNodeDataSchema.parse(value);
-    return true;
-  } catch {
-    return false;
-  }
+  return createTypeGuard(CharacterNodeDataSchema, value);
 }
 
 /**
@@ -61,12 +69,7 @@ export function isCharacterNodeData(value: unknown): value is CharacterNodeData 
  * @returns TypeGuardResult with validation details
  */
 export function isFactionNodeData(value: unknown): value is FactionNodeData {
-  try {
-    FactionNodeDataSchema.parse(value);
-    return true;
-  } catch {
-    return false;
-  }
+  return createTypeGuard(FactionNodeDataSchema, value);
 }
 
 /**
@@ -75,12 +78,7 @@ export function isFactionNodeData(value: unknown): value is FactionNodeData {
  * @returns True if value is valid NodeData
  */
 export function isNodeData(value: unknown): value is NodeData {
-  try {
-    NodeDataSchema.parse(value);
-    return true;
-  } catch {
-    return false;
-  }
+  return createTypeGuard(NodeDataSchema, value);
 }
 
 /**
@@ -89,12 +87,7 @@ export function isNodeData(value: unknown): value is NodeData {
  * @returns True if value is a valid RelationshipNode
  */
 export function isRelationshipNode(value: unknown): value is RelationshipNode {
-  try {
-    RelationshipNodeSchema.parse(value);
-    return true;
-  } catch {
-    return false;
-  }
+  return createTypeGuard(RelationshipNodeSchema, value);
 }
 
 /**
@@ -129,12 +122,7 @@ export function validateRelationshipNode(value: unknown): TypeGuardResult<Relati
  * @returns True if value is valid RelationshipEdgeData
  */
 export function isRelationshipEdgeData(value: unknown): value is RelationshipEdgeData {
-  try {
-    RelationshipEdgeDataSchema.parse(value);
-    return true;
-  } catch {
-    return false;
-  }
+  return createTypeGuard(RelationshipEdgeDataSchema, value);
 }
 
 /**
@@ -143,12 +131,7 @@ export function isRelationshipEdgeData(value: unknown): value is RelationshipEdg
  * @returns True if value is a valid RelationshipEdge
  */
 export function isRelationshipEdge(value: unknown): value is RelationshipEdge {
-  try {
-    RelationshipEdgeSchema.parse(value);
-    return true;
-  } catch {
-    return false;
-  }
+  return createTypeGuard(RelationshipEdgeSchema, value);
 }
 
 /**

@@ -98,6 +98,7 @@ const ActRecommendations = ({ recommendations, overallAssessment, onClose, onApp
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 className="bg-green-900/20 border border-green-700/30 rounded-lg p-4 mb-4"
+                data-testid="act-recommendations-none"
             >
                 <div className="flex items-start gap-3">
                     <Sparkles className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
@@ -126,6 +127,7 @@ const ActRecommendations = ({ recommendations, overallAssessment, onClose, onApp
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-4 mb-4 space-y-3"
+            data-testid="act-recommendations-panel"
         >
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
@@ -222,6 +224,7 @@ const ActRecommendations = ({ recommendations, overallAssessment, onClose, onApp
                                         onClick={() => handleApprove(rec)}
                                         disabled={isApplying}
                                         className="flex items-center gap-1 text-xs"
+                                        data-testid={`apply-recommendation-${rec.act_id}`}
                                     >
                                         {isApplying ? (
                                             <>Applying...</>
@@ -238,6 +241,7 @@ const ActRecommendations = ({ recommendations, overallAssessment, onClose, onApp
                                         onClick={() => handleReject(rec)}
                                         disabled={isApplying}
                                         className="flex items-center gap-1 text-xs"
+                                        data-testid={`reject-recommendation-${rec.act_id}`}
                                     >
                                         <X className="w-3 h-3" />
                                         Reject
@@ -258,6 +262,7 @@ const ActRecommendations = ({ recommendations, overallAssessment, onClose, onApp
                         onClick={handleApplyAll}
                         disabled={isApplying}
                         className="flex items-center gap-1"
+                        data-testid="apply-all-recommendations-btn"
                     >
                         <Check className="w-4 h-4" />
                         Apply All ({pendingCount})
@@ -266,6 +271,7 @@ const ActRecommendations = ({ recommendations, overallAssessment, onClose, onApp
                         size="sm"
                         variant="secondary"
                         onClick={handleCloseAll}
+                        data-testid="dismiss-all-recommendations-btn"
                     >
                         Dismiss All
                     </Button>

@@ -17,6 +17,7 @@ import {
 } from './index';
 import { Character, CharRelationship } from '@/app/types/Character';
 import { Faction, FactionRelationship } from '@/app/types/Faction';
+import { logger } from '@/app/utils/logger';
 
 /**
  * Validation error with detailed information
@@ -53,16 +54,20 @@ export interface TypeGuardResult<T> {
 }
 
 /**
- * Validates API response containing characters
- * @param data - Raw API response
+ * Generic validation helper to reduce code duplication
+ * @param schema - Zod schema to validate against
+ * @param data - Data to validate
  * @returns ValidationResult with typed data or errors
  */
-export function validateCharacterArray(data: unknown): ValidationResult<Character[]> {
+function validateWithSchema<T>(
+  schema: { parse: (data: unknown) => T },
+  data: unknown
+): ValidationResult<T> {
   try {
-    const validated = CharacterArraySchema.parse(data);
+    const validated = schema.parse(data);
     return {
       success: true,
-      data: validated as Character[]
+      data: validated as T
     };
   } catch (error) {
     if (error instanceof ZodError) {
@@ -76,6 +81,15 @@ export function validateCharacterArray(data: unknown): ValidationResult<Characte
       errors: ['Unknown validation error']
     };
   }
+}
+
+/**
+ * Validates API response containing characters
+ * @param data - Raw API response
+ * @returns ValidationResult with typed data or errors
+ */
+export function validateCharacterArray(data: unknown): ValidationResult<Character[]> {
+  return validateWithSchema(CharacterArraySchema, data);
 }
 
 /**
@@ -84,24 +98,7 @@ export function validateCharacterArray(data: unknown): ValidationResult<Characte
  * @returns ValidationResult with typed data or errors
  */
 export function validateFactionArray(data: unknown): ValidationResult<Faction[]> {
-  try {
-    const validated = FactionArraySchema.parse(data);
-    return {
-      success: true,
-      data: validated as Faction[]
-    };
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return {
-        success: false,
-        errors: error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
-      };
-    }
-    return {
-      success: false,
-      errors: ['Unknown validation error']
-    };
-  }
+  return validateWithSchema(FactionArraySchema, data);
 }
 
 /**
@@ -110,24 +107,7 @@ export function validateFactionArray(data: unknown): ValidationResult<Faction[]>
  * @returns ValidationResult with typed data or errors
  */
 export function validateCharRelationshipArray(data: unknown): ValidationResult<CharRelationship[]> {
-  try {
-    const validated = CharRelationshipArraySchema.parse(data);
-    return {
-      success: true,
-      data: validated as CharRelationship[]
-    };
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return {
-        success: false,
-        errors: error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
-      };
-    }
-    return {
-      success: false,
-      errors: ['Unknown validation error']
-    };
-  }
+  return validateWithSchema(CharRelationshipArraySchema, data);
 }
 
 /**
@@ -136,24 +116,7 @@ export function validateCharRelationshipArray(data: unknown): ValidationResult<C
  * @returns ValidationResult with typed data or errors
  */
 export function validateFactionRelationshipArray(data: unknown): ValidationResult<FactionRelationship[]> {
-  try {
-    const validated = FactionRelationshipArraySchema.parse(data);
-    return {
-      success: true,
-      data: validated as FactionRelationship[]
-    };
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return {
-        success: false,
-        errors: error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
-      };
-    }
-    return {
-      success: false,
-      errors: ['Unknown validation error']
-    };
-  }
+  return validateWithSchema(FactionRelationshipArraySchema, data);
 }
 
 /**
@@ -162,24 +125,7 @@ export function validateFactionRelationshipArray(data: unknown): ValidationResul
  * @returns ValidationResult with typed data or errors
  */
 export function validateRelationshipMapData(data: unknown): ValidationResult<RelationshipMapData> {
-  try {
-    const validated = RelationshipMapDataSchema.parse(data);
-    return {
-      success: true,
-      data: validated as RelationshipMapData
-    };
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return {
-        success: false,
-        errors: error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
-      };
-    }
-    return {
-      success: false,
-      errors: ['Unknown validation error']
-    };
-  }
+  return validateWithSchema(RelationshipMapDataSchema, data);
 }
 
 /**
@@ -188,24 +134,7 @@ export function validateRelationshipMapData(data: unknown): ValidationResult<Rel
  * @returns ValidationResult with typed data or errors
  */
 export function validateNodePositionUpdate(data: unknown): ValidationResult<NodePositionUpdate> {
-  try {
-    const validated = NodePositionUpdateSchema.parse(data);
-    return {
-      success: true,
-      data: validated as NodePositionUpdate
-    };
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return {
-        success: false,
-        errors: error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
-      };
-    }
-    return {
-      success: false,
-      errors: ['Unknown validation error']
-    };
-  }
+  return validateWithSchema(NodePositionUpdateSchema, data);
 }
 
 /**
@@ -214,24 +143,7 @@ export function validateNodePositionUpdate(data: unknown): ValidationResult<Node
  * @returns ValidationResult with typed data or errors
  */
 export function validateEdgeUpdate(data: unknown): ValidationResult<EdgeUpdate> {
-  try {
-    const validated = EdgeUpdateSchema.parse(data);
-    return {
-      success: true,
-      data: validated as EdgeUpdate
-    };
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return {
-        success: false,
-        errors: error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
-      };
-    }
-    return {
-      success: false,
-      errors: ['Unknown validation error']
-    };
-  }
+  return validateWithSchema(EdgeUpdateSchema, data);
 }
 
 /**
@@ -240,24 +152,7 @@ export function validateEdgeUpdate(data: unknown): ValidationResult<EdgeUpdate> 
  * @returns ValidationResult with RelationshipType or errors
  */
 export function validateRelationshipType(type: unknown): ValidationResult<RelationshipType> {
-  try {
-    const validated = RelationshipTypeSchema.parse(type);
-    return {
-      success: true,
-      data: validated
-    };
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return {
-        success: false,
-        errors: error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
-      };
-    }
-    return {
-      success: false,
-      errors: ['Unknown validation error']
-    };
-  }
+  return validateWithSchema(RelationshipTypeSchema, type);
 }
 
 /**
@@ -292,7 +187,7 @@ export function safeValidate<T>(
   const result = validationFn(data);
 
   if (!result.success) {
-    console.error(`Validation failed for ${context}:`, result.errors);
+    logger.warn(`Validation failed for ${context}`, { errors: result.errors });
     return defaultValue;
   }
 
@@ -325,7 +220,7 @@ export function validateAndSanitizeArray<T>(
   });
 
   if (errors.length > 0) {
-    console.warn(`Validation warnings for ${context}:`, errors);
+    logger.warn(`Validation warnings for ${context}`, { errors });
   }
 
   return validItems;

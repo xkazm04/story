@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { beatSummaryPrompt } from '@/prompts/story/beatSummary';
+import { logger } from '@/app/utils/logger';
+import { HTTP_STATUS } from '@/app/utils/apiErrorHandling';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -15,6 +17,45 @@ interface BeatSummaryRequest {
 interface BeatSummaryResponse {
   summary: string;
   beatId: string;
+}
+
+interface BeatContext {
+  beatName: string;
+  beatDescription?: string;
+  beatType?: string;
+  actContext?: string;
+  order?: number;
+  precedingBeatSummary?: string;
+}
+
+/**
+ * Generates a single beat summary using LLM
+ */
+async function generateBeatSummary(context: BeatContext): Promise<string> {
+  const systemPrompt = beatSummaryPrompt.system;
+  const userPrompt = beatSummaryPrompt.user(context);
+
+  const llmResponse = await fetch(`${API_BASE_URL}/api/llm`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      prompt: userPrompt,
+      systemPrompt,
+      temperature: 0.7,
+      maxTokens: 100, // Keep summaries concise
+      stream: false,
+    }),
+  });
+
+  if (!llmResponse.ok) {
+    const errorData = await llmResponse.json();
+    throw new Error(errorData.message || 'Failed to generate summary');
+  }
+
+  const llmData = await llmResponse.json();
+  return llmData.content.trim();
 }
 
 /**
@@ -40,12 +81,12 @@ export async function POST(request: NextRequest) {
     if (!beatName) {
       return NextResponse.json(
         { error: 'Missing beat name', message: 'Beat name is required' },
-        { status: 400 }
+        { status: HTTP_STATUS.BAD_REQUEST }
       );
     }
 
     // Build context for prompt
-    const context = {
+    const context: BeatContext = {
       beatName,
       beatDescription,
       beatType,
@@ -54,40 +95,7 @@ export async function POST(request: NextRequest) {
       precedingBeatSummary,
     };
 
-    // Generate prompt using template
-    const systemPrompt = beatSummaryPrompt.system;
-    const userPrompt = beatSummaryPrompt.user(context);
-
-    // Call LLM API
-    const llmResponse = await fetch(`${API_BASE_URL}/api/llm`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        prompt: userPrompt,
-        systemPrompt,
-        temperature: 0.7,
-        maxTokens: 100, // Keep summaries concise
-        stream: false,
-      }),
-    });
-
-    if (!llmResponse.ok) {
-      const errorData = await llmResponse.json();
-      console.error('LLM API error:', errorData);
-
-      return NextResponse.json(
-        {
-          error: 'LLM generation failed',
-          message: errorData.message || 'Failed to generate summary',
-        },
-        { status: llmResponse.status }
-      );
-    }
-
-    const llmData = await llmResponse.json();
-    const summary = llmData.content.trim();
+    const summary = await generateBeatSummary(context);
 
     const response: BeatSummaryResponse = {
       summary,
@@ -96,20 +104,63 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Beat summary API error:', error);
+    logger.apiError('POST /api/beat-summary', error);
 
     return NextResponse.json(
       {
         error: 'Internal server error',
         message: error instanceof Error ? error.message : 'Unknown error occurred',
       },
-      { status: 500 }
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
 
 /**
- * POST /api/beat-summary/batch
+ * Generates summary for a single beat in batch processing
+ */
+async function generateBatchBeatSummary(
+  beat: Record<string, unknown>,
+  index: number,
+  beats: Record<string, unknown>[]
+): Promise<{
+  beatId: unknown;
+  beatName: unknown;
+  summary: string;
+  error?: boolean;
+}> {
+  const context: BeatContext = {
+    beatName: beat.name as string,
+    beatDescription: beat.description as string | undefined,
+    beatType: beat.type as string | undefined,
+    actContext: beat.actContext as string | undefined,
+    order: index,
+    precedingBeatSummary:
+      index > 0 && beats[index - 1].summary
+        ? (beats[index - 1].summary as string)
+        : undefined,
+  };
+
+  try {
+    const summary = await generateBeatSummary(context);
+    return {
+      beatId: beat.id,
+      beatName: beat.name,
+      summary,
+    };
+  } catch (error) {
+    logger.error(`Error generating summary for beat ${beat.name as string}`, error);
+    return {
+      beatId: beat.id,
+      beatName: beat.name,
+      summary: (beat.description as string) || 'Summary generation failed',
+      error: true,
+    };
+  }
+}
+
+/**
+ * PUT /api/beat-summary
  *
  * Generates summaries for multiple beats in a single request
  * More efficient for generating summaries for entire act or project
@@ -121,74 +172,27 @@ export async function PUT(request: NextRequest) {
     if (!beats || !Array.isArray(beats)) {
       return NextResponse.json(
         { error: 'Invalid request', message: 'beats array is required' },
-        { status: 400 }
+        { status: HTTP_STATUS.BAD_REQUEST }
       );
     }
 
     // Generate summaries for all beats
-    const summaryPromises = beats.map(async (beat: any, index: number) => {
-      const context = {
-        beatName: beat.name,
-        beatDescription: beat.description,
-        beatType: beat.type,
-        actContext: beat.actContext,
-        order: index,
-        precedingBeatSummary: index > 0 && beats[index - 1].summary
-          ? beats[index - 1].summary
-          : undefined,
-      };
-
-      const systemPrompt = beatSummaryPrompt.system;
-      const userPrompt = beatSummaryPrompt.user(context);
-
-      try {
-        const llmResponse = await fetch(`${API_BASE_URL}/api/llm`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            prompt: userPrompt,
-            systemPrompt,
-            temperature: 0.7,
-            maxTokens: 100,
-            stream: false,
-          }),
-        });
-
-        if (!llmResponse.ok) {
-          throw new Error(`Failed to generate summary for beat: ${beat.name}`);
-        }
-
-        const llmData = await llmResponse.json();
-        return {
-          beatId: beat.id,
-          beatName: beat.name,
-          summary: llmData.content.trim(),
-        };
-      } catch (error) {
-        console.error(`Error generating summary for beat ${beat.name}:`, error);
-        return {
-          beatId: beat.id,
-          beatName: beat.name,
-          summary: beat.description || 'Summary generation failed',
-          error: true,
-        };
-      }
-    });
+    const summaryPromises = beats.map((beat, index) =>
+      generateBatchBeatSummary(beat, index, beats)
+    );
 
     const summaries = await Promise.all(summaryPromises);
 
     return NextResponse.json({ summaries });
   } catch (error) {
-    console.error('Batch beat summary API error:', error);
+    logger.apiError('PUT /api/beat-summary (batch)', error);
 
     return NextResponse.json(
       {
         error: 'Internal server error',
         message: error instanceof Error ? error.message : 'Unknown error occurred',
       },
-      { status: 500 }
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
     );
   }
 }
