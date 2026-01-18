@@ -1,0 +1,804 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-01-15",
+  "description": "Business feature map for Story - Creative writing and storytelling application",
+  "contexts": [
+    {
+      "id": "project-management",
+      "title": "Project Management",
+      "summary": "Create, browse, edit, and delete creative writing projects. Users can view project cards, access project statistics, and manage their story portfolio.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/projects/ProjectsFeature.tsx",
+          "src/app/features/projects/components/ProjectCard.tsx",
+          "src/app/features/projects/components/ProjectCardSkeleton.tsx",
+          "src/app/features/projects/components/ProjectDeleteModal.tsx",
+          "src/app/features/projects/sub_projectModal/ProjectEditModal.tsx",
+          "src/app/features/projectOverview/ProjectOverview.tsx",
+          "src/app/features/projectOverview/components/OverviewStats.tsx"
+        ],
+        "logic": [
+          "src/app/hooks/integration/useProjects.ts",
+          "src/app/hooks/integration/useProjectStats.ts",
+          "src/app/store/slices/projectSlice.ts"
+        ],
+        "server": [
+          "src/app/api/projects/route.ts",
+          "src/app/api/projects/[id]/route.ts",
+          "src/app/api/projectStats/route.ts"
+        ],
+        "data": [
+          "src/app/types/Project.ts",
+          "db/mockData/projects.ts"
+        ]
+      }
+    },
+    {
+      "id": "character-core",
+      "title": "Character Management",
+      "summary": "Create and manage story characters with names, descriptions, and basic attributes. View character lists, details, and organize characters within projects.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/characters/CharactersFeature.tsx",
+          "src/app/features/characters/components/CharactersList.tsx",
+          "src/app/features/characters/components/CharacterCard.tsx",
+          "src/app/features/characters/components/CharacterCardSkeleton.tsx",
+          "src/app/features/characters/components/CharacterDetails.tsx",
+          "src/app/features/characters/components/CharacterCreateForm.tsx",
+          "src/app/features/characters/sub_CharRightPanel/CharRightPanel.tsx"
+        ],
+        "logic": [
+          "src/app/hooks/integration/useCharacters.ts",
+          "src/app/hooks/useCharacters.ts",
+          "src/app/store/slices/characterSlice.ts"
+        ],
+        "server": [
+          "src/app/api/characters/route.ts",
+          "src/app/api/characters/[id]/route.ts"
+        ],
+        "data": [
+          "src/app/types/Character.ts",
+          "db/mockData/characters.ts"
+        ]
+      }
+    },
+    {
+      "id": "character-creator",
+      "title": "Character Creator & Appearance",
+      "summary": "Multi-step character creation wizard with appearance customization. Configure physical attributes, select archetypes, upload images, and generate AI character portraits.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/characters/sub_CharacterCreator/CharacterAppearanceForm.tsx",
+          "src/app/features/characters/sub_CharacterCreator/CharacterAppearanceWithArchetypes.tsx",
+          "src/app/features/characters/sub_CharacterCreator/components/SteppedAppearanceForm.tsx",
+          "src/app/features/characters/sub_CharacterCreator/components/FormStepper.tsx",
+          "src/app/features/characters/sub_CharacterCreator/components/GenderSelector.tsx",
+          "src/app/features/characters/sub_CharacterCreator/components/CharacterImageUpload.tsx",
+          "src/app/features/characters/sub_CharacterCreator/components/ImageGenerationPreview.tsx",
+          "src/app/features/characters/sub_CharacterCreator/components/PromptGenerator.tsx",
+          "src/app/features/characters/components/ArchetypeSelector.tsx"
+        ],
+        "logic": [
+          "src/app/features/characters/sub_CharacterCreator/lib/formConfig.ts",
+          "src/app/features/characters/sub_CharacterCreator/lib/promptGenerators.ts",
+          "src/app/hooks/useImages.ts"
+        ],
+        "server": [
+          "src/app/api/char-appearance/route.ts",
+          "src/app/api/archetypes/route.ts",
+          "src/app/api/ai/compose-character-prompt/route.ts"
+        ],
+        "data": [
+          "src/app/types/Archetype.ts"
+        ]
+      }
+    },
+    {
+      "id": "character-avatar-generator",
+      "title": "Avatar Generation",
+      "summary": "Generate AI-powered character avatars with style selection and reference images. Browse generated avatars, select art styles, and create consistent character portraits.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/characters/sub_AvatarGenerator/AvatarGenerator.tsx",
+          "src/app/features/characters/sub_AvatarGenerator/components/AvatarGrid.tsx",
+          "src/app/features/characters/sub_AvatarGenerator/components/CurrentAvatar.tsx",
+          "src/app/features/characters/sub_AvatarGenerator/components/ReferenceSelector.tsx",
+          "src/app/features/characters/sub_AvatarGenerator/components/StyleSelector.tsx"
+        ],
+        "logic": [
+          "src/app/hooks/useImages.ts"
+        ],
+        "server": [
+          "src/app/api/ai/compose-avatar-prompt/route.ts",
+          "src/app/api/ai/generate-images/route.ts"
+        ],
+        "data": []
+      }
+    },
+    {
+      "id": "character-consistency",
+      "title": "Character Consistency & Propagation",
+      "summary": "Ensure character appearance stays consistent across scenes. Detect inconsistencies, propagate appearance changes throughout the story, and verify character visual continuity.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/characters/components/AppearancePropagationPanel.tsx",
+          "src/app/features/characters/components/AppearancePropagationIndicator.tsx",
+          "src/app/features/characters/components/CharacterConsistencyPanel.tsx"
+        ],
+        "logic": [
+          "src/app/hooks/useCharacterConsistency.ts",
+          "src/app/hooks/useAppearancePropagation.ts"
+        ],
+        "server": [
+          "src/app/api/character-consistency/route.ts",
+          "src/app/api/character-consistency/[id]/route.ts",
+          "src/app/api/appearance-propagation/route.ts",
+          "src/app/api/appearance-propagation/apply/route.ts",
+          "src/app/api/appearance-propagation/process/route.ts",
+          "src/app/api/cron/process-appearance-changes/route.ts"
+        ],
+        "data": [
+          "src/app/types/CharacterConsistency.ts"
+        ]
+      }
+    },
+    {
+      "id": "character-ai-generation",
+      "title": "Character AI Generation",
+      "summary": "AI-powered character content generation including backstories, personality traits, dialogue styles, and name suggestions. Get intelligent recommendations for character development.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/characters/components/CharacterBackstoryGenerator.tsx",
+          "src/app/features/characters/components/CharacterTraitGenerator.tsx",
+          "src/app/features/characters/components/CharacterDialogueStyler.tsx",
+          "src/app/features/characters/components/AISuggestionSidebar.tsx"
+        ],
+        "logic": [
+          "src/app/hooks/integration/useTraits.ts"
+        ],
+        "server": [
+          "src/app/api/traits/route.ts",
+          "src/app/api/traits/[id]/route.ts",
+          "src/app/api/name-suggestions/route.ts"
+        ],
+        "data": [
+          "src/prompts/character/smartCharacterCreation.ts",
+          "src/prompts/character/characterBackstory.ts",
+          "src/prompts/character/characterTrait.ts",
+          "src/prompts/character/characterNameSuggestions.ts",
+          "src/prompts/character/characterDialogue.ts",
+          "src/prompts/character/personalityExtraction.ts"
+        ]
+      }
+    },
+    {
+      "id": "factions-management",
+      "title": "Factions & Groups",
+      "summary": "Create and manage story factions with members, hierarchies, and branding. Design faction emblems, set colors, assign character roles and ranks within organizations.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/characters/sub_CharFactions/FactionsList.tsx",
+          "src/app/features/characters/sub_CharFactions/FactionCard.tsx",
+          "src/app/features/characters/sub_CharFactions/FactionDetails.tsx",
+          "src/app/features/characters/sub_CharFactions/FactionTabNav.tsx",
+          "src/app/features/characters/sub_CharFactions/FactionWizard.tsx",
+          "src/app/features/characters/sub_CharFactions/FactionMembersList.tsx",
+          "src/app/features/characters/sub_CharFactions/RoleRankEditor.tsx",
+          "src/app/features/characters/components/CreateFactionForm.tsx",
+          "src/app/features/characters/components/FactionsList.tsx"
+        ],
+        "logic": [
+          "src/app/hooks/integration/useFactions.ts",
+          "src/app/hooks/integration/useFactionRelationships.ts"
+        ],
+        "server": [
+          "src/app/api/factions/route.ts",
+          "src/app/api/factions/[id]/route.ts",
+          "src/app/api/characters/[id]/faction-role/route.ts",
+          "src/app/api/faction-relationships/route.ts",
+          "src/app/api/faction-relationships/[id]/route.ts"
+        ],
+        "data": [
+          "src/app/types/Faction.ts",
+          "db/mockData/factions.ts"
+        ]
+      }
+    },
+    {
+      "id": "faction-branding",
+      "title": "Faction Branding & Emblems",
+      "summary": "Design faction visual identity with emblem creator, color customization, and branding panels. Create SVG emblems with configurable shapes and styles.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/characters/sub_CharFactions/FactionBrandingPanel.tsx",
+          "src/app/features/characters/sub_CharFactions/EmblemDesigner.tsx",
+          "src/app/features/characters/sub_CharFactions/EmblemSVG.tsx",
+          "src/app/features/characters/sub_CharFactions/ColorCustomizer.tsx",
+          "src/app/features/characters/sub_CharFactions/AchievementBadges.tsx",
+          "src/app/features/characters/sub_CharFactions/PhysicsPreview.tsx"
+        ],
+        "logic": [
+          "src/app/features/characters/sub_CharFactions/emblemConfig.ts"
+        ],
+        "server": [
+          "src/app/api/factions/[id]/branding/route.ts"
+        ],
+        "data": []
+      }
+    },
+    {
+      "id": "faction-lore",
+      "title": "Faction Lore & History",
+      "summary": "Write and manage faction history, lore entries, and timelines. Browse lore repositories, view summaries, and organize faction media galleries.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/characters/sub_CharFactions/TimelineView.tsx",
+          "src/app/features/characters/sub_CharFactions/LoreRepository.tsx",
+          "src/app/features/characters/sub_CharFactions/LoreSummaryPanel.tsx",
+          "src/app/features/characters/sub_CharFactions/FactionLoreGallery.tsx",
+          "src/app/features/characters/sub_CharFactions/FactionMediaGallery.tsx",
+          "src/app/features/characters/sub_CharFactions/MediaUploadForm.tsx",
+          "src/app/features/characters/sub_CharFactions/SemanticSearchPanel.tsx"
+        ],
+        "logic": [],
+        "server": [
+          "src/app/api/factions/[id]/lore/route.ts",
+          "src/app/api/factions/[id]/summary/route.ts",
+          "src/app/api/faction-lore/[id]/route.ts",
+          "src/app/api/ai/analyze-lore/route.ts"
+        ],
+        "data": [
+          "src/prompts/faction/smartFactionCreation.ts",
+          "src/prompts/faction/factionDescription.ts",
+          "src/prompts/faction/factionLore.ts",
+          "src/prompts/faction/factionRelationship.ts"
+        ]
+      }
+    },
+    {
+      "id": "relationships",
+      "title": "Character Relationships",
+      "summary": "Define and visualize relationships between characters and factions. Create relationship types, view interactive relationship graphs, and manage character connections.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/characters/components/CharacterRelationships.tsx",
+          "src/app/features/characters/components/RelationshipCard.tsx",
+          "src/app/features/characters/components/CreateRelationshipForm.tsx",
+          "src/app/features/relationships/RelationshipMap.tsx",
+          "src/app/features/relationships/components/RelationshipMapCanvas.tsx",
+          "src/app/features/relationships/components/CharacterNode.tsx",
+          "src/app/features/relationships/components/FactionNode.tsx",
+          "src/app/features/relationships/components/RelationshipEdge.tsx",
+          "src/app/features/relationships/components/RelationshipTypeFilter.tsx"
+        ],
+        "logic": [
+          "src/app/hooks/integration/useRelationships.ts",
+          "src/app/features/relationships/lib/relationshipApi.ts"
+        ],
+        "server": [
+          "src/app/api/relationships/route.ts",
+          "src/app/api/relationships/[id]/route.ts"
+        ],
+        "data": [
+          "src/app/types/relationships/index.ts",
+          "src/app/types/relationships/schemas.ts",
+          "src/app/types/relationships/validators.ts",
+          "src/app/types/relationships/guards.ts"
+        ]
+      }
+    },
+    {
+      "id": "story-structure",
+      "title": "Story Structure & Acts",
+      "summary": "Organize story into acts with overview and navigation. Create act hierarchies, view story flow, and manage high-level narrative structure.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/story/StoryFeature.tsx",
+          "src/app/features/story/components/ActOverview.tsx",
+          "src/app/features/story/components/Setup/CenterStory.tsx",
+          "src/app/features/story/sub_OutlineSidebar/OutlineSidebar.tsx",
+          "src/app/features/story/sub_StoryRightPanel/StoryRightPanel.tsx"
+        ],
+        "logic": [
+          "src/app/hooks/integration/useActs.ts",
+          "src/app/hooks/useActRecommendations.ts",
+          "src/app/store/appShellStore.ts"
+        ],
+        "server": [
+          "src/app/api/acts/route.ts",
+          "src/app/api/acts/[id]/route.ts"
+        ],
+        "data": [
+          "src/app/types/Act.ts",
+          "src/prompts/story/actSummary.ts",
+          "src/prompts/story/actDescriptionRecommendation.ts",
+          "src/prompts/story/storyDescription.ts",
+          "db/mockData/acts.ts"
+        ]
+      }
+    },
+    {
+      "id": "beats-management",
+      "title": "Beat Management & Pacing",
+      "summary": "Create and manage story beats within acts. Analyze beat pacing, establish dependencies between beats, and get AI suggestions for beat content.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/story/components/Beats/BeatsOverview.tsx"
+        ],
+        "logic": [
+          "src/app/hooks/integration/useBeats.ts",
+          "src/app/hooks/integration/useBeatPacing.ts",
+          "src/app/hooks/integration/useBeatDependencies.ts",
+          "src/app/hooks/integration/useBeatSceneMappings.ts",
+          "src/app/hooks/useBeatSummaries.ts",
+          "src/app/hooks/useBeatNameSuggestions.ts"
+        ],
+        "server": [
+          "src/app/api/beats/route.ts",
+          "src/app/api/beats/[id]/route.ts",
+          "src/app/api/beat-scene-mappings/route.ts",
+          "src/app/api/beat-scene-mappings/[id]/route.ts",
+          "src/app/api/beat-pacing/route.ts",
+          "src/app/api/beat-dependencies/route.ts",
+          "src/app/api/beat-summary/route.ts",
+          "src/app/api/beat-suggestions/route.ts"
+        ],
+        "data": [
+          "src/app/types/Beat.ts",
+          "src/prompts/story/beatDescription.ts",
+          "src/prompts/story/beatNameSuggestions.ts",
+          "src/prompts/story/beatSummary.ts",
+          "src/prompts/story/beatToSceneMapping.ts",
+          "db/mockData/beats.ts"
+        ]
+      }
+    },
+    {
+      "id": "scene-editor",
+      "title": "Scene Editor",
+      "summary": "Write and edit scene content including dialogue, descriptions, and narrative text. Configure scene metadata, headers, and track scene relationships.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/scenes/ScenesFeature.tsx",
+          "src/app/features/scenes/components/Script/ScriptEditor.tsx",
+          "src/app/features/story/sub_SceneEditor/SceneEditor.tsx",
+          "src/app/features/story/sub_SceneEditor/components/SceneContent.tsx",
+          "src/app/features/story/sub_SceneEditor/components/SceneHeader.tsx"
+        ],
+        "logic": [
+          "src/app/features/story/sub_SceneEditor/lib/sceneEditorUtils.ts",
+          "src/app/hooks/integration/useScenes.ts"
+        ],
+        "server": [
+          "src/app/api/scenes/route.ts",
+          "src/app/api/scenes/[id]/route.ts",
+          "src/app/api/ai/scene-breakdown/route.ts"
+        ],
+        "data": [
+          "src/app/types/Scene.ts",
+          "src/prompts/scene/smartSceneGeneration.ts",
+          "src/prompts/scene/sceneDescription.ts",
+          "src/prompts/scene/sceneNameSuggestions.ts",
+          "src/prompts/scene/generateDialogue.ts",
+          "src/prompts/scene/generateOverview.ts",
+          "src/prompts/scene/dialogueImprovement.ts",
+          "db/mockData/scenes.ts"
+        ]
+      }
+    },
+    {
+      "id": "scene-graph",
+      "title": "Scene Graph & Branching",
+      "summary": "Visualize story flow as an interactive graph. Create branching narratives with scene choices, manage choice connections, and navigate scene relationships visually.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/story/sub_SceneGraph/SceneGraph.tsx",
+          "src/app/features/story/sub_SceneGraph/components/SceneGraphCanvas.tsx",
+          "src/app/features/story/sub_SceneGraph/components/SceneNodeCard.tsx",
+          "src/app/features/story/sub_SceneGraph/components/ChoiceEdge.tsx",
+          "src/app/features/story/sub_ChoiceEditor/ChoiceEditor.tsx",
+          "src/app/features/story/sub_ChoiceEditor/components/ChoiceList.tsx",
+          "src/app/features/story/sub_ChoiceEditor/components/ChoiceForm.tsx"
+        ],
+        "logic": [
+          "src/app/features/story/sub_SceneGraph/hooks/useSceneGraphLayout.ts",
+          "src/app/features/story/sub_SceneGraph/lib/graphCalculations.ts",
+          "src/app/hooks/integration/useSceneGraphData.ts",
+          "src/app/hooks/integration/useSceneChoices.ts",
+          "src/app/store/sceneGraphStore.ts"
+        ],
+        "server": [],
+        "data": [
+          "src/app/types/SceneChoice.ts"
+        ]
+      }
+    },
+    {
+      "id": "story-script",
+      "title": "Story Script & Export",
+      "summary": "View and render full story scripts. Export stories in script format with proper formatting for characters, dialogue, and action lines.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/story/sub_StoryScript/StoryScript.tsx",
+          "src/app/features/story/sub_StoryScript/components/ScriptRenderer.tsx"
+        ],
+        "logic": [],
+        "server": [],
+        "data": []
+      }
+    },
+    {
+      "id": "prompt-composer",
+      "title": "Prompt Composer",
+      "summary": "Build and customize LLM prompts for story generation. Gather context from characters, scenes, and story elements to create effective AI prompts.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/story/sub_PromptComposer/PromptComposer.tsx",
+          "src/app/features/story/sub_PromptComposer/components/PromptBuilder.tsx",
+          "src/app/features/story/sub_PromptComposer/components/ContextBuilder.tsx"
+        ],
+        "logic": [
+          "src/app/lib/contextGathering.ts"
+        ],
+        "server": [
+          "src/app/api/contexts/route.ts",
+          "src/app/api/ai/prompt-variations/route.ts"
+        ],
+        "data": [
+          "src/prompts/index.ts"
+        ]
+      }
+    },
+    {
+      "id": "ai-companion",
+      "title": "AI Writing Companion",
+      "summary": "Get AI-powered writing assistance and suggestions. Generate story content, receive narrative recommendations, and collaborate with AI for creative writing.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/story/sub_AICompanion/AICompanion.tsx",
+          "src/app/features/assistant/AIAssistantPanel.tsx",
+          "src/app/features/assistant/components/SuggestionCard.tsx"
+        ],
+        "logic": [
+          "src/app/hooks/useAIAssistant.ts",
+          "src/app/hooks/useAISuggestionStream.ts",
+          "src/app/hooks/useLLM.ts"
+        ],
+        "server": [
+          "src/app/api/ai/suggestions/stream/route.ts",
+          "src/app/api/narrative-assistant/route.ts",
+          "src/app/api/ai/generate-story-details/route.ts",
+          "src/app/api/llm/route.ts"
+        ],
+        "data": [
+          "src/app/types/AIAssistant.ts",
+          "src/app/types/LLM.ts",
+          "src/prompts/assistant/narrativeAssistant.ts"
+        ]
+      }
+    },
+    {
+      "id": "art-style",
+      "title": "Story Art Style",
+      "summary": "Define and manage visual art style for stories. Extract styles from reference images, browse style galleries, and maintain consistent visual aesthetics.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/story/sub_StoryArtstyle/ArtStyleEditor.tsx",
+          "src/app/features/story/sub_StoryArtstyle/components/StyleGallery.tsx"
+        ],
+        "logic": [],
+        "server": [
+          "src/app/api/ai/art-style/extract/route.ts"
+        ],
+        "data": []
+      }
+    },
+    {
+      "id": "image-generation",
+      "title": "Image Generation",
+      "summary": "Generate AI images from text prompts using various models (Leonardo, Midjourney). Preview generated images, manage image gallery, and create story visuals.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/image/ImageFeature.tsx",
+          "src/app/features/image/generator/ImageGenerator.tsx",
+          "src/app/features/image/generator/components/PromptInput.tsx",
+          "src/app/features/image/generator/components/ImagePreview.tsx",
+          "src/app/features/image/generator/components/ImageGallery.tsx"
+        ],
+        "logic": [
+          "src/app/hooks/useImages.ts"
+        ],
+        "server": [
+          "src/app/api/ai/generate-images/route.ts",
+          "src/app/api/image-extraction/gemini/route.ts",
+          "src/app/api/image-extraction/groq/route.ts"
+        ],
+        "data": [
+          "src/app/types/Image.ts",
+          "src/prompts/image/smartImageGeneration.ts",
+          "src/prompts/image/promptFromDescription.ts",
+          "src/prompts/image/promptEnhancement.ts",
+          "src/prompts/image/negativePromptSuggestion.ts"
+        ]
+      }
+    },
+    {
+      "id": "sketch-to-image",
+      "title": "Sketch to Image",
+      "summary": "Draw sketches on canvas and convert them to AI-generated images. Use sketch as reference for image generation with drawing tools.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/image/sub_Sketch/SketchToImage.tsx",
+          "src/app/features/image/sub_Sketch/components/SketchCanvas.tsx"
+        ],
+        "logic": [],
+        "server": [],
+        "data": []
+      }
+    },
+    {
+      "id": "image-editor",
+      "title": "Image Editor",
+      "summary": "Edit and manipulate generated or uploaded images. Use editing tools on canvas to modify images for story use.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/image/editor/ImageEditor.tsx",
+          "src/app/features/image/editor/components/EditorCanvas.tsx",
+          "src/app/features/image/editor/components/ToolPanel.tsx"
+        ],
+        "logic": [],
+        "server": [],
+        "data": []
+      }
+    },
+    {
+      "id": "video-generation",
+      "title": "Video Generation",
+      "summary": "Generate AI videos from prompts. Create video content for stories with prompt configuration and video preview.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/video/VideoFeature.tsx",
+          "src/app/features/video/generator/VideoGenerator.tsx",
+          "src/app/features/video/generator/components/VideoPromptForm.tsx",
+          "src/app/features/video/generator/components/VideoPreview.tsx"
+        ],
+        "logic": [
+          "src/app/hooks/useVideos.ts"
+        ],
+        "server": [],
+        "data": [
+          "src/app/types/Video.ts",
+          "src/prompts/video/smartVideoGeneration.ts",
+          "src/prompts/video/videoPromptEnhancement.ts",
+          "src/prompts/video/motionDescription.ts"
+        ]
+      }
+    },
+    {
+      "id": "storyboard",
+      "title": "Storyboard Editor",
+      "summary": "Create visual storyboards with shot-by-shot planning. Organize shots in grids, configure shot details, and plan visual sequences.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/video/storyboard/StoryboardEditor.tsx",
+          "src/app/features/video/storyboard/components/StoryboardGrid.tsx",
+          "src/app/features/video/storyboard/components/ShotCard.tsx"
+        ],
+        "logic": [],
+        "server": [],
+        "data": [
+          "src/prompts/video/storyboardGeneration.ts",
+          "src/prompts/video/shotComposition.ts"
+        ]
+      }
+    },
+    {
+      "id": "voice-generation",
+      "title": "Voice Generation",
+      "summary": "Generate character voice-overs using AI (ElevenLabs). Manage voice library, assign voices to characters, and extract voices from audio samples.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/voice/VoiceFeature.tsx",
+          "src/app/features/voice/components/VoiceList.tsx",
+          "src/app/features/voice/extraction/VoiceExtraction.tsx"
+        ],
+        "logic": [
+          "src/app/hooks/useVoices.ts"
+        ],
+        "server": [
+          "src/app/api/ai/elevenlabs/route.ts"
+        ],
+        "data": [
+          "src/app/types/Voice.ts",
+          "src/prompts/voice/voiceCharacterization.ts",
+          "src/prompts/voice/voiceDescription.ts"
+        ]
+      }
+    },
+    {
+      "id": "asset-uploader",
+      "title": "Asset Uploader & Analysis",
+      "summary": "Upload images with AI-powered analysis. Drag-and-drop upload, configure analysis models, and view extraction results.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/assets/AssetsFeature.tsx",
+          "src/app/features/assets/components/uploader/UploaderPanel.tsx",
+          "src/app/features/assets/components/uploader/DropzoneCard.tsx",
+          "src/app/features/assets/components/uploader/ModelConfigPanel.tsx",
+          "src/app/features/assets/components/uploader/AnalysisResultsPanel.tsx",
+          "src/app/features/assets/components/panels/AssetLeftPanel.tsx",
+          "src/app/features/assets/components/panels/AssetRightPanel.tsx"
+        ],
+        "logic": [
+          "src/app/features/assets/store/assetFiltersStore.ts",
+          "src/app/features/assets/store/assetManagerStore.ts"
+        ],
+        "server": [
+          "src/app/api/asset-analysis/route.ts"
+        ],
+        "data": [
+          "src/app/features/assets/types/index.ts",
+          "src/app/types/Asset.ts"
+        ]
+      }
+    },
+    {
+      "id": "asset-manager",
+      "title": "Asset Library Manager",
+      "summary": "Browse and manage uploaded assets in grid or grouped views. Search assets, filter by type, and organize asset library.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/assets/components/manager/ManagerPanel.tsx",
+          "src/app/features/assets/components/manager/AssetGridView.tsx",
+          "src/app/features/assets/components/manager/AssetGroupedView.tsx",
+          "src/app/features/assets/components/manager/AssetGridItem.tsx",
+          "src/app/features/assets/components/manager/AssetSearchBar.tsx",
+          "src/app/features/assets/components/manager/AssetTypeFilter.tsx"
+        ],
+        "logic": [],
+        "server": [
+          "src/app/api/assets-manager/route.ts",
+          "src/app/api/assets-manager/[id]/route.ts",
+          "src/app/api/assets-manager/search/route.ts",
+          "src/app/api/assets-manager/semantic-search/route.ts",
+          "src/app/api/assets-manager/categories/route.ts"
+        ],
+        "data": []
+      }
+    },
+    {
+      "id": "datasets",
+      "title": "Datasets & Content Extraction",
+      "summary": "Manage content datasets for audio extraction and image collections. Analyze and tag content for story use.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/datasets/DatasetsFeature.tsx",
+          "src/app/features/datasets/audio/AudioExtraction.tsx",
+          "src/app/features/datasets/images/ImageDatasets.tsx"
+        ],
+        "logic": [
+          "src/app/hooks/useDatasets.ts"
+        ],
+        "server": [],
+        "data": [
+          "src/app/types/Dataset.ts",
+          "src/prompts/dataset/imageAnalysis.ts",
+          "src/prompts/dataset/audioTranscription.ts",
+          "src/prompts/dataset/datasetTagging.ts"
+        ]
+      }
+    },
+    {
+      "id": "landing-onboarding",
+      "title": "Landing & Onboarding",
+      "summary": "Welcome screen with project browser and guided first project creation. Step-by-step wizard for new users to create their first story project.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/landing/Landing.tsx",
+          "src/app/features/landing/components/LandingCard.tsx",
+          "src/app/features/landing/components/LandingCardHeader.tsx",
+          "src/app/features/landing/components/LandingMenu.tsx",
+          "src/app/features/landing/components/LandingStats.tsx",
+          "src/app/features/landing/components/LandingProjectCreate.tsx",
+          "src/app/features/landing/components/FirstProject/StepperLayout.tsx",
+          "src/app/features/landing/components/FirstProject/StepperNav.tsx",
+          "src/app/features/landing/components/FirstProject/StepperItem.tsx",
+          "src/app/features/landing/components/FirstProject/StepperOverview.tsx",
+          "src/app/features/landing/components/FirstProject/StepperOverviewCharacters.tsx",
+          "src/app/features/landing/components/FirstProject/StepperOverviewObjectives.tsx",
+          "src/app/features/landing/components/FirstProject/StepperOverviewResearch.tsx",
+          "src/app/features/landing/components/FirstProject/StepperAITemplate.tsx"
+        ],
+        "logic": [],
+        "server": [
+          "src/app/api/ai/generate-template/route.ts"
+        ],
+        "data": [
+          "src/prompts/project/projectInspiration.ts"
+        ]
+      }
+    },
+    {
+      "id": "command-palette",
+      "title": "Command Palette",
+      "summary": "Quick command access interface for power users. Search and execute commands across the application.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/story/sub_CommandPalette/CommandPalette.tsx",
+          "src/app/features/story/sub_CommandPalette/components/CommandSearch.tsx"
+        ],
+        "logic": [],
+        "server": [],
+        "data": []
+      }
+    },
+    {
+      "id": "collaboration",
+      "title": "Collaboration (Beta)",
+      "summary": "Real-time collaborative editing features including chat, user presence, and operational transforms for conflict resolution.",
+      "filepaths": {
+        "ui": [
+          "src/app/features/collaboration/components/CollaborationPanel.tsx",
+          "src/app/features/collaboration/components/CollaborationChat.tsx",
+          "src/app/features/collaboration/components/UsersView.tsx",
+          "src/app/features/collaboration/components/PresenceIndicator.tsx"
+        ],
+        "logic": [
+          "src/app/features/collaboration/lib/operationalTransform.ts",
+          "src/app/hooks/useCollaboration.ts"
+        ],
+        "server": [],
+        "data": [
+          "src/app/types/Collaboration.ts"
+        ]
+      }
+    },
+    {
+      "id": "core-layout",
+      "title": "Application Layout",
+      "summary": "Core application shell with resizable three-panel layout, navigation, and theme management.",
+      "filepaths": {
+        "ui": [
+          "src/app/components/layout/AppShell.tsx"
+        ],
+        "logic": [
+          "src/app/store/navigationStore.ts",
+          "src/app/store/writerThemeStore.ts",
+          "src/app/store/slices/userSettingsSlice.ts",
+          "src/app/hooks/useDynamicComponent.ts",
+          "src/app/hooks/useModal.ts"
+        ],
+        "server": [],
+        "data": [
+          "src/app/types/PanelPreset.ts"
+        ]
+      }
+    },
+    {
+      "id": "core-utilities",
+      "title": "Core Utilities",
+      "summary": "Shared utilities, API helpers, error handling, and database connections used across all features.",
+      "filepaths": {
+        "ui": [],
+        "logic": [
+          "src/app/lib/utils.ts",
+          "src/app/utils/apiErrorHandling.ts",
+          "src/app/hooks/integration/queryHelpers.ts",
+          "src/app/hooks/useOptimisticMutation.ts",
+          "src/app/hooks/useEventListenerGuard.ts",
+          "src/app/hooks/useNameSuggestions.ts",
+          "src/app/hooks/useCharacterProjectSync.ts",
+          "src/app/hooks/useTemplateGenerator.ts"
+        ],
+        "server": [],
+        "data": [
+          "src/lib/supabase/client.ts",
+          "src/lib/supabase/server.ts",
+          "src/lib/supabase/database.types.ts",
+          "src/app/types/ApiError.ts",
+          "src/app/types/Recommendation.ts"
+        ]
+      }
+    }
+  ]
+}

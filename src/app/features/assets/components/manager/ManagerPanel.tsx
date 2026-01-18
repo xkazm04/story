@@ -2,15 +2,22 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Package, Search, Grid3X3, LayoutList, Loader2 } from 'lucide-react';
+import { Package, Grid3X3, LayoutList, Loader2, BarChart3, AlertTriangle, FolderOpen } from 'lucide-react';
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { clsx } from 'clsx';
 import { useAssetManagerStore } from '../../store/assetManagerStore';
 import { useAssetFiltersStore } from '../../store/assetFiltersStore';
+import { useOrphanDetection } from '@/lib/assets';
 import AssetSearchBar from './AssetSearchBar';
 import AssetTypeFilter from './AssetTypeFilter';
 import AssetGridView from './AssetGridView';
 import AssetGroupedView from './AssetGroupedView';
+import OrphanView from './OrphanView';
+import UsageAnalytics from './UsageAnalytics';
+import CollectionPanel from './CollectionPanel';
 import type { PaginatedAsset } from '@/app/types/Asset';
+
+type ManagerTab = 'browse' | 'collections' | 'orphans' | 'analytics';
 
 interface ManagerPanelProps {
   className?: string;
@@ -53,8 +60,9 @@ async function fetchAssets({
 }
 
 export default function ManagerPanel({ className = '' }: ManagerPanelProps) {
-  const { viewMode, setViewMode } = useAssetManagerStore();
+  const { viewMode, setViewMode, openDetail } = useAssetManagerStore();
   const { assetType, subcategory, sortBy, sortOrder } = useAssetFiltersStore();
+  const [activeTab, setActiveTab] = useState<ManagerTab>('browse');
 
   // Show grouped view when no specific type is selected
   const showGroupedView = !assetType;
@@ -90,6 +98,16 @@ export default function ManagerPanel({ className = '' }: ManagerPanelProps) {
   const allAssets = data?.pages.flatMap((page) => page.assets) || [];
   const totalCount = data?.pages[0]?.total_assets || 0;
 
+  // Track orphan count for tab badge
+  const { orphanCount } = useOrphanDetection(allAssets);
+
+  const handleSelectAsset = (assetId: string) => {
+    const asset = allAssets.find(a => a._id === assetId);
+    if (asset) {
+      openDetail(assetId, asset);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -111,8 +129,8 @@ export default function ManagerPanel({ className = '' }: ManagerPanelProps) {
             )}
           </div>
 
-          {/* View toggle - only show when not in grouped view */}
-          {!showGroupedView && (
+          {/* View toggle - only show in browse tab when not in grouped view */}
+          {activeTab === 'browse' && !showGroupedView && (
             <div className="flex items-center gap-1 bg-slate-900/60 rounded-lg p-1 border border-slate-800/50">
               <button
                 onClick={() => setViewMode('grid')}
@@ -140,72 +158,170 @@ export default function ManagerPanel({ className = '' }: ManagerPanelProps) {
           )}
         </div>
 
-        {/* Search bar */}
-        <AssetSearchBar />
-
-        {/* Type filter */}
-        <div className="mt-3">
-          <AssetTypeFilter />
+        {/* Tab navigation */}
+        <div className="flex gap-1 mb-4 p-1 bg-slate-900/40 rounded-lg border border-slate-800/50">
+          <button
+            onClick={() => setActiveTab('browse')}
+            className={clsx(
+              'flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+              activeTab === 'browse'
+                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                : 'text-slate-400 hover:text-slate-200'
+            )}
+          >
+            <Package className="w-4 h-4" />
+            Browse
+          </button>
+          <button
+            onClick={() => setActiveTab('collections')}
+            className={clsx(
+              'flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+              activeTab === 'collections'
+                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                : 'text-slate-400 hover:text-slate-200'
+            )}
+          >
+            <FolderOpen className="w-4 h-4" />
+            Collections
+          </button>
+          <button
+            onClick={() => setActiveTab('orphans')}
+            className={clsx(
+              'flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors relative',
+              activeTab === 'orphans'
+                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                : 'text-slate-400 hover:text-slate-200'
+            )}
+          >
+            <AlertTriangle className="w-4 h-4" />
+            Orphans
+            {orphanCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-amber-500 text-white text-xs font-bold rounded-full">
+                {orphanCount > 9 ? '9+' : orphanCount}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={clsx(
+              'flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+              activeTab === 'analytics'
+                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                : 'text-slate-400 hover:text-slate-200'
+            )}
+          >
+            <BarChart3 className="w-4 h-4" />
+            Analytics
+          </button>
         </div>
+
+        {/* Search and filters - only show in browse tab */}
+        {activeTab === 'browse' && (
+          <>
+            {/* Search bar */}
+            <AssetSearchBar />
+
+            {/* Type filter */}
+            <div className="mt-3">
+              <AssetTypeFilter />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Content area */}
-      <div className="flex-1 overflow-auto p-4">
-        {/* Loading state */}
-        {isLoading && (
-          <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-            <Loader2 className="w-8 h-8 animate-spin mb-3" />
-            <p className="text-sm">Loading assets...</p>
-          </div>
-        )}
-
-        {/* Error state */}
-        {isError && (
-          <div className="flex flex-col items-center justify-center h-64 text-red-400">
-            <p className="text-sm mb-2">Failed to load assets</p>
-            <p className="text-xs text-slate-500">
-              {error instanceof Error ? error.message : 'Unknown error'}
-            </p>
-          </div>
-        )}
-
-        {/* Empty state */}
-        {!isLoading && !isError && allAssets.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-            <Package className="w-12 h-12 mb-3 opacity-40" />
-            <p className="text-sm mb-1">No assets found</p>
-            <p className="text-xs text-slate-500">
-              Try adjusting your filters or upload new assets
-            </p>
-          </div>
-        )}
-
-        {/* Assets display */}
-        {!isLoading && !isError && allAssets.length > 0 && (
-          <>
-            {showGroupedView ? (
-              <AssetGroupedView assets={allAssets} />
-            ) : (
-              <AssetGridView
-                assets={allAssets}
-                viewMode={viewMode}
-                onLoadMore={() => {
-                  if (hasNextPage && !isFetchingNextPage) {
-                    fetchNextPage();
-                  }
-                }}
-                hasMore={hasNextPage || false}
-                isLoadingMore={isFetchingNextPage}
-              />
-            )}
-
-            {/* Load more indicator */}
-            {isFetchingNextPage && (
-              <div className="flex justify-center py-4">
-                <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
+      <div className="flex-1 overflow-auto">
+        {/* Browse tab */}
+        {activeTab === 'browse' && (
+          <div className="p-4">
+            {/* Loading state */}
+            {isLoading && (
+              <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+                <Loader2 className="w-8 h-8 animate-spin mb-3" />
+                <p className="text-sm">Loading assets...</p>
               </div>
             )}
-          </>
+
+            {/* Error state */}
+            {isError && (
+              <div className="flex flex-col items-center justify-center h-64 text-red-400">
+                <p className="text-sm mb-2">Failed to load assets</p>
+                <p className="text-xs text-slate-500">
+                  {error instanceof Error ? error.message : 'Unknown error'}
+                </p>
+              </div>
+            )}
+
+            {/* Empty state */}
+            {!isLoading && !isError && allAssets.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+                <Package className="w-12 h-12 mb-3 opacity-40" />
+                <p className="text-sm mb-1">No assets found</p>
+                <p className="text-xs text-slate-500">
+                  Try adjusting your filters or upload new assets
+                </p>
+              </div>
+            )}
+
+            {/* Assets display */}
+            {!isLoading && !isError && allAssets.length > 0 && (
+              <>
+                {showGroupedView ? (
+                  <AssetGroupedView assets={allAssets} />
+                ) : (
+                  <AssetGridView
+                    assets={allAssets}
+                    viewMode={viewMode}
+                    onLoadMore={() => {
+                      if (hasNextPage && !isFetchingNextPage) {
+                        fetchNextPage();
+                      }
+                    }}
+                    hasMore={hasNextPage || false}
+                    isLoadingMore={isFetchingNextPage}
+                  />
+                )}
+
+                {/* Load more indicator */}
+                {isFetchingNextPage && (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Collections tab */}
+        {activeTab === 'collections' && (
+          <CollectionPanel
+            assets={allAssets}
+            onSelectAssets={(assetIds) => {
+              if (assetIds.length > 0) {
+                handleSelectAsset(assetIds[0]);
+              }
+            }}
+            className="h-full"
+          />
+        )}
+
+        {/* Orphans tab */}
+        {activeTab === 'orphans' && (
+          <OrphanView
+            assets={allAssets}
+            onSelectAsset={handleSelectAsset}
+            className="h-full"
+          />
+        )}
+
+        {/* Analytics tab */}
+        {activeTab === 'analytics' && (
+          <UsageAnalytics
+            assets={allAssets}
+            onSelectAsset={handleSelectAsset}
+            className="h-full"
+          />
         )}
       </div>
     </motion.div>

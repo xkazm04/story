@@ -1,163 +1,59 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase/client';
-import { GeneratedImage, GeneratedImageInsert, GeneratedImageUpdate } from '@/app/types/Image';
-
 /**
- * Fetch all generated images for a project
+ * Image hooks - re-export from integration layer
+ *
+ * These hooks now use the mockable query pattern to support both
+ * mock data (NEXT_PUBLIC_USE_MOCK_DATA=true) and real Supabase data.
  */
-export const useImagesByProject = (projectId: string) => {
-  return useQuery({
-    queryKey: ['images', projectId],
-    queryFn: async () => {
-      if (!projectId) return [];
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { imageApi } from './integration/useImages';
+import type { GeneratedImage } from '../types/Image';
 
-      const { data, error } = await supabase
-        .from('generated_images')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: false });
+// Re-export the API object
+export { imageApi };
 
-      if (error) {
-        console.error('Error fetching images:', error);
-        throw new Error(error.message);
-      }
+// Re-export query hooks for backwards compatibility with direct hook imports
+export const useImagesByProject = imageApi.useImagesByProject;
+export const useImage = imageApi.useImage;
+export const useImageVariants = imageApi.useImageVariants;
 
-      return data as GeneratedImage[];
-    },
-    enabled: !!projectId,
-  });
-};
-
-/**
- * Fetch a single image
- */
-export const useImage = (imageId: string) => {
-  return useQuery({
-    queryKey: ['image', imageId],
-    queryFn: async () => {
-      if (!imageId) return null;
-
-      const { data, error } = await supabase
-        .from('generated_images')
-        .select('*')
-        .eq('id', imageId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching image:', error);
-        throw new Error(error.message);
-      }
-
-      return data as GeneratedImage;
-    },
-    enabled: !!imageId,
-  });
-};
-
-/**
- * Create a new generated image record
- */
+// Mutation hooks for backwards compatibility
 export const useCreateImage = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (image: GeneratedImageInsert) => {
-      const { data, error } = await supabase
-        .from('generated_images')
-        .insert(image)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating image:', error);
-        throw new Error(error.message);
-      }
-
-      return data as GeneratedImage;
+    mutationFn: async (image: Partial<GeneratedImage>) => {
+      return imageApi.createImage(image);
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['images', data.project_id] });
+      queryClient.invalidateQueries({ queryKey: ['images', 'project', data.project_id] });
     },
   });
 };
 
-/**
- * Update an image record
- */
 export const useUpdateImage = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: GeneratedImageUpdate }) => {
-      const { data, error } = await supabase
-        .from('generated_images')
-        .update({ ...updates, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error updating image:', error);
-        throw new Error(error.message);
-      }
-
-      return data as GeneratedImage;
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<GeneratedImage> }) => {
+      return imageApi.updateImage(id, updates);
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['images', data.project_id] });
-      queryClient.invalidateQueries({ queryKey: ['image', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['images', 'project', data.project_id] });
+      queryClient.invalidateQueries({ queryKey: ['images', data.id] });
     },
   });
 };
 
-/**
- * Delete an image
- */
 export const useDeleteImage = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ id, projectId }: { id: string; projectId: string }) => {
-      const { error } = await supabase
-        .from('generated_images')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error('Error deleting image:', error);
-        throw new Error(error.message);
-      }
-
+      await imageApi.deleteImage(id);
       return { id, projectId };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['images', data.projectId] });
+      queryClient.invalidateQueries({ queryKey: ['images', 'project', data.projectId] });
     },
-  });
-};
-
-/**
- * Fetch image variants (child images)
- */
-export const useImageVariants = (parentImageId: string) => {
-  return useQuery({
-    queryKey: ['image-variants', parentImageId],
-    queryFn: async () => {
-      if (!parentImageId) return [];
-
-      const { data, error } = await supabase
-        .from('generated_images')
-        .select('*')
-        .eq('parent_image_id', parentImageId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching image variants:', error);
-        throw new Error(error.message);
-      }
-
-      return data as GeneratedImage[];
-    },
-    enabled: !!parentImageId,
   });
 };

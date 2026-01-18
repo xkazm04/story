@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Loader2, Wand2, PenTool, ChevronDown } from 'lucide-react';
 import PromptBuilder from '../components/PromptBuilder';
 import CameraSetup from './CameraSetup';
 import GenerationControls from './GenerationControls';
 import ImageGallery from '../components/ImageGallery';
+import SceneToImage from './components/SceneToImage';
 import { useProjectStore } from '@/app/store/projectStore';
 import { useCreateImage } from '@/app/hooks/useImages';
 import type { PromptComponents } from '@/app/types/Image';
@@ -20,10 +21,16 @@ interface GenerationParams {
   provider: 'leonardo' | 'stability' | 'midjourney' | 'dalle' | 'local';
 }
 
+type PromptMode = 'manual' | 'scene';
+
 const ImageGenerator: React.FC = () => {
   const { selectedProject } = useProjectStore();
   const activeProjectId = selectedProject?.id;
   const createImage = useCreateImage();
+
+  // Prompt mode state
+  const [promptMode, setPromptMode] = useState<PromptMode>('manual');
+  const [showSceneToImage, setShowSceneToImage] = useState(false);
 
   const [promptComponents, setPromptComponents] = useState<PromptComponents>({
     artstyle: '',
@@ -44,6 +51,17 @@ const ImageGenerator: React.FC = () => {
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Handle prompt generated from SceneToImage
+  const handleScenePromptGenerated = useCallback(
+    (components: PromptComponents, negative: string) => {
+      setPromptComponents(components);
+      setNegativePrompt(negative);
+      setShowSceneToImage(false);
+      setPromptMode('scene');
+    },
+    []
+  );
 
   // Combine all prompt components into final prompt
   const getFinalPrompt = () => {
@@ -101,6 +119,91 @@ const ImageGenerator: React.FC = () => {
     <div className="h-full grid grid-cols-2 gap-4 p-4 overflow-hidden text-sm text-slate-200">
       {/* Left Panel - Prompt & Settings */}
       <div className="flex flex-col gap-4 overflow-y-auto">
+        {/* Prompt Mode Toggle */}
+        <div className="bg-slate-950/95 rounded-lg border border-slate-900/70 p-3">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs font-medium text-slate-400">Prompt Mode</span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setPromptMode('manual');
+                setShowSceneToImage(false);
+              }}
+              className={`
+                flex-1 py-2 px-3 rounded-lg text-xs font-medium
+                flex items-center justify-center gap-2 transition-colors
+                ${
+                  promptMode === 'manual'
+                    ? 'bg-cyan-500/20 border border-cyan-500/40 text-cyan-100'
+                    : 'bg-slate-900/50 border border-slate-800/50 text-slate-400 hover:text-slate-300'
+                }
+              `}
+            >
+              <PenTool className="w-3.5 h-3.5" />
+              Manual
+            </button>
+            <button
+              onClick={() => {
+                setPromptMode('scene');
+                setShowSceneToImage(true);
+              }}
+              className={`
+                flex-1 py-2 px-3 rounded-lg text-xs font-medium
+                flex items-center justify-center gap-2 transition-colors
+                ${
+                  promptMode === 'scene'
+                    ? 'bg-cyan-500/20 border border-cyan-500/40 text-cyan-100'
+                    : 'bg-slate-900/50 border border-slate-800/50 text-slate-400 hover:text-slate-300'
+                }
+              `}
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              Scene to Image
+            </button>
+          </div>
+        </div>
+
+        {/* Scene to Image Panel (collapsible) */}
+        <AnimatePresence>
+          {showSceneToImage && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="bg-slate-950/95 rounded-lg border border-cyan-500/30 p-4">
+                <SceneToImage
+                  onPromptGenerated={handleScenePromptGenerated}
+                  onClose={() => setShowSceneToImage(false)}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Scene-generated prompt indicator */}
+        {promptMode === 'scene' && !showSceneToImage && (
+          <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Wand2 className="w-4 h-4 text-cyan-400" />
+                <span className="text-xs font-medium text-cyan-100">
+                  Prompt generated from scene
+                </span>
+              </div>
+              <button
+                onClick={() => setShowSceneToImage(true)}
+                className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+              >
+                Change scene
+                <ChevronDown className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Prompt Builder */}
         <div className="bg-slate-950/95 rounded-lg border border-slate-900/70">
           <PromptBuilder

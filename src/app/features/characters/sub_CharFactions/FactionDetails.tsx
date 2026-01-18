@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Edit, Trash2, Users, Save, X } from 'lucide-react';
 import { Faction } from '@/app/types/Faction';
@@ -16,12 +16,28 @@ import SemanticSearchPanel from './SemanticSearchPanel';
 import RoleRankEditor from './RoleRankEditor';
 import FactionTabNav, { FactionTabType } from './FactionTabNav';
 import FactionMembersList from './FactionMembersList';
+import AllianceNetworkGraph from './AllianceNetworkGraph';
+import InfluenceTracker from './InfluenceTracker';
+import DiplomacyPanel from './DiplomacyPanel';
 import { useQueryClient } from '@tanstack/react-query';
+import {
+  FactionPolitics,
+  FactionRelationship,
+  FactionInfluence,
+  createDefaultFactionPolitics,
+  createDefaultInfluence,
+  InfluenceType,
+  Territory,
+  PoliticalGoal,
+  FactionSecret,
+  DiplomaticAction,
+} from '@/lib/politics/PoliticsEngine';
 
 interface FactionDetailsProps {
   faction: Faction;
   onBack: () => void;
   onUpdate: () => void;
+  allFactions?: Faction[];
 }
 
 const PRESET_COLORS = [
@@ -37,6 +53,7 @@ const FactionDetails: React.FC<FactionDetailsProps> = ({
   faction,
   onBack,
   onUpdate,
+  allFactions = [],
 }) => {
   const queryClient = useQueryClient();
   const { selectedProject } = useProjectStore();
@@ -61,6 +78,129 @@ const FactionDetails: React.FC<FactionDetailsProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
+
+  // Politics state - in production, these would come from API
+  const [factionPolitics, setFactionPolitics] = useState<FactionPolitics | null>(() =>
+    createDefaultFactionPolitics(faction.id, faction.name)
+  );
+  const [factionInfluence, setFactionInfluence] = useState<FactionInfluence | null>(() =>
+    createDefaultInfluence(faction.id)
+  );
+  const [politicalRelationships, setPoliticalRelationships] = useState<FactionRelationship[]>([]);
+
+  // All influences for power rankings
+  const allInfluences = useMemo(() => {
+    const influences: FactionInfluence[] = [];
+    if (factionInfluence) {
+      influences.push(factionInfluence);
+    }
+    // Add placeholder influences for other factions
+    allFactions.forEach((f) => {
+      if (f.id !== faction.id) {
+        influences.push(createDefaultInfluence(f.id));
+      }
+    });
+    return influences;
+  }, [factionInfluence, allFactions, faction.id]);
+
+  // Politics and Influences Maps for AllianceNetworkGraph
+  const politicsMap = useMemo(() => {
+    const map = new Map<string, FactionPolitics>();
+    if (factionPolitics) {
+      map.set(faction.id, factionPolitics);
+    }
+    // Add default politics for other factions
+    allFactions.forEach((f) => {
+      if (f.id !== faction.id) {
+        map.set(f.id, createDefaultFactionPolitics(f.id, f.name));
+      }
+    });
+    return map;
+  }, [factionPolitics, faction.id, faction.name, allFactions]);
+
+  const influencesMap = useMemo(() => {
+    const map = new Map<string, FactionInfluence>();
+    allInfluences.forEach((inf) => {
+      map.set(inf.faction_id, inf);
+    });
+    return map;
+  }, [allInfluences]);
+
+  // Handlers for politics components
+  const handleInfluenceChange = (type: InfluenceType, value: number) => {
+    if (!factionInfluence) return;
+    setFactionInfluence({
+      ...factionInfluence,
+      influence_breakdown: {
+        ...factionInfluence.influence_breakdown,
+        [type]: Math.max(0, value),
+      },
+    });
+  };
+
+  const handleAddTerritory = (territory: Omit<Territory, 'id'>) => {
+    if (!factionInfluence) return;
+    const newTerritory: Territory = {
+      ...territory,
+      id: `territory_${Date.now()}`,
+    };
+    setFactionInfluence({
+      ...factionInfluence,
+      territories: [...factionInfluence.territories, newTerritory],
+    });
+  };
+
+  const handleRemoveTerritory = (territoryId: string) => {
+    if (!factionInfluence) return;
+    setFactionInfluence({
+      ...factionInfluence,
+      territories: factionInfluence.territories.filter((t) => t.id !== territoryId),
+    });
+  };
+
+  const handleUpdatePolitics = (updates: Partial<FactionPolitics>) => {
+    if (!factionPolitics) return;
+    setFactionPolitics({ ...factionPolitics, ...updates });
+  };
+
+  const handleAddGoal = (goal: PoliticalGoal) => {
+    if (!factionPolitics) return;
+    setFactionPolitics({
+      ...factionPolitics,
+      goals: [...factionPolitics.goals, goal],
+    });
+  };
+
+  const handleRemoveGoal = (goalId: string) => {
+    if (!factionPolitics) return;
+    setFactionPolitics({
+      ...factionPolitics,
+      goals: factionPolitics.goals.filter((g) => g.id !== goalId),
+    });
+  };
+
+  const handleAddSecret = (secret: FactionSecret) => {
+    if (!factionPolitics) return;
+    setFactionPolitics({
+      ...factionPolitics,
+      secrets: [...factionPolitics.secrets, secret],
+    });
+  };
+
+  const handleRevealSecret = (secretId: string) => {
+    if (!factionPolitics) return;
+    setFactionPolitics({
+      ...factionPolitics,
+      secrets: factionPolitics.secrets.map((s) =>
+        s.id === secretId ? { ...s, revealed: true } : s
+      ),
+    });
+  };
+
+  const handleExecuteDiplomaticAction = (action: DiplomaticAction) => {
+    // In production, this would call an API and update relationships
+    console.log('Executing diplomatic action:', action);
+  };
 
   // Check if current user is faction leader (for simplicity, the user who has the first character in the faction)
   // In a real app, this would be based on user roles/permissions
@@ -379,6 +519,70 @@ const FactionDetails: React.FC<FactionDetailsProps> = ({
                 isLeader={isLeader}
               />
             </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'politics' && (
+          <motion.div
+            key="politics"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
+              <ColoredBorder color="blue" />
+              <AllianceNetworkGraph
+                factions={allFactions.length > 0 ? allFactions : [faction]}
+                politics={politicsMap}
+                relationships={politicalRelationships}
+                influences={influencesMap}
+                selectedFactionId={faction.id}
+                onFactionSelect={(id) => console.log('Selected faction:', id)}
+              />
+            </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'influence' && (
+          <motion.div
+            key="influence"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <InfluenceTracker
+              faction={faction}
+              influence={factionInfluence}
+              allInfluences={allInfluences}
+              onInfluenceChange={handleInfluenceChange}
+              onAddTerritory={handleAddTerritory}
+              onRemoveTerritory={handleRemoveTerritory}
+            />
+          </motion.div>
+        )}
+
+        {activeTab === 'diplomacy' && (
+          <motion.div
+            key="diplomacy"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <DiplomacyPanel
+              faction={faction}
+              factionPolitics={factionPolitics}
+              relationships={politicalRelationships}
+              allFactions={allFactions}
+              onUpdatePolitics={handleUpdatePolitics}
+              onAddGoal={handleAddGoal}
+              onRemoveGoal={handleRemoveGoal}
+              onAddSecret={handleAddSecret}
+              onRevealSecret={handleRevealSecret}
+              onExecuteAction={handleExecuteDiplomaticAction}
+            />
           </motion.div>
         )}
 

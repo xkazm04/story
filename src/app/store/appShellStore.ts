@@ -5,7 +5,7 @@
 
 import { create } from 'zustand';
 
-export type FeatureTab = 'characters' | 'scenes' | 'story' | 'assets' | 'voice' | 'datasets' | 'images' | 'videos';
+export type FeatureTab = 'characters' | 'scenes' | 'story' | 'assets' | 'voice' | 'datasets' | 'images';
 export type StorySubtab = 'art-style' | 'beats' | 'scene-editor' | 'act-evaluation' | 'scene-graph' | 'prompt-composer' | 'story-script' | 'story-setup';
 
 interface AppShellState {

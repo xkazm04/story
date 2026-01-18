@@ -13,6 +13,15 @@ export interface GeneratedAvatar {
   prompt: string;
   style: string;
   createdAt: string;
+  outfitId?: string;
+  outfitName?: string;
+}
+
+export interface OutfitInfo {
+  id: string;
+  name: string;
+  promptFragment?: string;
+  thumbnailUrl?: string;
 }
 
 interface UseAvatarGeneratorOptions {
@@ -20,6 +29,7 @@ interface UseAvatarGeneratorOptions {
   appearance: Appearance;
   artStyle?: string;
   currentAvatarUrl?: string;
+  outfit?: OutfitInfo | null;
   onAvatarSelected?: (avatar: GeneratedAvatar) => void;
 }
 
@@ -33,10 +43,12 @@ interface UseAvatarGeneratorReturn {
   isComposing: boolean;
   isGenerating: boolean;
   error: string | null;
+  currentOutfit: OutfitInfo | null;
 
   // Actions
   setSelectedStyle: (style: string) => void;
   setReferenceImage: (url: string | null) => void;
+  setOutfit: (outfit: OutfitInfo | null) => void;
   composePrompt: () => Promise<string | null>;
   generateAvatars: () => Promise<void>;
   selectAvatar: (avatar: GeneratedAvatar) => void;
@@ -50,6 +62,7 @@ export function useAvatarGenerator({
   appearance,
   artStyle,
   currentAvatarUrl,
+  outfit: initialOutfit,
   onAvatarSelected,
 }: UseAvatarGeneratorOptions): UseAvatarGeneratorReturn {
   // State
@@ -61,6 +74,7 @@ export function useAvatarGenerator({
   const [isComposing, setIsComposing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentOutfit, setCurrentOutfit] = useState<OutfitInfo | null>(initialOutfit || null);
 
   // Abort controller for cancellation
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -76,6 +90,14 @@ export function useAvatarGenerator({
       setSelectedStyle(style);
       setComposedPrompt(null);
     }
+  }, []);
+
+  /**
+   * Handle outfit change - reset prompt to re-compose with new outfit
+   */
+  const handleOutfitChange = useCallback((outfit: OutfitInfo | null) => {
+    setCurrentOutfit(outfit);
+    setComposedPrompt(null); // Reset prompt to trigger re-composition with new outfit
   }, []);
 
   /**
@@ -97,6 +119,11 @@ export function useAvatarGenerator({
           appearance,
           style: selectedStyle,
           artStyle,
+          // Include outfit information in prompt composition
+          outfit: currentOutfit ? {
+            name: currentOutfit.name,
+            promptFragment: currentOutfit.promptFragment,
+          } : undefined,
         }),
         signal: abortControllerRef.current.signal,
       });
@@ -126,7 +153,7 @@ export function useAvatarGenerator({
         setIsComposing(false);
       }
     }
-  }, [characterId, appearance, selectedStyle, artStyle]);
+  }, [characterId, appearance, selectedStyle, artStyle, currentOutfit]);
 
   /**
    * Generate avatar images
@@ -186,6 +213,9 @@ export function useAvatarGenerator({
         prompt,
         style: selectedStyle,
         createdAt: new Date().toISOString(),
+        // Include outfit info in generated avatar for tracking
+        outfitId: currentOutfit?.id,
+        outfitName: currentOutfit?.name,
       }));
 
       setAvatars(generatedAvatars);
@@ -200,7 +230,7 @@ export function useAvatarGenerator({
         setIsGenerating(false);
       }
     }
-  }, [composedPrompt, composePrompt, referenceImage, selectedStyle]);
+  }, [composedPrompt, composePrompt, referenceImage, selectedStyle, currentOutfit]);
 
   /**
    * Select an avatar
@@ -228,8 +258,9 @@ export function useAvatarGenerator({
     setComposedPrompt(null);
     setAvatars([]);
     setSelectedAvatar(null);
+    setCurrentOutfit(initialOutfit || null);
     setError(null);
-  }, [currentAvatarUrl]);
+  }, [currentAvatarUrl, initialOutfit]);
 
   /**
    * Cancel ongoing requests
@@ -251,10 +282,12 @@ export function useAvatarGenerator({
     isComposing,
     isGenerating,
     error,
+    currentOutfit,
 
     // Actions
     setSelectedStyle: handleStyleChange,
     setReferenceImage,
+    setOutfit: handleOutfitChange,
     composePrompt,
     generateAvatars,
     selectAvatar,

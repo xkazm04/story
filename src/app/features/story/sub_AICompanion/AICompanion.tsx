@@ -22,11 +22,14 @@ import {
   Lightbulb,
   PenTool,
   Network,
+  Brain,
 } from 'lucide-react';
 import { Button } from '@/app/components/UI/Button';
 import { Label } from '@/app/components/UI/Label';
 import { useAICompanion } from './useAICompanion';
 import type { AICompanionMode, ContentVariant, NextStepSuggestion } from './types';
+import { BrainstormMode } from './components/BrainstormMode';
+import type { StoryContext as BrainstormStoryContext } from '@/lib/brainstorm';
 
 interface AICompanionProps {
   className?: string;
@@ -48,6 +51,11 @@ const modeConfig = {
     label: 'Story Architect',
     icon: Network,
     description: 'Build story structure',
+  },
+  brainstorm: {
+    label: 'Brainstorm',
+    icon: Brain,
+    description: 'Generate ideas & explore what-ifs',
   },
 };
 
@@ -198,6 +206,21 @@ export function AICompanion({ className, defaultExpanded = true }: AICompanionPr
                 onLevelsChange={setArchitectLevels}
                 onChoicesPerSceneChange={setArchitectChoicesPerScene}
                 onGenerate={handleArchitectGenerate}
+              />
+            </motion.div>
+          )}
+
+          {mode === 'brainstorm' && (
+            <motion.div
+              key="brainstorm"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+            >
+              <BrainstormModeContent
+                currentSceneId={currentSceneId}
+                hasCurrentScene={hasCurrentScene}
+                isGenerating={isGenerating}
               />
             </motion.div>
           )}
@@ -567,6 +590,43 @@ function ArchitectModeContent({
         )}
       </Button>
     </div>
+  );
+}
+
+interface BrainstormModeContentProps {
+  currentSceneId: string | null;
+  hasCurrentScene: boolean;
+  isGenerating: boolean;
+}
+
+function BrainstormModeContent({
+  currentSceneId,
+  hasCurrentScene,
+  isGenerating,
+}: BrainstormModeContentProps) {
+  // Build a simple story context for brainstorming
+  // In a real implementation, this would come from the useAICompanion hook
+  const storyContext: BrainstormStoryContext | null = hasCurrentScene
+    ? {
+        currentSceneTitle: 'Current Scene',
+        currentSceneSummary: '',
+        characters: [],
+        recentEvents: [],
+        activeConflicts: [],
+        themes: [],
+        genre: 'general',
+        mood: 'neutral',
+      }
+    : null;
+
+  return (
+    <BrainstormMode
+      projectId="default"
+      currentSceneId={currentSceneId}
+      storyContext={storyContext}
+      isGenerating={isGenerating}
+      disabled={false}
+    />
   );
 }
 

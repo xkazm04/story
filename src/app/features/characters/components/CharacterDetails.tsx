@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { User, BookOpen, Palette, Heart, Shield, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { User, BookOpen, Palette, Heart, Shield, Image as ImageIcon, Sparkles, Clock } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { characterApi } from '@/app/api/characters';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
@@ -13,7 +13,11 @@ import { CharacterAppearanceForm } from '../sub_CharacterCreator';
 import CharacterConsistencyPanel from './CharacterConsistencyPanel';
 import { ImageGenerator } from '../sub_ImageGenerator';
 import { AvatarGenerator } from '../sub_AvatarGenerator';
+import AppearanceTimeline from './AppearanceTimeline';
+import ReferenceSheetExporter from './ReferenceSheetExporter';
 import { defaultAppearance, Appearance } from '@/app/types/Character';
+import { useAvatarTimeline } from '@/app/hooks/integration/useAvatarTimeline';
+import { MilestoneManager } from '@/lib/evolution/MilestoneManager';
 
 interface CharacterDetailsProps {
   characterId: string;
@@ -21,7 +25,21 @@ interface CharacterDetailsProps {
 
 const CharacterDetails: React.FC<CharacterDetailsProps> = ({ characterId }) => {
   const { data: character, isLoading } = characterApi.useGetCharacter(characterId);
-  const [activeTab, setActiveTab] = useState<'info' | 'about' | 'appearance' | 'relationships' | 'consistency' | 'image_gen' | 'avatar_gen'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'about' | 'appearance' | 'relationships' | 'consistency' | 'image_gen' | 'avatar_gen' | 'timeline'>('info');
+  const [showExporter, setShowExporter] = useState(false);
+
+  // Fetch avatar timeline for the exporter
+  const { timeline } = useAvatarTimeline(characterId);
+
+  // Create milestone manager for exporter
+  const milestones = useMemo(() => {
+    const manager = new MilestoneManager();
+    timeline.forEach((entry) => {
+      const milestone = manager.fromAvatarHistoryEntry(entry);
+      manager.createMilestone(characterId, milestone);
+    });
+    return manager.getSortedMilestones(characterId);
+  }, [timeline, characterId]);
 
   // Fetch appearance data for image/avatar generation
   const { data: appearanceData } = useQuery<Appearance | null>({
@@ -57,6 +75,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ characterId }) => {
     { id: 'info' as const, label: 'info', icon: <User size={14} /> },
     { id: 'about' as const, label: 'about', icon: <BookOpen size={14} /> },
     { id: 'appearance' as const, label: 'appearance', icon: <Palette size={14} /> },
+    { id: 'timeline' as const, label: 'timeline', icon: <Clock size={14} /> },
     { id: 'relationships' as const, label: 'relations', icon: <Heart size={14} /> },
     { id: 'consistency' as const, label: 'consistency', icon: <Shield size={14} /> },
     { id: 'image_gen' as const, label: 'image_gen', icon: <ImageIcon size={14} /> },
@@ -160,7 +179,25 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ characterId }) => {
             currentAvatarUrl={character?.avatar_url}
           />
         )}
+
+        {activeTab === 'timeline' && (
+          <AppearanceTimeline
+            characterId={characterId}
+            characterName={character?.name || ''}
+            onExportRequest={() => setShowExporter(true)}
+          />
+        )}
       </motion.div>
+
+      {/* Reference Sheet Exporter Modal */}
+      {showExporter && (
+        <ReferenceSheetExporter
+          characterId={characterId}
+          characterName={character?.name || ''}
+          milestones={milestones}
+          onClose={() => setShowExporter(false)}
+        />
+      )}
     </div>
   );
 };

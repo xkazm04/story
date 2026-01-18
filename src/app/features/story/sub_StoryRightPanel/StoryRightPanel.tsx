@@ -1,11 +1,29 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlusIcon, ChevronDown, ChevronUp, CheckCircle, Circle, BookOpen, Sparkles } from 'lucide-react';
+import {
+  PlusIcon,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle,
+  Circle,
+  BookOpen,
+  Sparkles,
+  Palette,
+  Target,
+  AlertTriangle,
+} from 'lucide-react';
 import { useProjectStore } from '@/app/store/projectStore';
 import { beatApi } from '@/app/hooks/integration/useBeats';
 import { AIAssistantPanel } from '@/app/features/assistant/AIAssistantPanel';
+import { ThematicAnalysis } from '../components/ThematicAnalysis';
+import {
+  ThemeTracker,
+  type Theme,
+  type StoryPremise,
+  type ThemeCoverage,
+} from '@/lib/themes/ThemeTracker';
 import type { Beat } from '@/app/types/Beat';
 
 const StoryRightPanel: React.FC = () => {
@@ -15,10 +33,62 @@ const StoryRightPanel: React.FC = () => {
   const [showCompleted, setShowCompleted] = useState(true);
   const [completedBeats, setCompletedBeats] = useState<Record<string, boolean>>({});
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    themes: true,
     act: true,
     story: true,
     assistant: true,
   });
+
+  // Theme system state
+  const [themes, setThemes] = useState<Theme[]>([]);
+  const [premise, setPremise] = useState<StoryPremise | null>(null);
+
+  // Create theme tracker instance and compute analysis
+  const themeTracker = useMemo(() => {
+    const tracker = new ThemeTracker();
+
+    // Set premise if available
+    if (premise) {
+      tracker.setPremise(premise);
+    }
+
+    // Add themes
+    themes.forEach((theme) => tracker.addTheme(theme));
+
+    // Set scenes from beats (using beats as scene proxies)
+    if (beats && beats.length > 0) {
+      tracker.setScenes(
+        beats.map((beat, idx) => ({
+          id: beat.id,
+          name: beat.name,
+          order: idx,
+        }))
+      );
+    }
+
+    return tracker;
+  }, [themes, premise, beats]);
+
+  // Compute coverage data
+  const coverageData = useMemo(() => {
+    const data = new Map<string, ThemeCoverage>();
+    themes.forEach((theme) => {
+      const coverage = themeTracker.analyzeThemeCoverage(theme.id);
+      if (coverage) {
+        data.set(theme.id, coverage);
+      }
+    });
+    return data;
+  }, [themes, themeTracker]);
+
+  // Get balance and fulfillment analysis
+  const balance = useMemo(() => themeTracker.analyzeThematicBalance(), [themeTracker]);
+  const fulfillment = useMemo(() => themeTracker.analyzePremiseFulfillment(), [themeTracker]);
+
+  const handleThemeClick = useCallback((themeId: string) => {
+    // Could navigate to theme manager or highlight theme
+    console.log('Theme clicked:', themeId);
+  }, []);
 
   const toggleBeatCompletion = (beatId: string) => {
     setCompletedBeats((prev) => ({
@@ -294,6 +364,64 @@ const StoryRightPanel: React.FC = () => {
             </AnimatePresence>
           </div>
         )}
+
+        {/* Themes & Premise Section */}
+        <div className="mb-3">
+          <button
+            className="w-full px-3 py-2 flex justify-between items-center text-xs font-medium rounded-lg hover:bg-slate-900 transition-colors text-slate-200"
+            onClick={() => toggleSection('themes')}
+          >
+            <span className="flex items-center gap-2">
+              <Palette className="w-3 h-3 text-violet-400" />
+              Themes & Premise
+              {balance.recommendations.filter((r) => r.priority === 'high').length > 0 && (
+                <span className="flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-400 rounded">
+                  <AlertTriangle className="w-2.5 h-2.5" />
+                  {balance.recommendations.filter((r) => r.priority === 'high').length}
+                </span>
+              )}
+            </span>
+            {expandedSections.themes ? (
+              <ChevronUp className="h-3.5 w-3.5 text-slate-500" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
+            )}
+          </button>
+
+          <AnimatePresence initial={false}>
+            {expandedSections.themes && (
+              <motion.div
+                initial="closed"
+                animate="open"
+                exit="closed"
+                variants={sectionVariants}
+                className="overflow-hidden"
+              >
+                <div className="mt-2 px-2">
+                  {themes.length === 0 && !premise ? (
+                    <div className="p-4 text-center text-slate-500 bg-slate-900/50 rounded-lg">
+                      <Target className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                      <p className="text-xs">No themes defined yet</p>
+                      <p className="text-[10px] mt-1 text-slate-600">
+                        Add themes in the Story Structure tab
+                      </p>
+                    </div>
+                  ) : (
+                    <ThematicAnalysis
+                      themes={themes}
+                      coverageData={coverageData}
+                      balance={balance}
+                      fulfillment={fulfillment}
+                      sceneCount={beats?.length || 0}
+                      onThemeClick={handleThemeClick}
+                      compact
+                    />
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* AI Assistant Section */}
         <div className="mb-3">

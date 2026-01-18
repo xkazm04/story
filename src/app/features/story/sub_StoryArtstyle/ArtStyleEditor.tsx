@@ -1,18 +1,29 @@
 /**
  * ArtStyleEditor Component
- * Main editor for story art style with preset and custom modes
+ * Main editor for story art style with preset, custom, Style DNA, and Evolution modes
  */
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Palette, Save, Check } from 'lucide-react';
+import { Palette, Save, Check, Dna, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/app/components/UI/Button';
 import { ArtStylePresetSelector } from './components/ArtStylePresetSelector';
 import { ArtStyleExtractor } from './components/ArtStyleExtractor';
+import { StyleDNAPanel } from './components/StyleDNAPanel';
+import { MoodAdapter } from './components/MoodAdapter';
+import { SceneTypeRules } from './components/SceneTypeRules';
+import { VariationPreview } from './components/VariationPreview';
 import { ArtStyleSource } from './types';
+import type { StyleDNAConfig } from '@/lib/style';
+import {
+  styleVariationManager,
+  type EmotionalMood,
+  type SceneType,
+  type StyleVariationConfig,
+} from '@/lib/style';
 
 interface ArtStyleEditorProps {
   projectId: string;
@@ -38,9 +49,30 @@ export default function ArtStyleEditor({
 }: ArtStyleEditorProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [savedRecently, setSavedRecently] = useState(false);
-  const [activeTab, setActiveTab] = useState<'preset' | 'custom'>(
+  const [activeTab, setActiveTab] = useState<'preset' | 'custom' | 'dna' | 'evolution'>(
     initialSource === 'preset' ? 'preset' : 'custom'
   );
+  const [styleDNAConfig, setStyleDNAConfig] = useState<StyleDNAConfig | null>(null);
+
+  // Style Evolution state
+  const [variationConfig, setVariationConfig] = useState<StyleVariationConfig | null>(null);
+  const [selectedMood, setSelectedMood] = useState<EmotionalMood>('neutral');
+  const [selectedSceneTypes, setSelectedSceneTypes] = useState<SceneType[]>([]);
+
+  // Initialize or get variation config when Style DNA config changes
+  useEffect(() => {
+    if (styleDNAConfig) {
+      let config = styleVariationManager.getActiveConfig();
+      if (!config) {
+        config = styleVariationManager.createConfig(
+          `${styleDNAConfig.name} Variations`,
+          styleDNAConfig.id
+        );
+        styleVariationManager.setActiveConfig(config.id);
+      }
+      setVariationConfig(config);
+    }
+  }, [styleDNAConfig]);
 
   // Local state for editing
   const [selectedStyleId, setSelectedStyleId] = useState(
@@ -78,6 +110,13 @@ export default function ArtStyleEditor({
     setActiveTab('preset');
   }, []);
 
+  const handleStyleDNAChange = useCallback((config: StyleDNAConfig | null) => {
+    setStyleDNAConfig(config);
+    if (config) {
+      setArtStyleSource('extracted'); // Use 'extracted' as the source type for DNA-based styles
+    }
+  }, []);
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -112,7 +151,9 @@ export default function ArtStyleEditor({
     (activeTab === 'preset' &&
       (selectedStyleId !== initialStyleId || initialSource !== 'preset')) ||
     (activeTab === 'custom' &&
-      (customPrompt !== initialCustomPrompt || artStyleSource !== initialSource));
+      (customPrompt !== initialCustomPrompt || artStyleSource !== initialSource)) ||
+    (activeTab === 'dna' && styleDNAConfig !== null) ||
+    (activeTab === 'evolution' && (selectedMood !== 'neutral' || selectedSceneTypes.length > 0));
 
   return (
     <motion.div
@@ -138,36 +179,61 @@ export default function ArtStyleEditor({
         <button
           onClick={() => setActiveTab('preset')}
           className={cn(
-            'flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all',
+            'flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all',
             activeTab === 'preset'
               ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-500/20'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
           )}
         >
-          Preset Styles
+          Presets
         </button>
         <button
           onClick={() => setActiveTab('custom')}
           className={cn(
-            'flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all',
+            'flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all',
             activeTab === 'custom'
               ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
           )}
         >
-          Custom Style
+          Custom
+        </button>
+        <button
+          onClick={() => setActiveTab('dna')}
+          className={cn(
+            'flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-1',
+            activeTab === 'dna'
+              ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+          )}
+        >
+          <Dna className="w-3 h-3" />
+          DNA
+        </button>
+        <button
+          onClick={() => setActiveTab('evolution')}
+          className={cn(
+            'flex-1 px-2 py-2 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-1',
+            activeTab === 'evolution'
+              ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/20'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+          )}
+        >
+          <Sparkles className="w-3 h-3" />
+          Evolution
         </button>
       </div>
 
       {/* Tab Content */}
       <div className="min-h-[200px]">
-        {activeTab === 'preset' ? (
+        {activeTab === 'preset' && (
           <ArtStylePresetSelector
             selectedStyleId={selectedStyleId}
             onSelect={handlePresetSelect}
             disabled={isSaving}
           />
-        ) : (
+        )}
+        {activeTab === 'custom' && (
           <ArtStyleExtractor
             customPrompt={customPrompt}
             extractedImageUrl={extractedImageUrl}
@@ -176,6 +242,57 @@ export default function ArtStyleEditor({
             onClear={handleClearCustom}
             disabled={isSaving}
           />
+        )}
+        {activeTab === 'dna' && (
+          <StyleDNAPanel
+            projectId={projectId}
+            onStyleChange={handleStyleDNAChange}
+            disabled={isSaving}
+          />
+        )}
+        {activeTab === 'evolution' && variationConfig && (
+          <div className="space-y-6">
+            {/* Mood Adapter */}
+            <MoodAdapter
+              configId={variationConfig.id}
+              selectedMood={selectedMood}
+              onMoodSelect={setSelectedMood}
+              disabled={isSaving}
+            />
+
+            {/* Scene Type Rules */}
+            <SceneTypeRules
+              configId={variationConfig.id}
+              selectedSceneTypes={selectedSceneTypes}
+              onSceneTypesChange={setSelectedSceneTypes}
+              disabled={isSaving}
+            />
+
+            {/* Variation Preview */}
+            <VariationPreview
+              configId={variationConfig.id}
+              baseStyleId={styleDNAConfig?.id}
+              mood={selectedMood}
+              sceneTypes={selectedSceneTypes}
+              disabled={isSaving}
+            />
+          </div>
+        )}
+        {activeTab === 'evolution' && !variationConfig && (
+          <div className="p-6 rounded-lg bg-slate-800/30 border border-slate-700 text-center">
+            <Sparkles className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+            <p className="text-xs text-slate-400">
+              Create a Style DNA configuration first to enable style evolution
+            </p>
+            <Button
+              onClick={() => setActiveTab('dna')}
+              variant="secondary"
+              size="sm"
+              className="mt-3"
+            >
+              Go to Style DNA
+            </Button>
+          </div>
         )}
       </div>
 

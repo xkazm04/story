@@ -1,199 +1,70 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase/client';
-import {
-  Dataset,
-  DatasetInsert,
-  DatasetUpdate,
-  DatasetImage,
-  DatasetImageInsert,
-  AudioTranscription,
-  AudioTranscriptionInsert
-} from '@/app/types/Dataset';
-
 /**
- * Fetch all datasets for a project
+ * Dataset hooks - re-export from integration layer
+ *
+ * These hooks now use the mockable query pattern to support both
+ * mock data (NEXT_PUBLIC_USE_MOCK_DATA=true) and real Supabase data.
  */
-export const useDatasetsByProject = (projectId: string) => {
-  return useQuery({
-    queryKey: ['datasets', projectId],
-    queryFn: async () => {
-      if (!projectId) return [];
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { datasetApi } from './integration/useDatasets';
+import type { Dataset, DatasetImage, AudioTranscription } from '../types/Dataset';
 
-      const { data, error } = await supabase
-        .from('datasets')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: false });
+// Re-export the API object
+export { datasetApi };
 
-      if (error) {
-        console.error('Error fetching datasets:', error);
-        throw new Error(error.message);
-      }
+// Re-export query hooks for backwards compatibility with direct hook imports
+export const useDatasetsByProject = datasetApi.useDatasetsByProject;
+export const useDataset = datasetApi.useDataset;
+export const useDatasetImages = datasetApi.useDatasetImages;
+export const useTranscriptions = datasetApi.useTranscriptions;
 
-      return data as Dataset[];
-    },
-    enabled: !!projectId,
-  });
-};
-
-/**
- * Fetch a single dataset by ID
- */
-export const useDataset = (datasetId: string) => {
-  return useQuery({
-    queryKey: ['dataset', datasetId],
-    queryFn: async () => {
-      if (!datasetId) return null;
-
-      const { data, error } = await supabase
-        .from('datasets')
-        .select('*')
-        .eq('id', datasetId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching dataset:', error);
-        throw new Error(error.message);
-      }
-
-      return data as Dataset;
-    },
-    enabled: !!datasetId,
-  });
-};
-
-/**
- * Create a new dataset
- */
+// Mutation hooks for backwards compatibility
 export const useCreateDataset = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (dataset: DatasetInsert) => {
-      const { data, error } = await supabase
-        .from('datasets')
-        .insert(dataset)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating dataset:', error);
-        throw new Error(error.message);
-      }
-
-      return data as Dataset;
+    mutationFn: async (dataset: Partial<Dataset>) => {
+      return datasetApi.createDataset(dataset);
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['datasets', data.project_id] });
+      queryClient.invalidateQueries({ queryKey: ['datasets', 'project', data.project_id] });
     },
   });
 };
 
-/**
- * Update a dataset
- */
 export const useUpdateDataset = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: DatasetUpdate }) => {
-      const { data, error } = await supabase
-        .from('datasets')
-        .update({ ...updates, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error updating dataset:', error);
-        throw new Error(error.message);
-      }
-
-      return data as Dataset;
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Dataset> }) => {
+      return datasetApi.updateDataset(id, updates);
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['datasets', data.project_id] });
-      queryClient.invalidateQueries({ queryKey: ['dataset', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['datasets', 'project', data.project_id] });
+      queryClient.invalidateQueries({ queryKey: ['datasets', data.id] });
     },
   });
 };
 
-/**
- * Delete a dataset
- */
 export const useDeleteDataset = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ id, projectId }: { id: string; projectId: string }) => {
-      const { error } = await supabase
-        .from('datasets')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error('Error deleting dataset:', error);
-        throw new Error(error.message);
-      }
-
+      await datasetApi.deleteDataset(id);
       return { id, projectId };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['datasets', data.projectId] });
+      queryClient.invalidateQueries({ queryKey: ['datasets', 'project', data.projectId] });
     },
   });
 };
 
-// =====================================================
-// IMAGE DATASETS
-// =====================================================
-
-/**
- * Fetch images for a dataset
- */
-export const useDatasetImages = (datasetId: string) => {
-  return useQuery({
-    queryKey: ['dataset-images', datasetId],
-    queryFn: async () => {
-      if (!datasetId) return [];
-
-      const { data, error } = await supabase
-        .from('dataset_images')
-        .select('*')
-        .eq('dataset_id', datasetId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching dataset images:', error);
-        throw new Error(error.message);
-      }
-
-      return data as DatasetImage[];
-    },
-    enabled: !!datasetId,
-  });
-};
-
-/**
- * Add image to dataset
- */
 export const useAddImageToDataset = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (image: DatasetImageInsert) => {
-      const { data, error } = await supabase
-        .from('dataset_images')
-        .insert(image)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error adding image to dataset:', error);
-        throw new Error(error.message);
-      }
-
-      return data as DatasetImage;
+    mutationFn: async (image: Partial<DatasetImage> & { dataset_id: string }) => {
+      return datasetApi.addImageToDataset(image.dataset_id, image);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['dataset-images', data.dataset_id] });
@@ -201,24 +72,12 @@ export const useAddImageToDataset = () => {
   });
 };
 
-/**
- * Remove image from dataset
- */
 export const useRemoveImageFromDataset = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ imageId, datasetId }: { imageId: string; datasetId: string }) => {
-      const { error } = await supabase
-        .from('dataset_images')
-        .delete()
-        .eq('id', imageId);
-
-      if (error) {
-        console.error('Error removing image from dataset:', error);
-        throw new Error(error.message);
-      }
-
+      await datasetApi.removeImageFromDataset(datasetId, imageId);
       return { imageId, datasetId };
     },
     onSuccess: (data) => {
@@ -227,58 +86,12 @@ export const useRemoveImageFromDataset = () => {
   });
 };
 
-// =====================================================
-// AUDIO TRANSCRIPTIONS
-// =====================================================
-
-/**
- * Fetch transcriptions
- */
-export const useTranscriptions = (filters?: { filename?: string }) => {
-  return useQuery({
-    queryKey: ['transcriptions', filters],
-    queryFn: async () => {
-      let query = supabase
-        .from('audio_transcriptions')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (filters?.filename) {
-        query = query.eq('filename', filters.filename);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching transcriptions:', error);
-        throw new Error(error.message);
-      }
-
-      return data as AudioTranscription[];
-    },
-  });
-};
-
-/**
- * Create transcription
- */
 export const useCreateTranscription = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (transcription: AudioTranscriptionInsert) => {
-      const { data, error } = await supabase
-        .from('audio_transcriptions')
-        .insert(transcription)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating transcription:', error);
-        throw new Error(error.message);
-      }
-
-      return data as AudioTranscription;
+    mutationFn: async (transcription: Partial<AudioTranscription>) => {
+      return datasetApi.createTranscription(transcription);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transcriptions'] });

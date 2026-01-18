@@ -3,7 +3,7 @@
  * Types for the AI-powered story writing assistant
  */
 
-export type AICompanionMode = 'suggest' | 'generate' | 'architect';
+export type AICompanionMode = 'suggest' | 'generate' | 'architect' | 'brainstorm';
 
 export interface GeneratedChoice {
   label: string;

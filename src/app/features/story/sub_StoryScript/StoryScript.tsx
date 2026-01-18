@@ -2,6 +2,7 @@
  * StoryScript Component
  * Infinite notepad-style script editor with right-click context menu
  * Supports multiple block types: Scene, Description, Content, Script, Actor
+ * Now includes Audio Narration System with voice assignment and timeline
  */
 
 'use client';
@@ -11,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useProjectStore } from "@/app/store/slices/projectSlice";
 import { actApi } from "@/app/hooks/integration/useActs";
 import { sceneApi } from "@/app/hooks/integration/useScenes";
+import { characterApi } from "@/app/hooks/integration/useCharacters";
 import { cn } from '@/lib/utils';
 import {
     FileText,
@@ -39,7 +41,26 @@ import {
     Quote,
     Users,
     Settings2,
+    Headphones,
+    Radio,
+    Download,
 } from 'lucide-react';
+import { VoiceAssigner } from './components/VoiceAssigner';
+import { AudioTimeline } from './components/AudioTimeline';
+import { ScriptRenderer } from './components/ScriptRenderer';
+import { ExportDialog } from './components/ExportDialog';
+import {
+    narrationGenerator,
+    type NarrationBlock,
+    type CharacterVoiceAssignment,
+    type NarratorConfig,
+    type ChapterAudio,
+    PRESET_VOICES,
+} from '@/lib/audio';
+import { type ScriptData } from '@/lib/export';
+
+// Script view modes
+type ScriptViewMode = 'edit' | 'narrate' | 'voices';
 
 // Block types for the notepad
 type BlockType = 'scene-header' | 'description' | 'content' | 'dialogue' | 'actor' | 'direction';
@@ -446,12 +467,28 @@ const StoryScript = () => {
     const { selectedProject } = useProjectStore();
     const { data: acts } = actApi.useProjectActs(selectedProject?.id || '', !!selectedProject);
     const { data: allScenes } = sceneApi.useProjectScenes(selectedProject?.id || '', !!selectedProject);
+    const { data: characters } = characterApi.useProjectCharacters(selectedProject?.id || '', !!selectedProject);
 
     // Script blocks state (in real app, this would be persisted)
     const [blocks, setBlocks] = useState<ScriptBlock[]>([]);
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; sceneId: string } | null>(null);
     const [generatingAudioId, setGeneratingAudioId] = useState<string | null>(null);
     const canvasRef = useRef<HTMLDivElement>(null);
+
+    // Audio Narration State
+    const [viewMode, setViewMode] = useState<ScriptViewMode>('edit');
+    const [voiceAssignments, setVoiceAssignments] = useState<CharacterVoiceAssignment[]>([]);
+    const [narratorConfig, setNarratorConfig] = useState<NarratorConfig | null>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [currentBlockId, setCurrentBlockId] = useState<string | undefined>();
+    const [volume, setVolume] = useState(0.8);
+    const [isMuted, setIsMuted] = useState(false);
+    const [highlightMode, setHighlightMode] = useState<'word' | 'sentence' | 'block'>('sentence');
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    // Export State
+    const [showExportDialog, setShowExportDialog] = useState(false);
 
     const sortedActs = useMemo(() =>
         acts?.sort((a, b) => (a.order || 0) - (b.order || 0)) || [],
@@ -657,6 +694,109 @@ const StoryScript = () => {
         }
     }, [blocks]);
 
+    // Convert script blocks to narration blocks for the audio system
+    const narrationBlocks = useMemo<NarrationBlock[]>(() => {
+        return blocks
+            .filter(b => b.type === 'content' || b.type === 'dialogue' || b.type === 'description')
+            .map(b => ({
+                id: b.id,
+                sceneId: b.sceneId,
+                blockType: b.type === 'dialogue' ? 'dialogue' as const :
+                           b.type === 'description' ? 'description' as const : 'narration' as const,
+                text: b.content,
+                speaker: b.speaker,
+                speakerType: b.speakerType || 'narrator',
+                order: b.order,
+                audioData: b.audioUrl ? {
+                    url: b.audioUrl,
+                    duration: 5000, // Estimated, would be actual from API
+                    format: 'mp3' as const,
+                    sampleRate: 44100,
+                    bitRate: 128000,
+                    generatedAt: Date.now(),
+                    provider: 'elevenlabs' as const,
+                } : undefined,
+            }));
+    }, [blocks]);
+
+    // Calculate total duration
+    const totalDuration = useMemo(() => {
+        return narrationBlocks.reduce((sum, b) => sum + (b.audioData?.duration || 5000), 0);
+    }, [narrationBlocks]);
+
+    // Voice assignment handlers
+    const handleVoiceAssign = useCallback((characterId: string, voiceId: string) => {
+        const character = characters?.find(c => c.id === characterId);
+        if (!character) return;
+
+        const assignment = narrationGenerator.getVoiceManager().assignVoiceToCharacter(
+            characterId,
+            character.name,
+            voiceId
+        );
+
+        if (assignment) {
+            setVoiceAssignments(prev => {
+                const filtered = prev.filter(a => a.characterId !== characterId);
+                return [...filtered, assignment];
+            });
+        }
+    }, [characters]);
+
+    const handleVoiceUnassign = useCallback((characterId: string) => {
+        narrationGenerator.getVoiceManager().removeCharacterAssignment(characterId);
+        setVoiceAssignments(prev => prev.filter(a => a.characterId !== characterId));
+    }, []);
+
+    const handleNarratorChange = useCallback((voiceId: string, style: NarratorConfig['style']) => {
+        const config = narrationGenerator.getVoiceManager().setNarratorConfig(voiceId, style);
+        if (config) {
+            setNarratorConfig(config);
+        }
+    }, []);
+
+    const handlePreviewVoice = useCallback(async (voiceId: string, text: string) => {
+        // For preview, we could generate a short sample
+        console.log('Preview voice:', voiceId, text);
+        // In production, this would call the TTS API
+    }, []);
+
+    // Playback handlers
+    const handlePlay = useCallback(() => {
+        setIsPlaying(true);
+        // Start audio playback
+    }, []);
+
+    const handlePause = useCallback(() => {
+        setIsPlaying(false);
+        // Pause audio playback
+    }, []);
+
+    const handleSeek = useCallback((time: number) => {
+        setCurrentTime(time);
+        // Find which block this time falls into
+        let runningTime = 0;
+        for (const block of narrationBlocks) {
+            const blockDuration = block.audioData?.duration || 5000;
+            if (time < runningTime + blockDuration) {
+                setCurrentBlockId(block.id);
+                break;
+            }
+            runningTime += blockDuration;
+        }
+    }, [narrationBlocks]);
+
+    const handleBlockSelect = useCallback((blockId: string) => {
+        setCurrentBlockId(blockId);
+        // Calculate time offset for this block
+        let time = 0;
+        for (const block of narrationBlocks) {
+            if (block.id === blockId) break;
+            time += block.audioData?.duration || 5000;
+        }
+        setCurrentTime(time);
+    }, [narrationBlocks]);
+
     // Stats
     const stats = useMemo(() => {
         const totalBlocks = blocks.length;
@@ -668,6 +808,27 @@ const StoryScript = () => {
 
         return { totalBlocks, contentBlocks, withAudio, totalWords, scenes: allScenes?.length || 0 };
     }, [blocks, allScenes]);
+
+    // Prepare script data for export
+    const scriptExportData = useMemo<ScriptData>(() => ({
+        title: selectedProject?.name || 'Untitled Script',
+        author: 'Author Name', // Would come from user profile
+        blocks: blocks.map(b => ({
+            id: b.id,
+            sceneId: b.sceneId,
+            type: b.type,
+            content: b.content,
+            speaker: b.speaker,
+            order: b.order,
+        })),
+        scenes: allScenes?.map(s => ({
+            id: s.id,
+            name: s.name,
+        })),
+        metadata: {
+            description: selectedProject?.description,
+        },
+    }), [selectedProject, blocks, allScenes]);
 
     if (!selectedProject) {
         return (
@@ -684,11 +845,14 @@ const StoryScript = () => {
         <div className="h-full flex flex-col bg-slate-950">
             {/* Header */}
             <div className="shrink-0 px-4 py-3 border-b border-slate-800 bg-slate-900/80">
-                <div className="flex items-center justify-between max-w-5xl mx-auto">
+                <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                             <BookOpen className="w-5 h-5 text-cyan-400" />
-                            <h2 className="text-sm font-semibold text-white">Script Notepad</h2>
+                            <h2 className="text-sm font-semibold text-white">
+                                {viewMode === 'edit' ? 'Script Editor' :
+                                 viewMode === 'narrate' ? 'Audio Narration' : 'Voice Assignment'}
+                            </h2>
                         </div>
                         <div className="flex items-center gap-3 pl-4 border-l border-slate-700/50 text-xs text-slate-400">
                             <span>{stats.scenes} Scenes</span>
@@ -703,109 +867,242 @@ const StoryScript = () => {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <span className="flex items-center gap-1">
-                            <MoreHorizontal className="w-3.5 h-3.5" />
-                            Right-click to add blocks
-                        </span>
+                    <div className="flex items-center gap-2">
+                        {viewMode === 'edit' && (
+                            <span className="flex items-center gap-1 text-xs text-slate-500 mr-2">
+                                <MoreHorizontal className="w-3.5 h-3.5" />
+                                Right-click to add blocks
+                            </span>
+                        )}
+                        <button
+                            onClick={() => setShowExportDialog(true)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-cyan-600/20 text-cyan-400 hover:bg-cyan-600/30 transition-colors"
+                        >
+                            <Download className="w-3.5 h-3.5" />
+                            Export
+                        </button>
                     </div>
                 </div>
             </div>
 
-            {/* Canvas */}
-            <div
-                ref={canvasRef}
-                className="flex-1 overflow-y-auto p-6"
-                onContextMenu={(e) => {
-                    // Find nearest scene from click
-                    const firstScene = allScenes?.[0];
-                    if (firstScene) {
-                        handleContextMenu(e, firstScene.id);
-                    }
-                }}
-            >
-                <div className="max-w-4xl mx-auto space-y-2">
-                    {scenesByAct.length > 0 ? (
-                        scenesByAct.map(({ act, scenes }, actIdx) => (
-                            <div key={act.id}>
-                                {/* Act Header */}
-                                <div className="flex items-center gap-3 py-4 mb-4">
-                                    <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 px-3 py-1 rounded bg-slate-900 border border-slate-800">
-                                        Act {actIdx + 1}: {act.name}
-                                    </div>
-                                    <div className="flex-1 h-px bg-slate-800" />
-                                </div>
-
-                                {/* Scenes */}
-                                {scenes.map((scene, sceneIdx) => {
-                                    const sceneBlocks = getBlocksForScene(scene.id);
-
-                                    return (
-                                        <div
-                                            key={scene.id}
-                                            className="mb-8"
-                                            onContextMenu={(e) => handleContextMenu(e, scene.id)}
-                                        >
-                                            {/* Scene Divider */}
-                                            <SceneSeparator
-                                                sceneName={scene.name || `Scene ${sceneIdx + 1}`}
-                                                actName={`Act ${actIdx + 1}`}
-                                            />
-
-                                            {/* Scene Blocks */}
-                                            <div className="space-y-3 pl-8">
-                                                {sceneBlocks.length > 0 ? (
-                                                    sceneBlocks.map((block, idx) => (
-                                                        <EditableBlock
-                                                            key={block.id}
-                                                            block={block}
-                                                            onUpdate={handleUpdateBlock}
-                                                            onDelete={handleDeleteBlock}
-                                                            onMoveUp={(id) => handleMoveBlock(id, 'up')}
-                                                            onMoveDown={(id) => handleMoveBlock(id, 'down')}
-                                                            isFirst={idx === 0}
-                                                            isLast={idx === sceneBlocks.length - 1}
-                                                            onGenerateAudio={handleGenerateAudio}
-                                                            onDeleteAudio={handleDeleteAudio}
-                                                            isGeneratingAudio={generatingAudioId === block.id}
-                                                        />
-                                                    ))
-                                                ) : (
-                                                    <div className="py-8 text-center border-2 border-dashed border-slate-800 rounded-lg">
-                                                        <FileText className="w-6 h-6 text-slate-700 mx-auto mb-2" />
-                                                        <p className="text-xs text-slate-500">Right-click to add content blocks</p>
-                                                    </div>
-                                                )}
-
-                                                {/* Quick Add Button */}
-                                                <button
-                                                    onClick={(e) => handleContextMenu(e as any, scene.id)}
-                                                    className="w-full py-2 border border-dashed border-slate-800 rounded-lg text-xs text-slate-500 hover:border-cyan-500/50 hover:text-cyan-400 transition-colors flex items-center justify-center gap-1"
-                                                >
-                                                    <Plus className="w-3 h-3" />
-                                                    Add block
-                                                </button>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ))
-                    ) : (
-                        <div className="py-16 text-center">
-                            <Film className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-                            <p className="text-sm text-slate-400">No scenes available</p>
-                            <p className="text-xs text-slate-500 mt-1">
-                                Create acts and scenes to start writing your script
-                            </p>
-                        </div>
+            {/* Mode Switcher */}
+            <div className="shrink-0 flex border-b border-slate-800">
+                <button
+                    onClick={() => setViewMode('edit')}
+                    className={cn(
+                        'flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors',
+                        viewMode === 'edit'
+                            ? 'bg-cyan-600/10 text-cyan-400 border-b-2 border-cyan-500 -mb-px'
+                            : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'
                     )}
-                </div>
+                >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Script Editor</span>
+                </button>
+                <button
+                    onClick={() => setViewMode('narrate')}
+                    className={cn(
+                        'flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors',
+                        viewMode === 'narrate'
+                            ? 'bg-purple-600/10 text-purple-400 border-b-2 border-purple-500 -mb-px'
+                            : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'
+                    )}
+                >
+                    <Headphones className="w-3.5 h-3.5" />
+                    <span>Narration</span>
+                </button>
+                <button
+                    onClick={() => setViewMode('voices')}
+                    className={cn(
+                        'flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors',
+                        viewMode === 'voices'
+                            ? 'bg-amber-600/10 text-amber-400 border-b-2 border-amber-500 -mb-px'
+                            : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'
+                    )}
+                >
+                    <Radio className="w-3.5 h-3.5" />
+                    <span>Voices</span>
+                </button>
             </div>
 
-            {/* Context Menu */}
+            {/* Main Content */}
+            <div className="flex-1 overflow-hidden">
+                <AnimatePresence mode="wait">
+                    {viewMode === 'edit' ? (
+                        <motion.div
+                            key="edit-mode"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 10 }}
+                            className="h-full"
+                        >
+                            {/* Edit Canvas */}
+                            <div
+                                ref={canvasRef}
+                                className="h-full overflow-y-auto p-6"
+                                onContextMenu={(e) => {
+                                    const firstScene = allScenes?.[0];
+                                    if (firstScene) {
+                                        handleContextMenu(e, firstScene.id);
+                                    }
+                                }}
+                            >
+                                <div className="max-w-4xl mx-auto space-y-2">
+                                    {scenesByAct.length > 0 ? (
+                                        scenesByAct.map(({ act, scenes }, actIdx) => (
+                                            <div key={act.id}>
+                                                {/* Act Header */}
+                                                <div className="flex items-center gap-3 py-4 mb-4">
+                                                    <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 px-3 py-1 rounded bg-slate-900 border border-slate-800">
+                                                        Act {actIdx + 1}: {act.name}
+                                                    </div>
+                                                    <div className="flex-1 h-px bg-slate-800" />
+                                                </div>
+
+                                                {/* Scenes */}
+                                                {scenes.map((scene, sceneIdx) => {
+                                                    const sceneBlocks = getBlocksForScene(scene.id);
+
+                                                    return (
+                                                        <div
+                                                            key={scene.id}
+                                                            className="mb-8"
+                                                            onContextMenu={(e) => handleContextMenu(e, scene.id)}
+                                                        >
+                                                            <SceneSeparator
+                                                                sceneName={scene.name || `Scene ${sceneIdx + 1}`}
+                                                                actName={`Act ${actIdx + 1}`}
+                                                            />
+
+                                                            <div className="space-y-3 pl-8">
+                                                                {sceneBlocks.length > 0 ? (
+                                                                    sceneBlocks.map((block, idx) => (
+                                                                        <EditableBlock
+                                                                            key={block.id}
+                                                                            block={block}
+                                                                            onUpdate={handleUpdateBlock}
+                                                                            onDelete={handleDeleteBlock}
+                                                                            onMoveUp={(id) => handleMoveBlock(id, 'up')}
+                                                                            onMoveDown={(id) => handleMoveBlock(id, 'down')}
+                                                                            isFirst={idx === 0}
+                                                                            isLast={idx === sceneBlocks.length - 1}
+                                                                            onGenerateAudio={handleGenerateAudio}
+                                                                            onDeleteAudio={handleDeleteAudio}
+                                                                            isGeneratingAudio={generatingAudioId === block.id}
+                                                                        />
+                                                                    ))
+                                                                ) : (
+                                                                    <div className="py-8 text-center border-2 border-dashed border-slate-800 rounded-lg">
+                                                                        <FileText className="w-6 h-6 text-slate-700 mx-auto mb-2" />
+                                                                        <p className="text-xs text-slate-500">Right-click to add content blocks</p>
+                                                                    </div>
+                                                                )}
+
+                                                                <button
+                                                                    onClick={(e) => handleContextMenu(e as any, scene.id)}
+                                                                    className="w-full py-2 border border-dashed border-slate-800 rounded-lg text-xs text-slate-500 hover:border-cyan-500/50 hover:text-cyan-400 transition-colors flex items-center justify-center gap-1"
+                                                                >
+                                                                    <Plus className="w-3 h-3" />
+                                                                    Add block
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="py-16 text-center">
+                                            <Film className="w-12 h-12 text-slate-700 mx-auto mb-4" />
+                                            <p className="text-sm text-slate-400">No scenes available</p>
+                                            <p className="text-xs text-slate-500 mt-1">
+                                                Create acts and scenes to start writing your script
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.div>
+                    ) : viewMode === 'narrate' ? (
+                        <motion.div
+                            key="narrate-mode"
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -10 }}
+                            className="h-full flex flex-col"
+                        >
+                            {/* Narration View with Timeline and Script */}
+                            <div className="flex-1 flex overflow-hidden">
+                                {/* Script Renderer with sync highlighting */}
+                                <div className="flex-1 overflow-hidden">
+                                    <ScriptRenderer
+                                        blocks={narrationBlocks}
+                                        currentBlockId={currentBlockId}
+                                        currentTime={currentTime}
+                                        isPlaying={isPlaying}
+                                        highlightMode={highlightMode}
+                                        showTimingMarkers={true}
+                                        autoScroll={true}
+                                        onSeek={handleSeek}
+                                        onBlockClick={handleBlockSelect}
+                                        className="h-full"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Audio Timeline */}
+                            <div className="shrink-0 border-t border-slate-800">
+                                <AudioTimeline
+                                    blocks={narrationBlocks}
+                                    currentBlockId={currentBlockId}
+                                    currentTime={currentTime}
+                                    duration={totalDuration}
+                                    isPlaying={isPlaying}
+                                    volume={volume}
+                                    isMuted={isMuted}
+                                    onPlay={handlePlay}
+                                    onPause={handlePause}
+                                    onSeek={handleSeek}
+                                    onBlockSelect={handleBlockSelect}
+                                    onVolumeChange={setVolume}
+                                    onMuteToggle={() => setIsMuted(!isMuted)}
+                                    onExport={(format) => console.log('Export:', format)}
+                                />
+                            </div>
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key="voices-mode"
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -10 }}
+                            className="h-full"
+                        >
+                            {/* Voice Assignment Panel */}
+                            <VoiceAssigner
+                                characters={(characters || []).map(c => ({
+                                    id: c.id,
+                                    name: c.name,
+                                    role: c.type || undefined,
+                                    imageUrl: c.avatar_url || undefined,
+                                }))}
+                                assignments={voiceAssignments}
+                                narratorConfig={narratorConfig}
+                                availableVoices={PRESET_VOICES}
+                                onAssign={handleVoiceAssign}
+                                onUnassign={handleVoiceUnassign}
+                                onNarratorChange={handleNarratorChange}
+                                onPreviewVoice={handlePreviewVoice}
+                                className="h-full"
+                            />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            {/* Context Menu - Only shown in edit mode */}
             <AnimatePresence>
-                {contextMenu && (
+                {contextMenu && viewMode === 'edit' && (
                     <ContextMenu
                         x={contextMenu.x}
                         y={contextMenu.y}
@@ -814,6 +1111,14 @@ const StoryScript = () => {
                     />
                 )}
             </AnimatePresence>
+
+            {/* Export Dialog */}
+            <ExportDialog
+                isOpen={showExportDialog}
+                onClose={() => setShowExportDialog(false)}
+                scriptData={scriptExportData}
+                projectName={selectedProject?.name}
+            />
         </div>
     );
 };

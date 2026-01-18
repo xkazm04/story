@@ -1,7 +1,7 @@
 /**
  * SceneGraph Component
  * Main component for visualizing and navigating the story structure
- * Features: Diagnostics panel, OutlineSidebar, MiniMap, Quick Navigation, AI Companion
+ * Features: Diagnostics panel, OutlineSidebar, MiniMap, Quick Navigation, AI Companion, Analytics
  */
 
 'use client';
@@ -31,10 +31,18 @@ import {
   ListTree,
   XCircle,
   Keyboard,
+  TrendingUp,
+  Bug,
+  Footprints,
 } from 'lucide-react';
+import { useContextMenu } from './components/GraphContextMenu';
 
-// Lazy load AICompanion for performance
+// Lazy load heavy components for performance
 const AICompanion = lazy(() => import('../sub_AICompanion/AICompanion'));
+const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'));
+const StateDebugger = lazy(() => import('./components/StateDebugger'));
+const PathSimulator = lazy(() => import('./components/PathSimulator'));
+const GraphContextMenu = lazy(() => import('./components/GraphContextMenu'));
 
 interface StatsBarProps {
   totalScenes: number;
@@ -272,8 +280,19 @@ function SceneGraphInner() {
     toggleDiagnostics,
     showAIPanel,
     toggleAIPanel,
+    showAnalytics,
+    toggleAnalytics,
+    showHeatmap,
+    setShowHeatmap,
+    showDebugger,
+    toggleDebugger,
   } = useSceneGraphStore();
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [showPathSimulator, setShowPathSimulator] = useState(false);
+  const [highlightedPath, setHighlightedPath] = useState<string[]>([]);
+
+  // Context menu
+  const { menuPosition, menuTarget, hideMenu, handleContextMenu } = useContextMenu();
 
   // Transform data to React Flow format
   const { nodes, edges, analysis } = useSceneGraphData({
@@ -375,25 +394,75 @@ function SceneGraphInner() {
             />
           </Panel>
 
-          {/* Diagnostics Toggle (bottom-left) */}
+          {/* Diagnostics & Analytics Toggle (bottom-left) */}
           <Panel position="bottom-left" className="mb-4 ml-2">
             <div className="flex flex-col gap-2 items-start">
-              <button
-                onClick={toggleDiagnostics}
-                className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
-                  'bg-slate-900/90 border border-slate-700',
-                  showDiagnostics ? 'text-cyan-400 border-cyan-500/50' : 'text-slate-400 hover:text-cyan-400'
-                )}
-              >
-                <ListTree className="w-3.5 h-3.5" />
-                Diagnostics
-                {showDiagnostics ? (
-                  <ChevronDown className="w-3 h-3" />
-                ) : (
-                  <ChevronUp className="w-3 h-3" />
-                )}
-              </button>
+              <div className="flex items-center gap-1 flex-wrap">
+                <button
+                  onClick={toggleDiagnostics}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                    'bg-slate-900/90 border border-slate-700',
+                    showDiagnostics ? 'text-cyan-400 border-cyan-500/50' : 'text-slate-400 hover:text-cyan-400'
+                  )}
+                >
+                  <ListTree className="w-3.5 h-3.5" />
+                  Diagnostics
+                  {showDiagnostics ? (
+                    <ChevronDown className="w-3 h-3" />
+                  ) : (
+                    <ChevronUp className="w-3 h-3" />
+                  )}
+                </button>
+                <button
+                  onClick={toggleAnalytics}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                    'bg-slate-900/90 border border-slate-700',
+                    showAnalytics ? 'text-emerald-400 border-emerald-500/50' : 'text-slate-400 hover:text-emerald-400'
+                  )}
+                >
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  Analytics
+                  {showAnalytics ? (
+                    <ChevronDown className="w-3 h-3" />
+                  ) : (
+                    <ChevronUp className="w-3 h-3" />
+                  )}
+                </button>
+                <button
+                  onClick={toggleDebugger}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                    'bg-slate-900/90 border border-slate-700',
+                    showDebugger ? 'text-amber-400 border-amber-500/50' : 'text-slate-400 hover:text-amber-400'
+                  )}
+                >
+                  <Bug className="w-3.5 h-3.5" />
+                  State
+                  {showDebugger ? (
+                    <ChevronDown className="w-3 h-3" />
+                  ) : (
+                    <ChevronUp className="w-3 h-3" />
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowPathSimulator(!showPathSimulator)}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                    'bg-slate-900/90 border border-slate-700',
+                    showPathSimulator ? 'text-cyan-400 border-cyan-500/50' : 'text-slate-400 hover:text-cyan-400'
+                  )}
+                >
+                  <Footprints className="w-3.5 h-3.5" />
+                  Simulate
+                  {showPathSimulator ? (
+                    <ChevronDown className="w-3 h-3" />
+                  ) : (
+                    <ChevronUp className="w-3 h-3" />
+                  )}
+                </button>
+              </div>
 
               <AnimatePresence>
                 {showDiagnostics && (
@@ -407,6 +476,84 @@ function SceneGraphInner() {
                       onNavigateToScene={setCurrentSceneId}
                       sceneName={getSceneName}
                     />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <AnimatePresence>
+                {showAnalytics && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="w-72 max-h-96 overflow-hidden bg-slate-900/95 backdrop-blur-sm rounded-lg border border-slate-700/70 shadow-xl"
+                  >
+                    <Suspense
+                      fallback={
+                        <div className="h-48 flex items-center justify-center">
+                          <Loader2 className="w-6 h-6 animate-spin text-emerald-500/50" />
+                        </div>
+                      }
+                    >
+                      <AnalyticsDashboard
+                        scenes={scenes}
+                        choices={choices}
+                        firstSceneId={firstSceneId}
+                        onHeatmapToggle={setShowHeatmap}
+                        onSelectScene={setCurrentSceneId}
+                      />
+                    </Suspense>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <AnimatePresence>
+                {showDebugger && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="w-72 max-h-96 overflow-hidden bg-slate-900/95 backdrop-blur-sm rounded-lg border border-slate-700/70 shadow-xl"
+                  >
+                    <Suspense
+                      fallback={
+                        <div className="h-48 flex items-center justify-center">
+                          <Loader2 className="w-6 h-6 animate-spin text-amber-500/50" />
+                        </div>
+                      }
+                    >
+                      <StateDebugger
+                        currentSceneId={currentSceneId ?? undefined}
+                        onNavigateToScene={setCurrentSceneId}
+                      />
+                    </Suspense>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <AnimatePresence>
+                {showPathSimulator && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="w-72 max-h-[28rem] overflow-hidden"
+                  >
+                    <Suspense
+                      fallback={
+                        <div className="h-48 flex items-center justify-center bg-slate-900/95 rounded-lg">
+                          <Loader2 className="w-6 h-6 animate-spin text-cyan-500/50" />
+                        </div>
+                      }
+                    >
+                      <PathSimulator
+                        scenes={scenes}
+                        choices={choices}
+                        firstSceneId={firstSceneId}
+                        onSceneHighlight={setCurrentSceneId}
+                        onPathHighlight={setHighlightedPath}
+                      />
+                    </Suspense>
                   </motion.div>
                 )}
               </AnimatePresence>

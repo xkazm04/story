@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useNavStore } from "@/app/store/navigationStore";
 import BeatsTable from "./BeatsTable";
 import { beatApi } from "@/app/hooks/integration/useBeats";
@@ -11,10 +11,22 @@ import { Button } from "@/app/components/UI/Button";
 import ActRecommendations from "./ActRecommendations";
 import { RecommendationResponse } from "@/app/types/Recommendation";
 import { AnimatePresence, motion } from "framer-motion";
-import { LayoutGrid, List, Map, CheckCircle2, Circle, Clock, Sparkles } from 'lucide-react';
+import { LayoutGrid, List, Map as MapIcon, CheckCircle2, Circle, Clock, Sparkles, Tags, GitBranch } from 'lucide-react';
 import NarrativeMap from './NarrativeMap';
 import { BeatFilterPanel, BeatFilters, filterBeats } from './BeatFilterPanel';
 import { cn } from '@/lib/utils';
+import DistributionChart from './DistributionChart';
+import { BeatClassifierCompact } from './BeatClassifier';
+import {
+  type BeatClassification,
+  classifyBeatContent,
+  analyzeEmotions,
+  suggestFunctions,
+} from '@/lib/beats/TaxonomyLibrary';
+import { type Dependency, DependencyManager } from '@/lib/beats/DependencyManager';
+import DependencyEditor from './DependencyEditor';
+import DependencyGraph, { CausalityChainDisplay } from './DependencyGraph';
+import ValidationPanel from './ValidationPanel';
 
 export type BeatTableItem = {
     id: string;
@@ -146,7 +158,7 @@ const BeatsOverview = () => {
     const { data: backendBeats, isLoading, refetch: refreshBeats } = beatApi.useGetBeats(selectedProject?.id);
     const [sortedBeats, setBeats] = useState<BeatTableItem[]>([]);
     const { setRightMode } = useNavStore();
-    const [view, setView] = useState<'table' | 'map' | 'cards'>('table');
+    const [view, setView] = useState<'table' | 'map' | 'cards' | 'taxonomy' | 'dependencies'>('table');
     const [recommendations, setRecommendations] = useState<RecommendationResponse | null>(null);
     const [isReordering, setIsReordering] = useState(false);
     const [filters, setFilters] = useState<BeatFilters>({
@@ -154,6 +166,10 @@ const BeatsOverview = () => {
         type: 'all',
         completionStatus: 'all'
     });
+    const beatClassificationsRecord = useMemo<Record<string, BeatClassification>>(() => ({}), []);
+    const [dependencies, setDependencies] = useState<Dependency[]>([]);
+    const [selectedBeatId, setSelectedBeatId] = useState<string | null>(null);
+    const [highlightChain, setHighlightChain] = useState<string[] | undefined>(undefined);
 
     useEffect(() => {
         setRightMode('beats');
@@ -265,6 +281,98 @@ const BeatsOverview = () => {
 
     const filteredBeats = filterBeats(sortedBeats, filters);
 
+    // Convert beats to summary format for dependency components
+    const beatSummaries = useMemo(() => {
+        return sortedBeats.map(beat => ({
+            id: beat.id,
+            title: beat.name,
+            order: beat.order || 0,
+            type: beat.type,
+            sceneId: beat.paragraph_id,
+            sceneName: beat.paragraph_title,
+        }));
+    }, [sortedBeats]);
+
+    // Dependency manager instance for analysis
+    const dependencyManager = useMemo(() => {
+        const manager = new DependencyManager();
+        dependencies.forEach(d => manager.addDependency(d));
+        return manager;
+    }, [dependencies]);
+
+    // Causality chains for display
+    const causalityChains = useMemo(() => {
+        return dependencyManager.findCausalityChains();
+    }, [dependencyManager]);
+
+    // Beat map for lookups
+    const beatMap = useMemo(() => {
+        return new Map(beatSummaries.map(b => [b.id, b]));
+    }, [beatSummaries]);
+
+    // Dependency handlers
+    const handleAddDependency = useCallback((dependency: Omit<Dependency, 'id'>) => {
+        const newDependency: Dependency = {
+            ...dependency,
+            id: `dep-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        };
+        setDependencies(prev => [...prev, newDependency]);
+    }, []);
+
+    const handleRemoveDependency = useCallback((dependencyId: string) => {
+        setDependencies(prev => prev.filter(d => d.id !== dependencyId));
+    }, []);
+
+    const handleUpdateDependency = useCallback((dependencyId: string, updates: Partial<Dependency>) => {
+        setDependencies(prev => prev.map(d =>
+            d.id === dependencyId ? { ...d, ...updates } : d
+        ));
+    }, []);
+
+    const handleSelectBeat = useCallback((beatId: string) => {
+        setSelectedBeatId(beatId);
+        setHighlightChain(undefined);
+    }, []);
+
+    const handleSelectChain = useCallback((beatIds: string[]) => {
+        setHighlightChain(beatIds);
+        setSelectedBeatId(null);
+    }, []);
+
+    // Auto-classify beats based on content
+    const classifications = useMemo(() => {
+        const classificationArray: BeatClassification[] = [];
+
+        sortedBeats.forEach((beat, index) => {
+            // Check if we have a stored classification
+            const stored = beatClassificationsRecord[beat.id];
+            if (stored) {
+                classificationArray.push(stored);
+                return;
+            }
+
+            // Auto-classify based on content
+            const content = `${beat.name} ${beat.description || ''}`;
+            const suggestions = classifyBeatContent(content, beat.name);
+            const emotions = analyzeEmotions(content);
+            const position = sortedBeats.length > 0 ? index / sortedBeats.length : 0;
+            const functions = suggestFunctions(content, position, sortedBeats.length);
+
+            if (suggestions.length > 0) {
+                classificationArray.push({
+                    beatId: beat.id,
+                    category: suggestions[0].category,
+                    subtype: suggestions[0].subtype,
+                    confidence: suggestions[0].confidence,
+                    emotionalMarkers: emotions,
+                    functionTags: functions,
+                });
+            }
+        });
+
+        return classificationArray;
+    }, [sortedBeats, beatClassificationsRecord]);
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-10 text-sm text-slate-400">
@@ -327,10 +435,28 @@ const BeatsOverview = () => {
                         size="sm"
                         variant={view === 'map' ? 'primary' : 'secondary'}
                         onClick={() => setView('map')}
-                        icon={<Map />}
+                        icon={<MapIcon />}
                         data-testid="beats-map-view-btn"
                     >
                         Narrative Map
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant={view === 'taxonomy' ? 'primary' : 'secondary'}
+                        onClick={() => setView('taxonomy')}
+                        icon={<Tags />}
+                        data-testid="beats-taxonomy-view-btn"
+                    >
+                        Taxonomy
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant={view === 'dependencies' ? 'primary' : 'secondary'}
+                        onClick={() => setView('dependencies')}
+                        icon={<GitBranch />}
+                        data-testid="beats-dependencies-view-btn"
+                    >
+                        Dependencies
                     </Button>
                 </div>
             </div>
@@ -395,6 +521,147 @@ const BeatsOverview = () => {
                                 ) : (
                                     <>Total: {sortedBeats.length} beats</>
                                 )}
+                            </span>
+                            <BeatsTableAdd
+                                refetch={refreshBeats}
+                                onRecommendationsReceived={handleRecommendationsReceived}
+                            />
+                        </div>
+                    )}
+                </div>
+            ) : view === 'taxonomy' ? (
+                <div className="space-y-4">
+                    {/* Distribution Chart */}
+                    <div className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-4">
+                        <DistributionChart
+                            classifications={classifications}
+                            totalBeats={sortedBeats.length}
+                            showRecommendations={true}
+                        />
+                    </div>
+
+                    {/* Classified Beats List */}
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-slate-400">Beat Classifications</span>
+                            <span className="text-[10px] text-slate-500">
+                                {classifications.length} / {sortedBeats.length} classified
+                            </span>
+                        </div>
+                        <div className="space-y-1">
+                            {filteredBeats.map((beat, index) => {
+                                const classification = classifications.find(c => c.beatId === beat.id);
+                                return (
+                                    <motion.div
+                                        key={beat.id}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.02 }}
+                                        className={cn(
+                                            'flex items-center justify-between p-2 rounded-lg',
+                                            'bg-slate-800/50 border border-slate-700/50',
+                                            'hover:bg-slate-800 transition-colors'
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <span className="text-xs text-slate-500 w-6">
+                                                {(beat.order || index) + 1}
+                                            </span>
+                                            <span className="text-xs text-slate-200 truncate">
+                                                {beat.name}
+                                            </span>
+                                        </div>
+                                        <BeatClassifierCompact
+                                            category={classification?.category}
+                                            subtype={classification?.subtype}
+                                            emotionalMarkers={classification?.emotionalMarkers}
+                                            functionTags={classification?.functionTags}
+                                        />
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    {sortedBeats.length > 0 && (
+                        <div className="border-t border-gray-800 pt-4 flex justify-between items-center">
+                            <span className="text-xs text-gray-400">
+                                {filteredBeats.length !== sortedBeats.length ? (
+                                    <>Showing {filteredBeats.length} of {sortedBeats.length} beats</>
+                                ) : (
+                                    <>Total: {sortedBeats.length} beats</>
+                                )}
+                            </span>
+                            <BeatsTableAdd
+                                refetch={refreshBeats}
+                                onRecommendationsReceived={handleRecommendationsReceived}
+                            />
+                        </div>
+                    )}
+                </div>
+            ) : view === 'dependencies' ? (
+                <div className="space-y-4">
+                    {/* Dependency Graph Visualization */}
+                    <div className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-4">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-sm font-medium text-slate-200">Dependency Graph</h3>
+                            <div className="flex items-center gap-2 text-xs text-slate-400">
+                                <span>{dependencies.length} dependencies</span>
+                                <span>•</span>
+                                <span>{causalityChains.length} chains</span>
+                            </div>
+                        </div>
+                        <DependencyGraph
+                            beats={beatSummaries}
+                            dependencies={dependencies}
+                            selectedBeatId={selectedBeatId || undefined}
+                            onSelectBeat={handleSelectBeat}
+                            highlightChain={highlightChain}
+                        />
+                    </div>
+
+                    {/* Two-column layout for editor and validation */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {/* Left: Dependency Editor */}
+                        <div className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-4">
+                            <DependencyEditor
+                                beats={beatSummaries}
+                                dependencies={dependencies}
+                                onAddDependency={handleAddDependency}
+                                onRemoveDependency={handleRemoveDependency}
+                                onUpdateDependency={handleUpdateDependency}
+                                selectedBeatId={selectedBeatId || undefined}
+                            />
+                        </div>
+
+                        {/* Right: Validation Panel */}
+                        <div className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-4">
+                            <ValidationPanel
+                                beats={beatSummaries}
+                                dependencies={dependencies}
+                                onSelectBeat={handleSelectBeat}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Causality Chains */}
+                    {causalityChains.length > 0 && (
+                        <div className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-4">
+                            <h3 className="text-sm font-medium text-slate-200 mb-3">Causality Chains</h3>
+                            <CausalityChainDisplay
+                                chains={causalityChains}
+                                beatMap={beatMap}
+                                onSelectChain={handleSelectChain}
+                            />
+                        </div>
+                    )}
+
+                    {/* Footer */}
+                    {sortedBeats.length > 0 && (
+                        <div className="border-t border-gray-800 pt-4 flex justify-between items-center">
+                            <span className="text-xs text-gray-400">
+                                {sortedBeats.length} beats • {dependencies.length} dependencies
                             </span>
                             <BeatsTableAdd
                                 refetch={refreshBeats}

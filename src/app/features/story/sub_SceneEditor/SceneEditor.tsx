@@ -1,12 +1,13 @@
 /**
  * SceneEditor Component
  * Main editor for story scene content with split view mode
+ * Features: Multi-format support (screenplay, prose, comic), context panel
  * Design: Clean Manuscript style with monospace accents
  */
 
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSceneEditor } from '@/contexts/SceneEditorContext';
 import { cn } from '@/lib/utils';
@@ -18,9 +19,35 @@ import {
   ImageIcon,
   GripVertical,
   Keyboard,
+  BookOpen,
+  Loader2,
+  Lightbulb,
 } from 'lucide-react';
+import { useSceneRecommendations } from '@/app/hooks/useRecommendations';
+import { RecommendationPanel } from '@/app/components/recommendations/RecommendationPanel';
 import { ContentSection } from './components/ContentSection';
 import { SceneSketchPanel } from './components/SceneSketchPanel';
+import { characterApi } from '@/app/hooks/integration/useCharacters';
+import FormatToolbar, { type FormatMode, type FormatSettings } from './components/FormatToolbar';
+import {
+  ScreenplayFormatter,
+  ProseFormatter,
+  ComicFormatter,
+} from '@/lib/formats';
+
+// Lazy load ContextPanel for performance
+const ContextPanel = lazy(() => import('./components/ContextPanel'));
+
+// Default format settings
+const DEFAULT_FORMAT_SETTINGS: FormatSettings = {
+  screenplayAutoFormat: true,
+  screenplayShowLineNumbers: false,
+  proseDialogueStyle: 'american',
+  proseIndentParagraphs: true,
+  proseSceneBreak: '***',
+  comicNumberingStyle: 'per-page',
+  comicDefaultPanels: 6,
+};
 
 type LayoutMode = 'stacked' | 'split';
 
@@ -95,6 +122,36 @@ export default function SceneEditor() {
   const { currentScene, projectId, scenes, updateScene } = useSceneEditor();
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('stacked');
   const [splitRatio, setSplitRatio] = useState(50); // percentage
+  const [showContextPanel, setShowContextPanel] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+
+  // Format mode state
+  const [formatMode, setFormatMode] = useState<FormatMode>('prose');
+  const [formatSettings, setFormatSettings] = useState<FormatSettings>(DEFAULT_FORMAT_SETTINGS);
+
+  // Recommendations
+  const {
+    recommendations,
+    isLoading: recsLoading,
+    accept: acceptRec,
+    dismiss: dismissRec,
+    expand: expandRec,
+  } = useSceneRecommendations(projectId ?? '', currentScene?.id);
+
+  // Formatter instances
+  const screenplayFormatter = useRef(new ScreenplayFormatter());
+  const proseFormatter = useRef(new ProseFormatter({
+    dialogueStyle: formatSettings.proseDialogueStyle,
+    paragraphIndent: formatSettings.proseIndentParagraphs,
+    sceneBreakStyle: formatSettings.proseSceneBreak,
+  }));
+  const comicFormatter = useRef(new ComicFormatter({
+    numberingStyle: formatSettings.comicNumberingStyle,
+    defaultPanelsPerPage: formatSettings.comicDefaultPanels,
+  }));
+
+  // Fetch characters for the project
+  const { data: characters = [] } = characterApi.useProjectCharacters(projectId ?? '', !!projectId);
 
   // Handler for audio URL changes
   const handleAudioUrlChange = useCallback(
@@ -137,6 +194,59 @@ export default function SceneEditor() {
       return Math.min(80, Math.max(20, prev + percentDelta));
     });
   }, []);
+
+  // Handle format mode change
+  const handleFormatModeChange = useCallback((mode: FormatMode) => {
+    setFormatMode(mode);
+  }, []);
+
+  // Handle format settings change
+  const handleFormatSettingsChange = useCallback((newSettings: Partial<FormatSettings>) => {
+    setFormatSettings(prev => {
+      const updated = { ...prev, ...newSettings };
+      // Update formatter settings
+      if (newSettings.proseDialogueStyle || newSettings.proseIndentParagraphs || newSettings.proseSceneBreak) {
+        proseFormatter.current.updateSettings({
+          dialogueStyle: updated.proseDialogueStyle,
+          paragraphIndent: updated.proseIndentParagraphs,
+          sceneBreakStyle: updated.proseSceneBreak,
+        });
+      }
+      if (newSettings.comicNumberingStyle || newSettings.comicDefaultPanels) {
+        comicFormatter.current.updateSettings({
+          numberingStyle: updated.comicNumberingStyle,
+          defaultPanelsPerPage: updated.comicDefaultPanels,
+        });
+      }
+      return updated;
+    });
+  }, []);
+
+  // Handle format element insertion
+  const handleInsertElement = useCallback((elementId: string) => {
+    if (!currentScene) return;
+
+    let insertText = '';
+
+    switch (formatMode) {
+      case 'screenplay':
+        insertText = screenplayFormatter.current.insertElement(elementId as any);
+        break;
+      case 'prose':
+        insertText = proseFormatter.current.insertElement(elementId as any);
+        break;
+      case 'comic':
+        insertText = comicFormatter.current.insertElement(elementId as any);
+        break;
+    }
+
+    if (insertText) {
+      const currentContent = currentScene.content || '';
+      updateScene(currentScene.id, {
+        content: currentContent + insertText,
+      });
+    }
+  }, [currentScene, formatMode, updateScene]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -190,6 +300,41 @@ export default function SceneEditor() {
           <div className="flex items-center gap-3">
             <KeyboardHint />
 
+            {/* Recommendations Toggle */}
+            <button
+              onClick={() => setShowRecommendations(!showRecommendations)}
+              className={cn(
+                'relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-medium transition-all',
+                showRecommendations
+                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                  : 'bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/50'
+              )}
+              title="Toggle Suggestions"
+            >
+              <Lightbulb className="w-3.5 h-3.5" />
+              Suggest
+              {recommendations.length > 0 && !showRecommendations && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-slate-900 text-[9px] font-bold rounded-full flex items-center justify-center">
+                  {recommendations.length}
+                </span>
+              )}
+            </button>
+
+            {/* Context Panel Toggle */}
+            <button
+              onClick={() => setShowContextPanel(!showContextPanel)}
+              className={cn(
+                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-medium transition-all',
+                showContextPanel
+                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                  : 'bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/50'
+              )}
+              title="Toggle Context Panel"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              Context
+            </button>
+
             {/* Layout Mode Toggle */}
             <div className="flex items-center gap-1 bg-slate-800/80 p-1 rounded-lg border border-slate-700/50">
               <button
@@ -223,12 +368,23 @@ export default function SceneEditor() {
         </div>
       </motion.div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-hidden relative">
-        {/* Subtle gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900/50 to-slate-950 pointer-events-none" />
+      {/* Format Toolbar */}
+      <FormatToolbar
+        mode={formatMode}
+        onModeChange={handleFormatModeChange}
+        onInsertElement={handleInsertElement}
+        settings={formatSettings}
+        onSettingsChange={handleFormatSettingsChange}
+      />
 
-        <AnimatePresence mode="wait">
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-hidden relative flex">
+        {/* Main Editor Section */}
+        <div className="flex-1 overflow-hidden relative">
+          {/* Subtle gradient background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900/50 to-slate-950 pointer-events-none" />
+
+          <AnimatePresence mode="wait">
           {currentScene ? (
             layoutMode === 'split' ? (
               // Split View
@@ -369,6 +525,56 @@ export default function SceneEditor() {
                 </motion.div>
               </div>
             </motion.div>
+          )}
+          </AnimatePresence>
+        </div>
+
+        {/* Recommendations Panel */}
+        <AnimatePresence>
+          {showRecommendations && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 320, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="h-full border-l border-slate-800 overflow-hidden"
+            >
+              <RecommendationPanel
+                recommendations={recommendations}
+                isLoading={recsLoading}
+                title="Scene Suggestions"
+                subtitle="Relevant for this scene"
+                variant="inline"
+                maxHeight="100%"
+                showFilters={true}
+                onAccept={acceptRec}
+                onDismiss={dismissRec}
+                onExpand={expandRec}
+                onClose={() => setShowRecommendations(false)}
+                className="h-full rounded-none border-0"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Context Panel */}
+        <AnimatePresence>
+          {showContextPanel && currentScene && (
+            <Suspense fallback={
+              <div className="w-72 h-full flex items-center justify-center bg-slate-900/80 border-l border-slate-800">
+                <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
+              </div>
+            }>
+              <ContextPanel
+                scene={currentScene}
+                content={currentScene.content || ''}
+                characters={characters}
+                scenes={scenes}
+                isOpen={showContextPanel}
+                onToggle={() => setShowContextPanel(!showContextPanel)}
+                onUpdateScene={(updates) => updateScene(currentScene.id, updates)}
+              />
+            </Suspense>
           )}
         </AnimatePresence>
       </div>

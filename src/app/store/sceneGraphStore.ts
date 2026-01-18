@@ -27,6 +27,20 @@ interface SceneGraphState {
   setShowAIPanel: (show: boolean) => void;
   toggleAIPanel: () => void;
 
+  // Analytics panel
+  showAnalytics: boolean;
+  setShowAnalytics: (show: boolean) => void;
+  toggleAnalytics: () => void;
+
+  // Heatmap overlay
+  showHeatmap: boolean;
+  setShowHeatmap: (show: boolean) => void;
+
+  // State Debugger panel
+  showDebugger: boolean;
+  setShowDebugger: (show: boolean) => void;
+  toggleDebugger: () => void;
+
   // Search
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -51,6 +65,20 @@ export const useSceneGraphStore = create<SceneGraphState>((set) => ({
   showAIPanel: false,
   setShowAIPanel: (show) => set({ showAIPanel: show }),
   toggleAIPanel: () => set((state) => ({ showAIPanel: !state.showAIPanel })),
+
+  // Analytics panel
+  showAnalytics: false,
+  setShowAnalytics: (show) => set({ showAnalytics: show }),
+  toggleAnalytics: () => set((state) => ({ showAnalytics: !state.showAnalytics })),
+
+  // Heatmap overlay
+  showHeatmap: false,
+  setShowHeatmap: (show) => set({ showHeatmap: show }),
+
+  // State Debugger panel
+  showDebugger: false,
+  setShowDebugger: (show) => set({ showDebugger: show }),
+  toggleDebugger: () => set((state) => ({ showDebugger: !state.showDebugger })),
 
   // Search
   searchQuery: '',

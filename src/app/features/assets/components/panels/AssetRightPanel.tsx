@@ -5,6 +5,7 @@
  *
  * Detail panel for assets - shows full asset information when selected.
  * Listens to assetManagerStore for activeAsset state.
+ * Includes usage tracking information and deletion safety warnings.
  */
 
 import { useEffect, useState } from 'react';
@@ -20,10 +21,17 @@ import {
   Copy,
   Check,
   Info,
-  Sparkles
+  Sparkles,
+  Link2,
+  AlertTriangle,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useAssetManagerStore } from '../../store/assetManagerStore';
 import { Button } from '@/app/components/UI/Button';
+import { useDeleteSafety, useReferenceCount } from '@/lib/assets';
+import UsagePanel from '../manager/UsagePanel';
 import type { Asset } from '@/app/types/Asset';
 
 interface AssetDetailProps {
@@ -34,6 +42,12 @@ interface AssetDetailProps {
 function AssetDetail({ asset, onClose }: AssetDetailProps) {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
+  const [showUsagePanel, setShowUsagePanel] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Usage tracking hooks
+  const referenceCount = useReferenceCount(asset._id);
+  const deleteSafety = useDeleteSafety(asset._id);
 
   const handleCopy = async (text: string, field: string) => {
     try {
@@ -61,8 +75,29 @@ function AssetDetail({ asset, onClose }: AssetDetailProps) {
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800/70">
         <div className="flex items-center gap-2">
           <ImageIcon className="w-4 h-4 text-cyan-400" />
-          <span className="text-sm font-medium text-slate-200 truncate max-w-[200px]">
+          <span className="text-sm font-medium text-slate-200 truncate max-w-[160px]">
             {asset.name}
+          </span>
+          {/* Reference count badge */}
+          <span
+            className={`px-1.5 py-0.5 text-[10px] font-medium rounded-full ${
+              referenceCount > 0
+                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+            }`}
+            title={referenceCount > 0 ? `Used in ${referenceCount} place(s)` : 'Unused asset'}
+          >
+            {referenceCount > 0 ? (
+              <span className="flex items-center gap-0.5">
+                <Link2 className="w-2.5 h-2.5" />
+                {referenceCount}
+              </span>
+            ) : (
+              <span className="flex items-center gap-0.5">
+                <AlertTriangle className="w-2.5 h-2.5" />
+                0
+              </span>
+            )}
           </span>
         </div>
         <button
@@ -173,6 +208,43 @@ function AssetDetail({ asset, onClose }: AssetDetailProps) {
             </section>
           )}
 
+          {/* Usage Section - Collapsible */}
+          <section className="space-y-2">
+            <button
+              onClick={() => setShowUsagePanel(!showUsagePanel)}
+              className="w-full flex items-center justify-between text-xs font-medium text-slate-400 uppercase tracking-wide hover:text-slate-300 transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <Link2 className="w-3.5 h-3.5" />
+                Usage ({referenceCount})
+              </span>
+              {showUsagePanel ? (
+                <ChevronUp className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5" />
+              )}
+            </button>
+            <AnimatePresence>
+              {showUsagePanel && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="rounded-lg bg-slate-900/30 border border-slate-800/50 overflow-hidden">
+                    <UsagePanel
+                      assetId={asset._id}
+                      assetName={asset.name}
+                      className="max-h-[300px]"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </section>
+
           {/* Timestamps */}
           <section className="space-y-2">
             <h3 className="flex items-center gap-2 text-xs font-medium text-slate-400 uppercase tracking-wide">
@@ -223,7 +295,7 @@ function AssetDetail({ asset, onClose }: AssetDetailProps) {
       </div>
 
       {/* Footer Actions */}
-      <div className="px-4 py-3 border-t border-slate-800/70 bg-slate-900/30">
+      <div className="px-4 py-3 border-t border-slate-800/70 bg-slate-900/30 space-y-2">
         <div className="flex gap-2">
           <Button
             variant="ghost"
@@ -239,7 +311,113 @@ function AssetDetail({ asset, onClose }: AssetDetailProps) {
             Use in Project
           </Button>
         </div>
+
+        {/* Delete button with safety check */}
+        <Button
+          variant={deleteSafety.canDelete ? 'secondary' : 'ghost'}
+          size="sm"
+          className="w-full text-xs"
+          onClick={() => setShowDeleteConfirm(true)}
+        >
+          <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+          Delete Asset
+          {!deleteSafety.canDelete && (
+            <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-400 rounded">
+              {deleteSafety.referenceCount} refs
+            </span>
+          )}
+        </Button>
       </div>
+
+      {/* Delete confirmation modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowDeleteConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-md p-6 mx-4 bg-slate-900 border border-slate-700/50 rounded-xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`p-2 rounded-lg ${deleteSafety.canDelete ? 'bg-red-500/10' : 'bg-amber-500/10'}`}>
+                  {deleteSafety.canDelete ? (
+                    <Trash2 className="w-6 h-6 text-red-400" />
+                  ) : (
+                    <AlertTriangle className="w-6 h-6 text-amber-400" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-100">
+                    {deleteSafety.canDelete ? 'Delete Asset?' : 'Asset In Use'}
+                  </h3>
+                  <p className="text-sm text-slate-400">
+                    {deleteSafety.canDelete
+                      ? 'This action cannot be undone.'
+                      : `This asset has ${deleteSafety.referenceCount} active reference(s).`
+                    }
+                  </p>
+                </div>
+              </div>
+
+              {deleteSafety.warning && (
+                <div className="p-3 mb-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <p className="text-sm text-amber-300">{deleteSafety.warning}</p>
+                  {deleteSafety.locations.length > 0 && (
+                    <div className="mt-2 max-h-32 overflow-auto">
+                      <p className="text-xs text-amber-400/70 mb-1">Used in:</p>
+                      {deleteSafety.locations.slice(0, 5).map((loc) => (
+                        <p key={loc.id} className="text-xs text-slate-400 pl-2">
+                          • {loc.entityName} ({loc.entityType})
+                        </p>
+                      ))}
+                      {deleteSafety.locations.length > 5 && (
+                        <p className="text-xs text-slate-500 pl-2">
+                          ...and {deleteSafety.locations.length - 5} more
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!deleteSafety.canDelete && (
+                <p className="text-sm text-slate-300 mb-4">
+                  Deleting this asset may break existing references. Are you sure you want to proceed?
+                </p>
+              )}
+
+              <div className="flex gap-3 justify-end">
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="danger"
+                  icon={<Trash2 className="w-4 h-4" />}
+                  onClick={() => {
+                    // TODO: Implement actual deletion
+                    console.log('Delete asset:', asset._id);
+                    setShowDeleteConfirm(false);
+                    onClose();
+                  }}
+                >
+                  {deleteSafety.canDelete ? 'Delete' : 'Delete Anyway'}
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

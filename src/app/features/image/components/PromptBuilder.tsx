@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Film } from 'lucide-react';
 import PromptEnhancer from './PromptEnhancer';
 import NegativePromptGenerator from './NegativePromptGenerator';
+import PromptInput from '../generator/components/PromptInput';
 import type { PromptComponents } from '@/app/types/Image';
 
 interface PromptBuilderProps {
@@ -12,6 +13,7 @@ interface PromptBuilderProps {
   setPromptComponents: React.Dispatch<React.SetStateAction<PromptComponents>>;
   negativePrompt: string;
   setNegativePrompt: (value: string) => void;
+  showSceneInput?: boolean;
 }
 
 interface PromptSection {
@@ -53,9 +55,19 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
   setPromptComponents,
   negativePrompt,
   setNegativePrompt,
+  showSceneInput = true,
 }) => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['artstyle'])
+  );
+
+  // Handle prompt generated from scene
+  const handleScenePromptGenerated = useCallback(
+    (components: PromptComponents, negative: string) => {
+      setPromptComponents(components);
+      setNegativePrompt(negative);
+    },
+    [setPromptComponents, setNegativePrompt]
   );
 
   const toggleSection = (key: string) => {
@@ -84,6 +96,19 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
 
   return (
     <div className="p-4 space-y-4 text-sm text-slate-200">
+      {/* Quick Scene Input */}
+      {showSceneInput && (
+        <div className="border border-slate-800/50 rounded-lg p-3 bg-slate-900/30">
+          <div className="flex items-center gap-2 mb-2">
+            <Film className="w-4 h-4 text-cyan-400" />
+            <span className="text-xs font-medium text-slate-300">
+              Quick Generate from Scene
+            </span>
+          </div>
+          <PromptInput onPromptGenerated={handleScenePromptGenerated} />
+        </div>
+      )}
+
       {/* Final Prompt Preview */}
       <div className="mb-6">
         <label className="block text-xs font-medium text-slate-200 mb-2 tracking-tight">

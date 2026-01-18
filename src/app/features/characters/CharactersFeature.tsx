@@ -6,7 +6,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Users, Shield, Network, FileText } from 'lucide-react';
+import { Users, Shield, Network, FileText, Lightbulb } from 'lucide-react';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { useCharacterStore } from '@/app/store/slices/characterSlice';
 import { characterApi } from '@/app/hooks/integration/useCharacters';
@@ -14,16 +14,28 @@ import CharactersList from './components/CharactersList';
 import DynamicComponentLoader from '@/app/components/UI/DynamicComponentLoader';
 import SkeletonLoader from '@/app/components/UI/SkeletonLoader';
 import { CharacterCardSkeletonGrid } from './components/CharacterCardSkeleton';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useCharacterRecommendations } from '@/app/hooks/useRecommendations';
+import { RecommendationPanel } from '@/app/components/recommendations/RecommendationPanel';
 
 const CharactersFeature: React.FC = () => {
   const { selectedProject } = useProjectStore();
   const selectedCharacter = useCharacterStore((state) => state.selectedCharacter);
   const [activeTab, setActiveTab] = useState(0);
+  const [showRecommendations, setShowRecommendations] = useState(false);
   const { data: characters = [], isLoading: charactersLoading } = characterApi.useProjectCharacters(
     selectedProject?.id || '',
     !!selectedProject
   );
+
+  // Recommendations
+  const {
+    recommendations,
+    isLoading: recsLoading,
+    accept: acceptRec,
+    dismiss: dismissRec,
+    expand: expandRec,
+  } = useCharacterRecommendations(selectedProject?.id ?? '', selectedCharacter ?? undefined);
 
   const tabs = [
     {
@@ -107,46 +119,98 @@ const CharactersFeature: React.FC = () => {
   return (
     <div className="h-full w-full flex flex-col ms-surface">
       {/* Tab Navigation - Clean Manuscript style */}
-      <div className="flex items-center gap-2 px-4 pt-3 pb-2 border-b border-slate-800/50 bg-slate-950/80">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-slate-600 mr-2">
-          // module
-        </span>
-        {tabs.map((tab, index) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === index;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(index)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200 font-mono text-xs ${
-                isActive
-                  ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
-                  : 'text-slate-400 border border-transparent hover:text-slate-200 hover:bg-slate-800/50'
-              }`}
-              data-testid={`character-tab-${tab.id}`}
-            >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-400' : ''}`} />
-              <span className="uppercase tracking-wide">{tab.label}</span>
-            </button>
-          );
-        })}
+      <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-slate-800/50 bg-slate-950/80">
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[10px] uppercase tracking-wider text-slate-600 mr-2">
+            // module
+          </span>
+          {tabs.map((tab, index) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === index;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(index)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200 font-mono text-xs ${
+                  isActive
+                    ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
+                    : 'text-slate-400 border border-transparent hover:text-slate-200 hover:bg-slate-800/50'
+                }`}
+                data-testid={`character-tab-${tab.id}`}
+              >
+                <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-400' : ''}`} />
+                <span className="uppercase tracking-wide">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Recommendations Toggle */}
+        <button
+          onClick={() => setShowRecommendations(!showRecommendations)}
+          className={`relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-md font-mono text-xs transition-all ${
+            showRecommendations
+              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+              : 'text-slate-400 border border-transparent hover:text-slate-200 hover:bg-slate-800/50'
+          }`}
+          title="Toggle Suggestions"
+        >
+          <Lightbulb className="w-3.5 h-3.5" />
+          <span className="uppercase tracking-wide">suggest</span>
+          {recommendations.length > 0 && !showRecommendations && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-slate-900 text-[9px] font-bold rounded-full flex items-center justify-center">
+              {recommendations.length}
+            </span>
+          )}
+        </button>
       </div>
 
-      {/* Content Area */}
-      <div className="flex-1 overflow-auto px-4 py-4 text-sm text-slate-200 ms-scrollbar">
-        {tabs.length > 0 && (
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-          >
-            {tabs[activeTab]?.content || (
-              <div className="font-mono text-xs text-slate-500 italic">// no_content_available</div>
-            )}
-          </motion.div>
-        )}
+      {/* Content Area with Recommendations Panel */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Main Content */}
+        <div className="flex-1 overflow-auto px-4 py-4 text-sm text-slate-200 ms-scrollbar">
+          {tabs.length > 0 && (
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            >
+              {tabs[activeTab]?.content || (
+                <div className="font-mono text-xs text-slate-500 italic">// no_content_available</div>
+              )}
+            </motion.div>
+          )}
+        </div>
+
+        {/* Recommendations Panel */}
+        <AnimatePresence>
+          {showRecommendations && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 300, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="h-full border-l border-slate-800 overflow-hidden shrink-0"
+            >
+              <RecommendationPanel
+                recommendations={recommendations}
+                isLoading={recsLoading}
+                title="Character Suggestions"
+                subtitle="Relationships & connections"
+                variant="inline"
+                maxHeight="100%"
+                showFilters={true}
+                onAccept={acceptRec}
+                onDismiss={dismissRec}
+                onExpand={expandRec}
+                onClose={() => setShowRecommendations(false)}
+                className="h-full rounded-none border-0"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

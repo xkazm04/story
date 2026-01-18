@@ -2,9 +2,11 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Loader2, Plus } from 'lucide-react';
+import { Sparkles, Loader2, Plus, Brain, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLLM } from '@/app/hooks/useLLM';
 import { characterTraitPrompt } from '@/prompts';
+import { cn } from '@/app/lib/utils';
+import type { PsychologyProfile } from '@/lib/psychology/PsychologyEngine';
 
 interface CharacterTraitGeneratorProps {
   characterName: string;
@@ -13,6 +15,8 @@ interface CharacterTraitGeneratorProps {
   role?: string;
   background?: string;
   onTraitGenerated: (trait: string) => void;
+  psychologyProfile?: PsychologyProfile | null;
+  onOpenPsychology?: () => void;
 }
 
 const CharacterTraitGenerator: React.FC<CharacterTraitGeneratorProps> = ({
@@ -22,9 +26,12 @@ const CharacterTraitGenerator: React.FC<CharacterTraitGeneratorProps> = ({
   role,
   background,
   onTraitGenerated,
+  psychologyProfile,
+  onOpenPsychology,
 }) => {
   const { generateFromTemplate, isLoading } = useLLM();
   const [traitCount, setTraitCount] = useState(3);
+  const [showPsychologyHint, setShowPsychologyHint] = useState(true);
 
   const handleGenerate = async () => {
     if (!characterName.trim()) {
@@ -126,6 +133,80 @@ const CharacterTraitGenerator: React.FC<CharacterTraitGeneratorProps> = ({
       <p className="text-xs text-gray-500">
         AI will suggest traits based on character type, role, and background
       </p>
+
+      {/* Psychology Profile Integration */}
+      {onOpenPsychology && showPsychologyHint && (
+        <div className="mt-3 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-2">
+              <Brain className="w-4 h-4 text-purple-400 mt-0.5" />
+              <div>
+                <p className="text-xs text-purple-300 font-medium">
+                  Deep Psychology Available
+                </p>
+                <p className="text-[10px] text-purple-400/70 mt-0.5">
+                  {psychologyProfile
+                    ? `Profile active with ${psychologyProfile.motivationTree.totalMotivations} motivations`
+                    : 'Generate a psychology profile for deeper character insights'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowPsychologyHint(false)}
+              className="p-0.5 text-purple-400/50 hover:text-purple-400"
+            >
+              <ChevronUp size={12} />
+            </button>
+          </div>
+          <button
+            onClick={onOpenPsychology}
+            className={cn(
+              'mt-2 w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded text-xs font-medium transition-colors',
+              'bg-purple-500/20 hover:bg-purple-500/30 text-purple-300'
+            )}
+          >
+            <Brain size={12} />
+            {psychologyProfile ? 'View Psychology Profile' : 'Generate Psychology Profile'}
+          </button>
+        </div>
+      )}
+
+      {/* Collapsed psychology hint */}
+      {onOpenPsychology && !showPsychologyHint && (
+        <button
+          onClick={() => setShowPsychologyHint(true)}
+          className="mt-2 w-full flex items-center justify-center gap-1 py-1 text-[10px] text-purple-400/50 hover:text-purple-400"
+        >
+          <Brain size={10} />
+          <span>Psychology tools</span>
+          <ChevronDown size={10} />
+        </button>
+      )}
+
+      {/* Psychology-informed traits summary */}
+      {psychologyProfile && psychologyProfile.motivationTree.rootMotivations.length > 0 && (
+        <div className="mt-3 p-2 bg-slate-800/50 rounded border border-slate-700/30">
+          <p className="text-[10px] text-slate-500 uppercase mb-1">Psychology-Driven Traits</p>
+          <div className="flex flex-wrap gap-1">
+            {psychologyProfile.motivationTree.rootMotivations.slice(0, 3).map((m) => (
+              <span
+                key={m.id}
+                className="px-1.5 py-0.5 bg-cyan-500/10 border border-cyan-500/20 rounded text-[10px] text-cyan-400"
+              >
+                {m.label}
+              </span>
+            ))}
+            {psychologyProfile.internalConflicts.slice(0, 2).map((c) => (
+              <span
+                key={c.id}
+                className="px-1.5 py-0.5 bg-orange-500/10 border border-orange-500/20 rounded text-[10px] text-orange-400"
+              >
+                {c.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

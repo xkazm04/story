@@ -1,33 +1,83 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Save, X, Shield, TrendingUp } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Save, X, Shield, TrendingUp, Crown, GitBranch, ChevronDown, ChevronUp } from 'lucide-react';
 import { Character, FACTION_ROLES, FactionRole } from '@/app/types/Character';
 import { characterApi } from '@/app/api/characters';
+import { HierarchyRole, FactionHierarchy } from '@/lib/hierarchy/HierarchyEngine';
+import { cn } from '@/app/lib/utils';
 
 interface RoleRankEditorProps {
   character: Character;
   onClose: () => void;
   onUpdate: () => void;
+  /** Optional: Hierarchy roles for this faction (enables hierarchy-aware mode) */
+  hierarchyRoles?: HierarchyRole[];
+  /** Optional: Auto-calculate rank from hierarchy level */
+  autoRankFromHierarchy?: boolean;
 }
 
 const RoleRankEditor: React.FC<RoleRankEditorProps> = ({
   character,
   onClose,
   onUpdate,
+  hierarchyRoles = [],
+  autoRankFromHierarchy = true,
 }) => {
+  const hasHierarchy = hierarchyRoles.length > 0;
+  const [useHierarchyMode, setUseHierarchyMode] = useState(hasHierarchy);
   const [factionRole, setFactionRole] = useState<string>(character.faction_role || '');
+  const [selectedHierarchyRole, setSelectedHierarchyRole] = useState<string>('');
   const [customRole, setCustomRole] = useState('');
   const [factionRank, setFactionRank] = useState<number>(character.faction_rank || 0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Sort hierarchy roles by level
+  const sortedHierarchyRoles = useMemo(() => {
+    return [...hierarchyRoles].sort((a, b) => a.level - b.level);
+  }, [hierarchyRoles]);
+
+  // Find current hierarchy role if any
+  const currentHierarchyRole = useMemo(() => {
+    if (!character.faction_role) return null;
+    return hierarchyRoles.find(
+      (r) => r.title === character.faction_role || r.name === character.faction_role
+    );
+  }, [character.faction_role, hierarchyRoles]);
+
+  // Auto-select hierarchy role on mount if matches
+  React.useEffect(() => {
+    if (currentHierarchyRole) {
+      setSelectedHierarchyRole(currentHierarchyRole.id);
+    }
+  }, [currentHierarchyRole]);
+
+  // Handle hierarchy role selection
+  const handleHierarchyRoleChange = (roleId: string) => {
+    setSelectedHierarchyRole(roleId);
+    const role = hierarchyRoles.find((r) => r.id === roleId);
+    if (role && autoRankFromHierarchy) {
+      // Convert level to rank: level 0 = rank 100, level 5 = rank 50, etc.
+      const calculatedRank = Math.max(0, 100 - role.level * 10);
+      setFactionRank(calculatedRank);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      const roleToSave = factionRole === 'Custom' ? customRole : factionRole;
+      let roleToSave: string | undefined;
+
+      if (useHierarchyMode && selectedHierarchyRole) {
+        // Use the hierarchy role title
+        const role = hierarchyRoles.find((r) => r.id === selectedHierarchyRole);
+        roleToSave = role?.title;
+      } else {
+        roleToSave = factionRole === 'Custom' ? customRole : factionRole;
+      }
 
       await characterApi.updateCharacter(character.id, {
         faction_role: roleToSave || undefined,
@@ -92,48 +142,144 @@ const RoleRankEditor: React.FC<RoleRankEditorProps> = ({
             </div>
           </div>
 
-          {/* Role Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-              <Shield size={16} className="text-purple-400" />
-              Faction Role
-            </label>
-            <select
-              value={factionRole}
-              onChange={(e) => setFactionRole(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-              data-testid="faction-role-select"
-            >
-              <option value="">-- No Role --</option>
-              {FACTION_ROLES.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-              <option value="Custom">Custom Role...</option>
-            </select>
-          </div>
-
-          {/* Custom Role Input */}
-          {factionRole === 'Custom' && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-            >
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Custom Role Name
-              </label>
-              <input
-                type="text"
-                value={customRole}
-                onChange={(e) => setCustomRole(e.target.value)}
-                placeholder="Enter custom role..."
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                data-testid="custom-role-input"
-              />
-            </motion.div>
+          {/* Mode Toggle (if hierarchy available) */}
+          {hasHierarchy && (
+            <div className="flex gap-2 p-1 bg-gray-800 rounded-lg">
+              <button
+                type="button"
+                onClick={() => setUseHierarchyMode(true)}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm transition-colors',
+                  useHierarchyMode
+                    ? 'bg-purple-600 text-white'
+                    : 'text-gray-400 hover:text-white'
+                )}
+              >
+                <GitBranch size={14} />
+                Hierarchy Roles
+              </button>
+              <button
+                type="button"
+                onClick={() => setUseHierarchyMode(false)}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm transition-colors',
+                  !useHierarchyMode
+                    ? 'bg-purple-600 text-white'
+                    : 'text-gray-400 hover:text-white'
+                )}
+              >
+                <Shield size={14} />
+                Standard Roles
+              </button>
+            </div>
           )}
+
+          {/* Hierarchy Role Selection */}
+          <AnimatePresence mode="wait">
+            {useHierarchyMode && hasHierarchy ? (
+              <motion.div
+                key="hierarchy"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+              >
+                <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+                  <Crown size={16} className="text-amber-400" />
+                  Hierarchy Role
+                </label>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {sortedHierarchyRoles.map((role) => (
+                    <button
+                      key={role.id}
+                      type="button"
+                      onClick={() => handleHierarchyRoleChange(role.id)}
+                      className={cn(
+                        'w-full flex items-center gap-3 p-3 rounded-lg border transition-all text-left',
+                        selectedHierarchyRole === role.id
+                          ? 'border-purple-500 bg-purple-500/10'
+                          : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
+                      )}
+                    >
+                      {role.color && (
+                        <div
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: role.color }}
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-medium">{role.title}</span>
+                          <span className="text-xs text-gray-500">Level {role.level}</span>
+                        </div>
+                        <p className="text-xs text-gray-400 truncate">{role.description}</p>
+                      </div>
+                      {selectedHierarchyRole === role.id && (
+                        <div className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center">
+                          <span className="text-white text-xs">✓</span>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {sortedHierarchyRoles.length === 0 && (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    No hierarchy roles defined. Create roles in the organization chart first.
+                  </p>
+                )}
+              </motion.div>
+            ) : (
+              <motion.div
+                key="standard"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+              >
+                {/* Standard Role Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+                    <Shield size={16} className="text-purple-400" />
+                    Faction Role
+                  </label>
+                  <select
+                    value={factionRole}
+                    onChange={(e) => setFactionRole(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    data-testid="faction-role-select"
+                  >
+                    <option value="">-- No Role --</option>
+                    {FACTION_ROLES.map((role) => (
+                      <option key={role} value={role}>
+                        {role}
+                      </option>
+                    ))}
+                    <option value="Custom">Custom Role...</option>
+                  </select>
+                </div>
+
+                {/* Custom Role Input */}
+                {factionRole === 'Custom' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-4"
+                  >
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Custom Role Name
+                    </label>
+                    <input
+                      type="text"
+                      value={customRole}
+                      onChange={(e) => setCustomRole(e.target.value)}
+                      placeholder="Enter custom role..."
+                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                      data-testid="custom-role-input"
+                    />
+                  </motion.div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Rank Input */}
           <div>
@@ -193,7 +339,11 @@ const RoleRankEditor: React.FC<RoleRankEditorProps> = ({
         {/* Help Text */}
         <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
           <p className="text-xs text-blue-300">
-            <strong>Tip:</strong> Use roles to define positions (Leader, Guard, etc.) and ranks to establish hierarchy within those roles. Higher ranks appear first in sorted lists.
+            <strong>Tip:</strong> {useHierarchyMode && hasHierarchy ? (
+              <>Hierarchy roles are defined in the Organization Chart. Rank is automatically calculated from the role level.</>
+            ) : (
+              <>Use roles to define positions (Leader, Guard, etc.) and ranks to establish hierarchy within those roles. Higher ranks appear first in sorted lists.</>
+            )}
           </p>
         </div>
       </motion.div>

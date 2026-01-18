@@ -1,198 +1,69 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase/client';
-import { Voice, VoiceInsert, VoiceUpdate, VoiceConfig } from '@/app/types/Voice';
-
 /**
- * Fetch all voices for a project
+ * Voice hooks - re-export from integration layer
+ *
+ * These hooks now use the mockable query pattern to support both
+ * mock data (NEXT_PUBLIC_USE_MOCK_DATA=true) and real Supabase data.
  */
-export const useVoicesByProject = (projectId: string) => {
-  return useQuery({
-    queryKey: ['voices', projectId],
-    queryFn: async () => {
-      if (!projectId) return [];
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { voiceApi } from './integration/useVoices';
+import type { Voice, VoiceConfig } from '../types/Voice';
 
-      const { data, error } = await supabase
-        .from('voices')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: false });
+// Re-export the API object
+export { voiceApi };
 
-      if (error) {
-        console.error('Error fetching voices:', error);
-        throw new Error(error.message);
-      }
+// Re-export query hooks for backwards compatibility with direct hook imports
+export const useVoicesByProject = voiceApi.useVoicesByProject;
+export const useVoice = voiceApi.useVoice;
+export const useVoiceConfig = voiceApi.useVoiceConfig;
 
-      return data as Voice[];
-    },
-    enabled: !!projectId,
-  });
-};
-
-/**
- * Fetch a single voice by ID
- */
-export const useVoice = (voiceId: string) => {
-  return useQuery({
-    queryKey: ['voice', voiceId],
-    queryFn: async () => {
-      if (!voiceId) return null;
-
-      const { data, error } = await supabase
-        .from('voices')
-        .select('*')
-        .eq('id', voiceId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching voice:', error);
-        throw new Error(error.message);
-      }
-
-      return data as Voice;
-    },
-    enabled: !!voiceId,
-  });
-};
-
-/**
- * Create a new voice
- */
+// Mutation hooks for backwards compatibility
 export const useCreateVoice = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (voice: VoiceInsert) => {
-      const { data, error } = await supabase
-        .from('voices')
-        .insert(voice)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating voice:', error);
-        throw new Error(error.message);
-      }
-
-      return data as Voice;
+    mutationFn: async (voice: Partial<Voice>) => {
+      return voiceApi.createVoice(voice);
     },
     onSuccess: (data) => {
-      // Invalidate and refetch voices for the project
-      queryClient.invalidateQueries({ queryKey: ['voices', data.project_id] });
+      queryClient.invalidateQueries({ queryKey: ['voices', 'project', data.project_id] });
     },
   });
 };
 
-/**
- * Update a voice
- */
 export const useUpdateVoice = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: VoiceUpdate }) => {
-      const { data, error } = await supabase
-        .from('voices')
-        .update({ ...updates, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error updating voice:', error);
-        throw new Error(error.message);
-      }
-
-      return data as Voice;
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Voice> }) => {
+      return voiceApi.updateVoice(id, updates);
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['voices', data.project_id] });
-      queryClient.invalidateQueries({ queryKey: ['voice', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['voices', 'project', data.project_id] });
+      queryClient.invalidateQueries({ queryKey: ['voices', data.id] });
     },
   });
 };
 
-/**
- * Delete a voice
- */
 export const useDeleteVoice = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ id, projectId }: { id: string; projectId: string }) => {
-      const { error } = await supabase
-        .from('voices')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error('Error deleting voice:', error);
-        throw new Error(error.message);
-      }
-
+      await voiceApi.deleteVoice(id);
       return { id, projectId };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['voices', data.projectId] });
+      queryClient.invalidateQueries({ queryKey: ['voices', 'project', data.projectId] });
     },
   });
 };
 
-/**
- * Fetch voice configuration settings
- */
-export const useVoiceConfig = (voiceId: string) => {
-  return useQuery({
-    queryKey: ['voice-config', voiceId],
-    queryFn: async () => {
-      if (!voiceId) return null;
-
-      const { data, error } = await supabase
-        .from('voice_configs')
-        .select('*')
-        .eq('voice_id', voiceId)
-        .single();
-
-      if (error) {
-        // Return default config if not found
-        if (error.code === 'PGRST116') {
-          return {
-            voice_id: voiceId,
-            stability: 0.5,
-            similarity_boost: 0.75,
-            style: 0.5,
-            speed: 1.0,
-          } as VoiceConfig;
-        }
-        console.error('Error fetching voice config:', error);
-        throw new Error(error.message);
-      }
-
-      return data as VoiceConfig;
-    },
-    enabled: !!voiceId,
-  });
-};
-
-/**
- * Update voice configuration
- */
 export const useUpdateVoiceConfig = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (config: VoiceConfig) => {
-      const { data, error } = await supabase
-        .from('voice_configs')
-        .upsert(config)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error updating voice config:', error);
-        throw new Error(error.message);
-      }
-
-      return data as VoiceConfig;
+      return voiceApi.updateVoiceConfig(config.voice_id, config);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['voice-config', data.voice_id] });

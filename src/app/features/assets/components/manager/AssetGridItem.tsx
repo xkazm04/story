@@ -3,8 +3,9 @@
 import { memo, useState } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { Eye, Plus, Check, ImageOff } from 'lucide-react';
+import { Eye, Plus, Check, ImageOff, Link2 } from 'lucide-react';
 import { useAssetManagerStore } from '../../store/assetManagerStore';
+import { useReferenceCount } from '@/lib/assets';
 import type { Asset } from '@/app/types/Asset';
 
 interface AssetGridItemProps {
@@ -34,6 +35,9 @@ function AssetGridItem({ asset, viewMode, index }: AssetGridItemProps) {
   const [isHovered, setIsHovered] = useState(false);
   const { selectedAssetIds, selectionMode, toggleAssetSelection, openDetail } =
     useAssetManagerStore();
+
+  // Usage tracking
+  const referenceCount = useReferenceCount(asset._id);
 
   const isSelected = selectedAssetIds.includes(asset._id);
   const typeColor = TYPE_COLORS[asset.type] || 'bg-slate-500';
@@ -93,6 +97,17 @@ function AssetGridItem({ asset, viewMode, index }: AssetGridItemProps) {
           </div>
         </div>
 
+        {/* Reference count badge */}
+        {referenceCount > 0 && (
+          <div
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20"
+            title={`Used in ${referenceCount} place(s)`}
+          >
+            <Link2 className="w-3 h-3 text-cyan-400" />
+            <span className="text-[10px] font-medium text-cyan-400">{referenceCount}</span>
+          </div>
+        )}
+
         {/* Selection indicator */}
         {isSelected && (
           <div className="p-1 rounded-full bg-cyan-500/20">
@@ -139,6 +154,17 @@ function AssetGridItem({ asset, viewMode, index }: AssetGridItemProps) {
 
       {/* Type indicator dot */}
       <div className={`absolute top-2 left-2 w-2 h-2 rounded-full ${typeColor}`} />
+
+      {/* Reference count badge - always visible if has references */}
+      {referenceCount > 0 && (
+        <div
+          className="absolute top-2 left-6 flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-slate-900/80 border border-cyan-500/30"
+          title={`Used in ${referenceCount} place(s)`}
+        >
+          <Link2 className="w-2.5 h-2.5 text-cyan-400" />
+          <span className="text-[9px] font-medium text-cyan-400">{referenceCount}</span>
+        </div>
+      )}
 
       {/* Selection checkbox */}
       {(selectionMode || isHovered) && (

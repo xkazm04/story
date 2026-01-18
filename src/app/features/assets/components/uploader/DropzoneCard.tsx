@@ -11,6 +11,10 @@ interface DropzoneCardProps {
   onFileSelect: (file: File | null) => void;
   onClear: () => void;
   isDisabled?: boolean;
+  // Multi-file support
+  multiple?: boolean;
+  onFilesSelect?: (files: File[]) => void;
+  maxFiles?: number;
 }
 
 type DropzoneState = 'idle' | 'dragOver' | 'uploading' | 'error';
@@ -27,6 +31,9 @@ export default function DropzoneCard({
   onFileSelect,
   onClear,
   isDisabled = false,
+  multiple = false,
+  onFilesSelect,
+  maxFiles = 20,
 }: DropzoneCardProps) {
   const [dropzoneState, setDropzoneState] = useState<DropzoneState>('idle');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -61,8 +68,36 @@ export default function DropzoneCard({
     }
   }, [onFileSelect]);
 
+  const processMultipleFiles = useCallback(async (files: File[]) => {
+    if (!onFilesSelect) return;
+
+    setDropzoneState('uploading');
+    const processedFiles: File[] = [];
+
+    // Limit number of files
+    const filesToProcess = files.slice(0, maxFiles);
+
+    for (const file of filesToProcess) {
+      try {
+        const processedFile = await compressImage(file, setIsCompressing, setCompressionInfo);
+        processedFiles.push(processedFile);
+      } catch (error) {
+        console.error('Error compressing image:', error);
+        processedFiles.push(file);
+      }
+    }
+
+    onFilesSelect(processedFiles);
+    setDropzoneState('idle');
+  }, [onFilesSelect, maxFiles]);
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
+    if (!e.target.files || e.target.files.length === 0) return;
+
+    if (multiple && onFilesSelect) {
+      const filesArray = Array.from(e.target.files);
+      await processMultipleFiles(filesArray);
+    } else if (e.target.files[0]) {
       await processFile(e.target.files[0]);
     }
   };
@@ -71,7 +106,15 @@ export default function DropzoneCard({
     e.preventDefault();
     if (isDisabled) return;
     setDropzoneState('idle');
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+
+    if (!e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
+
+    if (multiple && onFilesSelect) {
+      const filesArray = Array.from(e.dataTransfer.files).filter(
+        (file) => file.type.startsWith('image/')
+      );
+      await processMultipleFiles(filesArray);
+    } else if (e.dataTransfer.files[0]) {
       await processFile(e.dataTransfer.files[0]);
     }
   };
@@ -145,11 +188,15 @@ export default function DropzoneCard({
               {isCompressing
                 ? 'Processing image...'
                 : dropzoneState === 'dragOver'
-                ? 'Drop to upload'
+                ? `Drop to upload${multiple ? ' files' : ''}`
+                : multiple
+                ? 'Drag & drop images'
                 : 'Drag & drop an image'}
             </p>
             <p className="text-slate-500 text-xs text-center">
-              or click to browse
+              {multiple
+                ? `or click to browse (up to ${maxFiles} files)`
+                : 'or click to browse'}
             </p>
 
             {/* Hidden input */}
@@ -160,6 +207,7 @@ export default function DropzoneCard({
               accept="image/*"
               className="hidden"
               disabled={isDisabled}
+              multiple={multiple}
             />
 
             {/* Glow effect on drag */}

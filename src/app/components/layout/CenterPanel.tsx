@@ -4,7 +4,7 @@ import React, { Suspense, lazy, useEffect } from 'react';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { useAssetManagerStore } from '@/app/features/assets/store/assetManagerStore';
 import { useAppShellStore, FeatureTab } from '@/app/store/appShellStore';
-import { Users, Film, BookOpen, Image, Mic, Database, Sparkles, Video } from 'lucide-react';
+import { Users, Film, BookOpen, Image, Mic, Database, Sparkles } from 'lucide-react';
 
 // Lazy load all feature components
 const CharactersFeature = lazy(() => import('@/app/features/characters/CharactersFeature'));
@@ -14,7 +14,6 @@ const AssetsFeature = lazy(() => import('@/app/features/assets/AssetsFeature'));
 const VoiceFeature = lazy(() => import('@/app/features/voice/VoiceFeature'));
 const DatasetsFeature = lazy(() => import('@/app/features/datasets/DatasetsFeature'));
 const ImageFeature = lazy(() => import('@/app/features/image/ImageFeature'));
-const VideoFeature = lazy(() => import('@/app/features/video/VideoFeature'));
 
 // Loading fallback component
 const FeatureLoadingFallback: React.FC = () => (
@@ -43,7 +42,6 @@ const CenterPanel: React.FC = () => {
     { id: 'voice' as const, label: 'Voice', icon: Mic },
     { id: 'datasets' as const, label: 'Datasets', icon: Database },
     { id: 'images' as const, label: 'Images', icon: Sparkles },
-    { id: 'videos' as const, label: 'Videos', icon: Video },
     { id: 'assets' as const, label: 'Assets', icon: Image },
   ];
 
@@ -61,8 +59,6 @@ const CenterPanel: React.FC = () => {
         return <DatasetsFeature />;
       case 'images':
         return <ImageFeature />;
-      case 'videos':
-        return <VideoFeature />;
       case 'assets':
         return <AssetsFeature />;
       default:

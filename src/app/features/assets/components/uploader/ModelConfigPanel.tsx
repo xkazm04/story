@@ -1,13 +1,25 @@
 'use client';
 
-import { memo } from 'react';
-import { motion } from 'framer-motion';
-import { ExternalLink, Sparkles } from 'lucide-react';
+import { memo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ExternalLink,
+  Sparkles,
+  ChevronDown,
+  Tag,
+  Palette,
+  Gauge,
+  Eye,
+  Type,
+} from 'lucide-react';
 import type { AnalysisConfig } from '../../types';
+import type { AnalysisOptions } from '@/lib/assets';
 
 interface ModelConfigPanelProps {
   config: AnalysisConfig;
   onConfigChange: (config: AnalysisConfig) => void;
+  analysisOptions?: AnalysisOptions;
+  onAnalysisOptionsChange?: (options: AnalysisOptions) => void;
 }
 
 interface ModelChipProps {
@@ -85,10 +97,58 @@ const MODEL_CONFIG = [
   },
 ] as const;
 
+// Default analysis options
+const DEFAULT_ANALYSIS_OPTIONS: AnalysisOptions = {
+  generateTags: true,
+  extractContent: true,
+  analyzeColors: true,
+  assessQuality: true,
+  detectObjects: true,
+  extractText: false,
+};
+
+// Analysis option configuration
+const ANALYSIS_OPTIONS_CONFIG = [
+  {
+    key: 'generateTags' as const,
+    label: 'Auto Tags',
+    icon: Tag,
+    description: 'Generate descriptive tags',
+  },
+  {
+    key: 'analyzeColors' as const,
+    label: 'Colors',
+    icon: Palette,
+    description: 'Analyze color palette',
+  },
+  {
+    key: 'assessQuality' as const,
+    label: 'Quality',
+    icon: Gauge,
+    description: 'Assess image quality',
+  },
+  {
+    key: 'detectObjects' as const,
+    label: 'Objects',
+    icon: Eye,
+    description: 'Detect objects & scenes',
+  },
+  {
+    key: 'extractText' as const,
+    label: 'OCR',
+    icon: Type,
+    description: 'Extract text from image',
+  },
+];
+
 export default function ModelConfigPanel({
   config,
   onConfigChange,
+  analysisOptions = DEFAULT_ANALYSIS_OPTIONS,
+  onAnalysisOptionsChange,
 }: ModelConfigPanelProps) {
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   const handleToggle = (model: keyof AnalysisConfig) => (enabled: boolean) => {
     onConfigChange({
       ...config,
@@ -96,38 +156,117 @@ export default function ModelConfigPanel({
     });
   };
 
+  const handleOptionToggle = (key: keyof AnalysisOptions) => {
+    if (onAnalysisOptionsChange) {
+      onAnalysisOptionsChange({
+        ...analysisOptions,
+        [key]: !analysisOptions[key],
+      });
+    }
+  };
+
   const enabledCount = Object.values(config).filter((m) => m.enabled).length;
+  const enabledOptionsCount = Object.values(analysisOptions).filter(Boolean).length;
 
   return (
-    <div className="flex flex-col gap-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-slate-400">AI Models</span>
-        <span className="text-[10px] text-slate-500">
-          {enabledCount} enabled
-        </span>
+    <div className="flex flex-col gap-4">
+      {/* AI Models Section */}
+      <div className="flex flex-col gap-3">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-slate-400">AI Models</span>
+          <span className="text-[10px] text-slate-500">
+            {enabledCount} enabled
+          </span>
+        </div>
+
+        {/* Model chips */}
+        <div className="flex flex-wrap items-center gap-2">
+          {MODEL_CONFIG.map((model) => (
+            <ModelChip
+              key={model.name}
+              name={model.name}
+              label={model.label}
+              enabled={config[model.name as keyof AnalysisConfig]?.enabled || false}
+              tooltip={model.tooltip}
+              referenceUrl={model.referenceUrl}
+              onToggle={handleToggle(model.name as keyof AnalysisConfig)}
+            />
+          ))}
+        </div>
+
+        {/* Validation message */}
+        {enabledCount === 0 && (
+          <p className="text-[11px] text-amber-400/80">
+            Enable at least one model to analyze
+          </p>
+        )}
       </div>
 
-      {/* Model chips */}
-      <div className="flex flex-wrap items-center gap-2">
-        {MODEL_CONFIG.map((model) => (
-          <ModelChip
-            key={model.name}
-            name={model.name}
-            label={model.label}
-            enabled={config[model.name as keyof AnalysisConfig]?.enabled || false}
-            tooltip={model.tooltip}
-            referenceUrl={model.referenceUrl}
-            onToggle={handleToggle(model.name as keyof AnalysisConfig)}
-          />
-        ))}
-      </div>
+      {/* Analysis Options Section */}
+      {onAnalysisOptionsChange && (
+        <div className="flex flex-col gap-3">
+          {/* Collapsible header */}
+          <button
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="flex items-center justify-between text-xs text-slate-400 hover:text-slate-300 transition-colors"
+          >
+            <span className="font-medium">Analysis Options</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-slate-500">
+                {enabledOptionsCount} active
+              </span>
+              <motion.div
+                animate={{ rotate: showAdvanced ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronDown className="w-4 h-4" />
+              </motion.div>
+            </div>
+          </button>
 
-      {/* Validation message */}
-      {enabledCount === 0 && (
-        <p className="text-[11px] text-amber-400/80">
-          Enable at least one model to analyze
-        </p>
+          {/* Options list */}
+          <AnimatePresence>
+            {showAdvanced && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {ANALYSIS_OPTIONS_CONFIG.map((option) => {
+                    const Icon = option.icon;
+                    const isEnabled = analysisOptions[option.key];
+
+                    return (
+                      <motion.button
+                        key={option.key}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => handleOptionToggle(option.key)}
+                        className={`
+                          inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium
+                          border transition-all duration-200
+                          ${
+                            isEnabled
+                              ? 'bg-purple-500/20 border-purple-500/40 text-purple-300'
+                              : 'bg-slate-900/60 border-slate-700/50 text-slate-400 hover:border-slate-600'
+                          }
+                        `}
+                        title={option.description}
+                      >
+                        <Icon className="w-3 h-3" />
+                        {option.label}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       )}
     </div>
   );
