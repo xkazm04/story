@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Clapperboard, Loader2 } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { useLLM } from '@/app/hooks/useLLM';
 import { storyboardGenerationPrompt } from '@/prompts';
 import { useCreateStoryboard, useCreateStoryboardFrame } from '@/app/hooks/useVideos';
@@ -153,14 +154,12 @@ const SceneToStoryboard: React.FC<SceneToStoryboardProps> = ({
         disabled={isLoading}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className={`
-          w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold
-          transition-colors duration-200
-          ${isLoading
+        className={cn(
+          'w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold transition-colors duration-200',
+          isLoading
             ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
             : 'bg-purple-600 hover:bg-purple-700 text-white'
-          }
-        `}
+        )}
       >
         {isLoading ? (
           <>

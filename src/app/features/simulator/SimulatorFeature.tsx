@@ -1,0 +1,398 @@
+/**
+ * SimulatorFeature - "What if" image visualization module
+ *
+ * Logic extracted into hooks: useProjectManager, usePosterHandlers, useImageEffects, useAutosave
+ */
+
+'use client';
+
+import React, { useState, useCallback, useMemo, useRef, useEffect, lazy, Suspense } from 'react';
+import { GeneratedPrompt, SavedPanelImage } from './types';
+import { useImageGeneration } from './hooks/useImageGeneration';
+import { useProjectManager } from './hooks/useProjectManager';
+import { usePosterHandlers } from './hooks/usePosterHandlers';
+import { useImageEffects } from './hooks/useImageEffects';
+import { useAutosave } from './hooks/useAutosave';
+import { useAutoplayOrchestrator } from './hooks/useAutoplayOrchestrator';
+import { useMultiPhaseAutoplay } from './hooks/useMultiPhaseAutoplay';
+import { useAutoplayEventLog } from './hooks/useAutoplayEventLog';
+import { OnionLayout } from './components/variants/OnionLayout';
+import { ModalLoadingFallback } from './components/ModalLoadingFallback';
+import { Toast, useToast } from '@/app/components/UI/SimToast';
+import { DimensionsProvider, useDimensionsContext } from './subfeature_dimensions';
+import { BrainProvider, useBrainContext } from './subfeature_brain';
+import { PromptsProvider, usePromptsContext } from './subfeature_prompts';
+import { SimulatorProvider, useSimulatorContext } from './SimulatorContext';
+import { ProjectProvider } from './contexts';
+import { SimulatorHeader } from './subfeature_project';
+import { ViewModeProvider } from './stores';
+
+const PromptDetailModal = lazy(() => import('./subfeature_prompts').then(m => ({ default: m.PromptDetailModal })));
+const SavedImageModal = lazy(() => import('./subfeature_panels').then(m => ({ default: m.SavedImageModal })));
+const ComparisonModal = lazy(() => import('./subfeature_comparison').then(m => ({ default: m.ComparisonModal })));
+
+function SimulatorContent() {
+  const [selectedPrompt, setSelectedPrompt] = useState<GeneratedPrompt | null>(null);
+  const [selectedPanelImage, setSelectedPanelImage] = useState<SavedPanelImage | null>(null);
+  const [showComparisonModal, setShowComparisonModal] = useState(false);
+
+  const dimensions = useDimensionsContext();
+  const brain = useBrainContext();
+  const prompts = usePromptsContext();
+  const simulator = useSimulatorContext();
+  const { showToast, toastProps } = useToast();
+
+  // Track current project for image generation (will be set by projectManager)
+  const [currentProjectId, setCurrentProjectId] = React.useState<string | null>(null);
+
+  // Callback to sync saved images to database
+  const handleImageSaved = useCallback(async (info: { id: string; side: 'left' | 'right'; slotIndex: number; imageUrl: string; prompt: string; type?: 'gameplay' | 'trailer' | 'sketch' | 'poster' | 'realistic' | null }) => {
+    if (!currentProjectId) return;
+
+    try {
+      await fetch(`/api/simulator-projects/${currentProjectId}/images`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: info.id,
+          side: info.side,
+          slotIndex: info.slotIndex,
+          imageUrl: info.imageUrl,
+          prompt: info.prompt,
+          type: info.type,
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to sync image to database:', error);
+    }
+  }, [currentProjectId]);
+
+  const imageGen = useImageGeneration({
+    projectId: currentProjectId,
+    onImageSaved: handleImageSaved,
+    outputMode: brain.outputMode,
+  });
+
+  // --- Panel image error cleanup: collect 403 failures, debounce, call cleanup API ---
+  const failedPanelIdsRef = useRef<Set<string>>(new Set());
+  const panelCleanupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handlePanelImageError = useCallback((imageId: string) => {
+    if (!currentProjectId) return;
+    failedPanelIdsRef.current.add(imageId);
+
+    if (panelCleanupTimerRef.current) clearTimeout(panelCleanupTimerRef.current);
+    panelCleanupTimerRef.current = setTimeout(async () => {
+      const ids = Array.from(failedPanelIdsRef.current);
+      failedPanelIdsRef.current.clear();
+      if (ids.length === 0) return;
+
+      try {
+        const res = await fetch(`/api/simulator-projects/${currentProjectId}/images/cleanup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageIds: ids }),
+        });
+        const data = await res.json();
+        if (data.success && data.deleted.length > 0) {
+          for (const deletedId of data.deleted) {
+            imageGen.removePanelImage(deletedId);
+          }
+        }
+      } catch (err) {
+        console.error('Panel image cleanup failed:', err);
+      }
+    }, 2000);
+  }, [currentProjectId, imageGen]);
+
+  useEffect(() => {
+    return () => {
+      if (panelCleanupTimerRef.current) clearTimeout(panelCleanupTimerRef.current);
+    };
+  }, []);
+
+  const pm = useProjectManager({ imageGen, onProjectChange: setCurrentProjectId });
+  const ph = usePosterHandlers({
+    setShowPosterOverlay: pm.setShowPosterOverlay,
+    poster: pm.poster,
+    currentProject: pm.project.currentProject,
+  });
+
+  // Event log for autoplay activity monitoring
+  const eventLog = useAutoplayEventLog();
+
+  // Autoplay orchestrator - wires together state machine with image generation
+  // NOTE: Must be defined BEFORE useImageEffects so we can pass isRunning to prevent race conditions
+  const autoplayOrchestrator = useAutoplayOrchestrator({
+    generatedImages: imageGen.generatedImages,
+    isGeneratingImages: imageGen.isGeneratingImages,
+    generateImagesFromPrompts: imageGen.generateImagesFromPrompts,
+    saveImageToPanel: imageGen.saveImageToPanel,
+    updateGeneratedImageUrl: imageGen.updateGeneratedImageUrl,
+    setFeedback: brain.setFeedback,
+    generatedPrompts: prompts.generatedPrompts,
+    outputMode: brain.outputMode,
+    dimensions: dimensions.dimensions,
+    baseImage: brain.baseImage,
+    visionSentence: brain.visionSentence,
+    breakdown: brain.breakdown,
+    onRegeneratePrompts: simulator.handleGenerate,
+    onLogEvent: eventLog.addEvent,
+  });
+
+  // Multi-phase autoplay - orchestrates concept, gameplay, poster, and HUD phases
+  const multiPhaseAutoplay = useMultiPhaseAutoplay({
+    generatedImages: imageGen.generatedImages,
+    isGeneratingImages: imageGen.isGeneratingImages,
+    generateImagesFromPrompts: imageGen.generateImagesFromPrompts,
+    saveImageToPanel: imageGen.saveImageToPanel,
+    updateGeneratedImageUrl: imageGen.updateGeneratedImageUrl,
+    leftPanelSlots: imageGen.leftPanelSlots,
+    rightPanelSlots: imageGen.rightPanelSlots,
+    resetSaveTracking: imageGen.resetSaveTracking,
+    setFeedback: brain.setFeedback,
+    setOutputMode: brain.setOutputMode,
+    baseImage: brain.baseImage,
+    visionSentence: brain.visionSentence,
+    breakdown: brain.breakdown,
+    generatedPrompts: prompts.generatedPrompts,
+    dimensions: dimensions.dimensions,
+    outputMode: brain.outputMode,
+    generatePosters: ph.poster.generatePosters,
+    posterGenerations: ph.poster.posterGenerations,
+    selectPoster: ph.handleSelectPoster,
+    savePoster: ph.handleSavePoster,
+    isGeneratingPoster: ph.poster.isGenerating,
+    existingPoster: ph.poster.poster,
+    currentProjectId,
+    currentProjectName: pm.project.currentProject?.name || 'Untitled',
+    onRegeneratePrompts: simulator.handleGenerate,
+    clearHistory: prompts.clearHistory,
+    onLogEvent: eventLog.addEvent,
+  });
+
+  // Image effects - skip auto-generation during autoplay (orchestrator controls flow)
+  const ie = useImageEffects({
+    imageGen,
+    submittedForGenerationRef: pm.submittedForGenerationRef,
+    setSavedPromptIds: pm.setSavedPromptIds,
+    isAutoplayRunning: autoplayOrchestrator.isRunning || multiPhaseAutoplay.isRunning,
+  });
+  useAutosave();
+
+  // Memoized autoplay props to prevent OnionLayout re-renders (legacy single-mode)
+  const autoplayProps = useMemo(() => ({
+    isRunning: autoplayOrchestrator.isRunning,
+    canStart: autoplayOrchestrator.canStart,
+    canStartReason: autoplayOrchestrator.canStartReason,
+    status: autoplayOrchestrator.status,
+    currentIteration: autoplayOrchestrator.currentIteration,
+    maxIterations: autoplayOrchestrator.maxIterations,
+    totalSaved: autoplayOrchestrator.totalSaved,
+    targetSaved: autoplayOrchestrator.targetSaved,
+    completionReason: autoplayOrchestrator.completionReason,
+    error: autoplayOrchestrator.error,
+    onStart: autoplayOrchestrator.startAutoplay,
+    onStop: autoplayOrchestrator.abortAutoplay,
+    onReset: autoplayOrchestrator.resetAutoplay,
+  }), [
+    autoplayOrchestrator.isRunning,
+    autoplayOrchestrator.canStart,
+    autoplayOrchestrator.canStartReason,
+    autoplayOrchestrator.status,
+    autoplayOrchestrator.currentIteration,
+    autoplayOrchestrator.maxIterations,
+    autoplayOrchestrator.totalSaved,
+    autoplayOrchestrator.targetSaved,
+    autoplayOrchestrator.completionReason,
+    autoplayOrchestrator.error,
+    autoplayOrchestrator.startAutoplay,
+    autoplayOrchestrator.abortAutoplay,
+    autoplayOrchestrator.resetAutoplay,
+  ]);
+
+  // Memoized event log props (nested object, memoize separately)
+  const eventLogProps = useMemo(() => ({
+    textEvents: eventLog.textEvents,
+    imageEvents: eventLog.imageEvents,
+    clearEvents: eventLog.clearEvents,
+  }), [eventLog.textEvents, eventLog.imageEvents, eventLog.clearEvents]);
+
+  // Memoized multi-phase autoplay props
+  const multiPhaseAutoplayProps = useMemo(() => ({
+    isRunning: multiPhaseAutoplay.isRunning,
+    canStart: multiPhaseAutoplay.canStart,
+    canStartReason: multiPhaseAutoplay.canStartReason,
+    hasContent: multiPhaseAutoplay.hasContent,
+    phase: multiPhaseAutoplay.phase,
+    sketchProgress: multiPhaseAutoplay.sketchProgress,
+    gameplayProgress: multiPhaseAutoplay.gameplayProgress,
+    posterSelected: multiPhaseAutoplay.posterSelected,
+    hudGenerated: multiPhaseAutoplay.hudGenerated,
+    error: multiPhaseAutoplay.error,
+    errorPhase: multiPhaseAutoplay.errorPhase,
+    onStart: multiPhaseAutoplay.startMultiPhase,
+    onStop: multiPhaseAutoplay.abort,
+    onReset: multiPhaseAutoplay.reset,
+    onRetry: multiPhaseAutoplay.retry,
+    currentIteration: multiPhaseAutoplay.currentIteration,
+    maxIterations: multiPhaseAutoplay.maxIterations,
+    currentImageInPhase: multiPhaseAutoplay.currentImageInPhase,
+    phaseTarget: multiPhaseAutoplay.phaseTarget,
+    singlePhaseStatus: multiPhaseAutoplay.singlePhaseStatus,
+    eventLog: eventLogProps,
+  }), [
+    multiPhaseAutoplay.isRunning,
+    multiPhaseAutoplay.canStart,
+    multiPhaseAutoplay.canStartReason,
+    multiPhaseAutoplay.hasContent,
+    multiPhaseAutoplay.phase,
+    multiPhaseAutoplay.sketchProgress,
+    multiPhaseAutoplay.gameplayProgress,
+    multiPhaseAutoplay.posterSelected,
+    multiPhaseAutoplay.hudGenerated,
+    multiPhaseAutoplay.error,
+    multiPhaseAutoplay.errorPhase,
+    multiPhaseAutoplay.startMultiPhase,
+    multiPhaseAutoplay.abort,
+    multiPhaseAutoplay.reset,
+    multiPhaseAutoplay.retry,
+    multiPhaseAutoplay.currentIteration,
+    multiPhaseAutoplay.maxIterations,
+    multiPhaseAutoplay.currentImageInPhase,
+    multiPhaseAutoplay.phaseTarget,
+    multiPhaseAutoplay.singlePhaseStatus,
+    eventLogProps,
+  ]);
+
+  const selectedPromptImage = selectedPrompt ? imageGen.generatedImages.find(img => img.promptId === selectedPrompt.id) : undefined;
+
+  const handleCopyWithToast = useCallback(() => showToast('Prompt copied to clipboard', 'success'), [showToast]);
+
+  const handleTogglePosterOverlay = useCallback(
+    () => pm.setShowPosterOverlay(prev => !prev),
+    [pm.setShowPosterOverlay]
+  );
+
+  const handleOpenComparison = useCallback(() => setShowComparisonModal(true), []);
+
+  return (
+    <div className="h-full w-full flex flex-col ms-surface font-sans">
+      <SimulatorHeader
+        projects={pm.project.projects}
+        currentProject={pm.project.currentProject}
+        isLoadingProjects={pm.project.isLoading}
+        saveStatus={pm.project.saveStatus}
+        lastSavedAt={pm.project.lastSavedAt}
+        onProjectSelect={pm.handleProjectSelect}
+        onProjectCreate={pm.handleProjectCreate}
+        onProjectDelete={pm.project.deleteProject}
+        onProjectRename={pm.project.renameProject}
+        onProjectDuplicate={pm.project.duplicateProject}
+        onLoadExample={simulator.handleLoadExample}
+        onReset={pm.handleResetProject}
+      />
+
+      <div className="flex-1 overflow-hidden relative bg-surface-primary">
+        <OnionLayout
+          leftPanelSlots={imageGen.leftPanelSlots}
+          rightPanelSlots={imageGen.rightPanelSlots}
+          onRemovePanelImage={imageGen.removePanelImage}
+          onViewPanelImage={setSelectedPanelImage}
+          onPanelImageError={handlePanelImageError}
+          generatedImages={imageGen.generatedImages}
+          isGeneratingImages={imageGen.isGeneratingImages}
+          onStartImage={ie.handleStartImage}
+          onDeleteImage={imageGen.deleteGeneration}
+          savedPromptIds={pm.savedPromptIds}
+          onDeleteGenerations={imageGen.deleteAllGenerations}
+          projectPoster={ph.poster.poster}
+          showPosterOverlay={pm.showPosterOverlay}
+          onTogglePosterOverlay={handleTogglePosterOverlay}
+          isGeneratingPoster={ph.poster.isGenerating}
+          onUploadPoster={ph.handleUploadPoster}
+          onGeneratePoster={ph.handleGeneratePoster}
+          posterGenerations={ph.poster.posterGenerations}
+          selectedPosterIndex={ph.poster.selectedIndex}
+          isSavingPoster={ph.isSavingPoster}
+          onSelectPoster={ph.handleSelectPoster}
+          onSavePoster={ph.handleSavePoster}
+          onCancelPosterGeneration={ph.handleCancelPosterGeneration}
+          onOpenComparison={handleOpenComparison}
+          onViewPrompt={setSelectedPrompt}
+          onUploadImageToPanel={imageGen.uploadImageToPanel}
+          autoplay={autoplayProps}
+          multiPhaseAutoplay={multiPhaseAutoplayProps}
+        />
+
+        {selectedPrompt && (
+          <Suspense fallback={<ModalLoadingFallback />}>
+            <PromptDetailModal
+              prompt={selectedPrompt}
+              isOpen={!!selectedPrompt}
+              onClose={() => setSelectedPrompt(null)}
+              onRate={prompts.handlePromptRate}
+              onLock={prompts.handlePromptLock}
+              onLockElement={prompts.handleElementLock}
+              onAcceptElement={simulator.onAcceptElement}
+              acceptingElementId={prompts.acceptingElementId}
+              generatedImage={selectedPromptImage}
+              onStartImage={ie.handleStartImage}
+              isSavedToPanel={selectedPrompt ? pm.savedPromptIds.has(selectedPrompt.id) : false}
+              onCopy={handleCopyWithToast}
+            />
+          </Suspense>
+        )}
+
+        {selectedPanelImage && (
+          <Suspense fallback={<ModalLoadingFallback />}>
+            <SavedImageModal
+              image={selectedPanelImage}
+              isOpen={!!selectedPanelImage}
+              onClose={() => setSelectedPanelImage(null)}
+              onRemove={imageGen.removePanelImage}
+              onUpdateImage={imageGen.updatePanelImage}
+              onUpdateImageVideo={imageGen.updatePanelImageVideo}
+              gameUIDimension={dimensions.dimensions.find(d => d.type === 'gameUI')?.reference}
+              onCopy={handleCopyWithToast}
+            />
+          </Suspense>
+        )}
+
+        <Toast {...toastProps} data-testid="simulator-toast" />
+
+        {showComparisonModal && (
+          <Suspense fallback={<ModalLoadingFallback />}>
+            <ComparisonModal
+              isOpen={showComparisonModal}
+              onClose={() => setShowComparisonModal(false)}
+              allPrompts={prompts.generatedPrompts}
+              allImages={imageGen.generatedImages}
+              dimensions={dimensions.dimensions}
+            />
+          </Suspense>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function SimulatorFeature() {
+  return (
+    <ProjectProvider>
+      <ViewModeProvider>
+        <DimensionsProvider>
+          <BrainProvider>
+            <PromptsProvider>
+              <SimulatorProvider>
+                <SimulatorContent />
+              </SimulatorProvider>
+            </PromptsProvider>
+          </BrainProvider>
+        </DimensionsProvider>
+      </ViewModeProvider>
+    </ProjectProvider>
+  );
+}
+
+export default SimulatorFeature;

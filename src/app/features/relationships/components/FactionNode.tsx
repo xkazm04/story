@@ -3,6 +3,7 @@
 import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { Shield } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { FactionNodeData } from '../types';
 
 const FactionNode = memo(({ data, selected }: NodeProps<FactionNodeData>) => {
@@ -10,15 +11,12 @@ const FactionNode = memo(({ data, selected }: NodeProps<FactionNodeData>) => {
 
   return (
     <div
-      className={`
-        relative bg-gradient-to-br from-purple-500/20 to-pink-500/20
-        backdrop-blur-sm border-2 rounded-xl p-4 min-w-[200px] max-w-[220px]
-        transition-all duration-300 shadow-lg
-        ${selected
+      className={cn(
+        'relative bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-sm border-2 rounded-xl p-4 min-w-[200px] max-w-[220px] transition-all duration-300 shadow-lg',
+        selected
           ? 'border-purple-400 shadow-purple-400/50 shadow-2xl scale-105'
           : 'border-purple-500/50 hover:border-purple-400 hover:shadow-xl hover:scale-102'
-        }
-      `}
+      )}
       style={{
         animation: selected ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none',
         borderColor: faction.color || undefined

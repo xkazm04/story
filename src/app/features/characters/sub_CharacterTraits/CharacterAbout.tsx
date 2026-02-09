@@ -16,6 +16,7 @@ import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { useCharacters } from '@/app/hooks/useCharacters';
 import { useUnifiedTraitGeneration } from './useUnifiedTraitGeneration';
 import TraitPromptSection from './TraitPromptSection';
+import { cn } from '@/app/lib/utils';
 
 interface CharacterAboutProps {
   characterId: string;
@@ -113,12 +114,12 @@ const CharacterAbout: React.FC<CharacterAboutProps> = ({ characterId }) => {
             <button
               key={section.id}
               onClick={() => setActiveSection(index)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md font-mono text-xs
-                         transition-all duration-200 ${
+              className={cn(
+                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md font-mono text-xs transition-all duration-200',
                 isActive
                   ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
                   : 'text-slate-400 border border-transparent hover:text-slate-200 hover:bg-slate-800/50'
-              }`}
+              )}
             >
               {section.icon && <span className="w-3 h-3">{section.icon}</span>}
               <span className="uppercase tracking-wide">{section.title.toLowerCase().replace(/\s+/g, '_')}</span>

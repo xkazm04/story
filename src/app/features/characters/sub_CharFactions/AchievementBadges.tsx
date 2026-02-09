@@ -83,7 +83,7 @@ const AchievementBadges: React.FC<AchievementBadgesProps> = ({ achievements, cha
                           : '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
                       }}
                     >
-                      {achievement.icon_url || '🏆'}
+                      {achievement.icon_url || <Trophy className="w-6 h-6 text-amber-400" />}
                     </motion.div>
 
                     {/* Particle effects around badge */}

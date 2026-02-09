@@ -23,6 +23,7 @@ import {
   BarChart3,
   ArrowRight,
 } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { CharacterArchetype, ArchetypeCategory, ArchetypeGenre } from '@/app/types/Archetype';
 import {
   ARCHETYPE_LIBRARY,
@@ -42,7 +43,6 @@ import {
 import ArchetypeHierarchy from './ArchetypeHierarchy';
 import ArchetypeBlender from './ArchetypeBlender';
 import ArchetypeCreator from './ArchetypeCreator';
-import { cn } from '@/app/lib/utils';
 
 // ============================================================================
 // Types

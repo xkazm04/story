@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { cn } from '@/app/lib/utils';
 import { FormFieldConfig } from '../lib/formConfig';
 import { GenderSelector } from './GenderSelector';
 
@@ -38,7 +39,7 @@ export function FormField({ field, value, onChange }: FormFieldProps) {
           <label className="block text-sm font-medium text-gray-300">
             {field.label}
           </label>
-          <span className={`text-xs ${isOverLimit ? 'text-red-400' : 'text-gray-500'}`}>
+          <span className={cn('text-xs', isOverLimit ? 'text-red-400' : 'text-gray-500')}>
             {wordCount}/10 words
           </span>
         </div>
@@ -47,7 +48,7 @@ export function FormField({ field, value, onChange }: FormFieldProps) {
           value={value}
           onChange={(e) => onChange(field.path, e.target.value)}
           placeholder={field.placeholder}
-          className={`${baseClasses} ${isOverLimit ? 'border-red-500' : ''}`}
+          className={cn(baseClasses, isOverLimit && 'border-red-500')}
           maxLength={100}
           data-testid="special-features-input"
         />
@@ -68,7 +69,7 @@ export function FormField({ field, value, onChange }: FormFieldProps) {
           value={value}
           onChange={(e) => onChange(field.path, e.target.value)}
           placeholder={field.placeholder}
-          className={`${baseClasses} min-h-[120px] resize-none`}
+          className={cn(baseClasses, 'min-h-[120px] resize-none')}
           data-testid={`${field.id}-textarea`}
         />
       </div>

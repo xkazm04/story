@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/app/lib/utils';
 import { relationshipApi } from '@/app/api/relationships';
 import { characterApi } from '@/app/api/characters';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
@@ -190,11 +191,12 @@ const CreateRelationshipForm: React.FC<CreateRelationshipFormProps> = ({
                   key={type.value}
                   type="button"
                   onClick={() => setRelType(type.value)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={cn(
+                    'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
                     relType === type.value
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                  }`}
+                  )}
                 >
                   {type.label}
                 </button>

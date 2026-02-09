@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
 import { AIGeneratedFaction, FactionWizardResponse } from '@/app/types/Faction';
 import WizardStepPrompt from './WizardStepPrompt';
@@ -107,19 +108,19 @@ const FactionWizard: React.FC<FactionWizardProps> = ({
         <div className="mb-6">
           <div className="flex gap-2">
             <div
-              className={`flex-1 h-1 rounded-full transition-colors ${
+              className={cn('flex-1 h-1 rounded-full transition-colors',
                 getStepNumber() >= 1 ? 'bg-purple-500' : 'bg-gray-700'
-              }`}
+              )}
             />
             <div
-              className={`flex-1 h-1 rounded-full transition-colors ${
+              className={cn('flex-1 h-1 rounded-full transition-colors',
                 getStepNumber() >= 2 ? 'bg-purple-500' : 'bg-gray-700'
-              }`}
+              )}
             />
             <div
-              className={`flex-1 h-1 rounded-full transition-colors ${
+              className={cn('flex-1 h-1 rounded-full transition-colors',
                 getStepNumber() >= 3 ? 'bg-purple-500' : 'bg-gray-700'
-              }`}
+              )}
             />
           </div>
         </div>

@@ -8,6 +8,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Sparkles, RefreshCw } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 
 interface PromptPreviewProps {
   prompt: string | null;
@@ -39,7 +40,7 @@ const PromptPreview: React.FC<PromptPreviewProps> = ({
                        text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10
                        transition-all duration-200 disabled:opacity-50"
           >
-            <RefreshCw className={`w-3 h-3 ${isComposing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={cn('w-3 h-3', isComposing && 'animate-spin')} />
             recompose
           </button>
         )}

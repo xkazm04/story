@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { Calendar, Swords, Handshake, Compass, Award, Flame, Trophy, Info } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { FactionEvent } from '@/app/types/Faction';
 
 interface TimelineViewProps {
@@ -94,7 +95,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
       >
         {/* Timeline node */}
         <motion.div
-          className={`absolute left-0 w-16 h-16 rounded-full bg-gradient-to-br ${colorGradient} flex items-center justify-center shadow-lg`}
+          className={cn('absolute left-0 w-16 h-16 rounded-full bg-gradient-to-br flex items-center justify-center shadow-lg', colorGradient)}
           whileHover={{ scale: prefersReducedMotion ? 1 : 1.1, rotate: prefersReducedMotion ? 0 : 360 }}
           transition={{ duration: 0.6 }}
           data-testid={`timeline-node-${event.event_type}`}
@@ -136,7 +137,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
               data-testid={`timeline-card-front-${event.id}`}
             >
               {/* Colored top border */}
-              <div className={`h-1 bg-gradient-to-r ${colorGradient}`} />
+              <div className={cn('h-1 bg-gradient-to-r', colorGradient)} />
 
               <div className="p-6 h-full flex flex-col justify-between">
                 {/* Date and title */}
@@ -175,7 +176,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
                 {!prefersReducedMotion && [...Array(5)].map((_, i) => (
                   <motion.div
                     key={i}
-                    className={`absolute w-2 h-2 rounded-full bg-gradient-to-r ${colorGradient}`}
+                    className={cn('absolute w-2 h-2 rounded-full bg-gradient-to-r', colorGradient)}
                     animate={{
                       x: [0, Math.random() * 100 - 50],
                       y: [0, Math.random() * 100 - 50],
@@ -208,12 +209,12 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
               data-testid={`timeline-card-back-${event.id}`}
             >
               {/* Colored top border */}
-              <div className={`h-1 bg-gradient-to-r ${colorGradient}`} />
+              <div className={cn('h-1 bg-gradient-to-r', colorGradient)} />
 
               <div className="p-6 h-full flex flex-col">
                 {/* Header with icon */}
                 <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${colorGradient} flex items-center justify-center`}>
+                  <div className={cn('w-12 h-12 rounded-full bg-gradient-to-br flex items-center justify-center', colorGradient)}>
                     <Icon className="text-white" size={20} />
                   </div>
                   <div className="flex-1">
@@ -244,7 +245,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
                       <div className="grid grid-cols-2 gap-3 text-xs">
                         <div>
                           <span className="text-gray-500 block mb-1">Type</span>
-                          <span className={`px-2 py-1 bg-gradient-to-r ${colorGradient} text-white rounded capitalize font-medium inline-block`}>
+                          <span className={cn('px-2 py-1 bg-gradient-to-r text-white rounded capitalize font-medium inline-block', colorGradient)}>
                             {event.event_type}
                           </span>
                         </div>

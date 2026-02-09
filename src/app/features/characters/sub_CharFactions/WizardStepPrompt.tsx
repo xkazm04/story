@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, AlertCircle, Loader2 } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { aiService } from '@/app/services/aiService';
 import { FactionWizardResponse } from '@/app/types/Faction';
 
@@ -96,11 +97,12 @@ const WizardStepPrompt: React.FC<WizardStepPromptProps> = ({
               key={type.value}
               type="button"
               onClick={() => setFactionType(type.value)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={cn(
+                'px-3 py-2 rounded-lg text-sm font-medium transition-all',
                 factionType === type.value
                   ? 'bg-purple-600 text-white ring-2 ring-purple-400'
                   : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
+              )}
               data-testid={`faction-type-${type.value}`}
             >
               {type.label}

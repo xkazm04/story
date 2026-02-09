@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { User, BookOpen, Palette, Heart, Shield, Image as ImageIcon, Sparkles, Clock } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { characterApi } from '@/app/api/characters';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
@@ -90,11 +91,12 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ characterId }) => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md font-mono text-xs transition-all duration-200 ${
+            className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md font-mono text-xs transition-all duration-200',
               activeTab === tab.id
                 ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
                 : 'text-slate-400 border border-transparent hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
+            )}
             data-testid={`character-detail-tab-${tab.id}`}
           >
             {tab.icon}

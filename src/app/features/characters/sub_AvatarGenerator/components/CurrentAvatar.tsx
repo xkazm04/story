@@ -8,6 +8,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { User, Check, ArrowRight } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { GeneratedAvatar } from '../../hooks/useAvatarGenerator';
 
 interface CurrentAvatarProps {
@@ -39,9 +40,10 @@ const CurrentAvatar: React.FC<CurrentAvatarProps> = ({
         {/* Current Avatar */}
         <div className="flex flex-col items-center gap-2">
           <span className="font-mono text-[10px] text-slate-500 uppercase">current</span>
-          <div className={`w-20 h-20 rounded-lg border-2 overflow-hidden flex-shrink-0
-            ${hasCurrent ? 'border-slate-600' : 'border-dashed border-slate-700/50'}
-          `}>
+          <div className={cn(
+            'w-20 h-20 rounded-lg border-2 overflow-hidden flex-shrink-0',
+            hasCurrent ? 'border-slate-600' : 'border-dashed border-slate-700/50'
+          )}>
             {hasCurrent ? (
               <img
                 src={currentAvatarUrl}

@@ -9,6 +9,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ImageIcon } from 'lucide-react';
 import { GeneratedImage } from '../../hooks/useImageGenerator';
+import { cn } from '@/app/lib/utils';
 
 interface SketchGridProps {
   sketches: GeneratedImage[];
@@ -98,12 +99,12 @@ const SketchGrid: React.FC<SketchGridProps> = ({
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ delay: index * 0.1 }}
                 onClick={() => onSelectSketch(sketch)}
-                className={`relative aspect-[9/10] rounded-lg overflow-hidden border-2 transition-all duration-200
-                  ${isSelected
+                className={cn(
+                  'relative aspect-[9/10] rounded-lg overflow-hidden border-2 transition-all duration-200',
+                  isSelected
                     ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)]'
                     : 'border-slate-700/50 hover:border-slate-600'
-                  }
-                `}
+                )}
               >
                 <img
                   src={sketch.url}
@@ -123,7 +124,7 @@ const SketchGrid: React.FC<SketchGridProps> = ({
                 )}
 
                 {/* Hover overlay */}
-                <div className={`absolute inset-0 bg-cyan-500/10 opacity-0 hover:opacity-100 transition-opacity ${isSelected ? 'opacity-100' : ''}`} />
+                <div className={cn('absolute inset-0 bg-cyan-500/10 opacity-0 hover:opacity-100 transition-opacity', isSelected && 'opacity-100')} />
 
                 {/* Label */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">

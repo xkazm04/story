@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Save, AlertCircle, Sparkles } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { factionApi } from '@/app/api/factions';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
@@ -243,11 +244,12 @@ const CreateFactionForm: React.FC<CreateFactionFormProps> = ({
                   key={presetColor}
                   type="button"
                   onClick={() => handleColorChange(presetColor)}
-                  className={`w-8 h-8 rounded-lg transition-all ${
+                  className={cn(
+                    'w-8 h-8 rounded-lg transition-all',
                     color === presetColor
                       ? 'ring-2 ring-white ring-offset-2 ring-offset-gray-900 scale-110'
                       : 'hover:scale-105'
-                  }`}
+                  )}
                   style={{ backgroundColor: presetColor }}
                   data-testid={`color-preset-${presetColor}`}
                 />

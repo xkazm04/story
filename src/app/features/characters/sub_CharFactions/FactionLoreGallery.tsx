@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Trophy, Clock, Sparkles } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { Faction } from '@/app/types/Faction';
 import { Character } from '@/app/types/Character';
 import { factionApi } from '@/app/api/factions';
@@ -81,11 +82,11 @@ const FactionLoreGallery: React.FC<FactionLoreGalleryProps> = ({
         {/* Story mode toggle */}
         <motion.button
           onClick={() => setStoryMode(!storyMode)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+          className={cn('flex items-center gap-2 px-4 py-2 rounded-lg transition-colors',
             storyMode
               ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
               : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-          }`}
+          )}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -104,20 +105,20 @@ const FactionLoreGallery: React.FC<FactionLoreGalleryProps> = ({
             <button
               key={section.id}
               onClick={() => setActiveSection(section.id)}
-              className={`relative flex items-center gap-2 px-6 py-3 font-medium transition-all ${
+              className={cn('relative flex items-center gap-2 px-6 py-3 font-medium transition-all',
                 isActive
                   ? `text-${section.color}-400`
                   : 'text-gray-400 hover:text-gray-300'
-              }`}
+              )}
             >
               <Icon size={18} />
               {section.label}
               <span
-                className={`ml-1 px-2 py-0.5 rounded text-xs ${
+                className={cn('ml-1 px-2 py-0.5 rounded text-xs',
                   isActive
                     ? `bg-${section.color}-600/20 text-${section.color}-400`
                     : 'bg-gray-800 text-gray-500'
-                }`}
+                )}
               >
                 {section.count}
               </span>
@@ -126,7 +127,7 @@ const FactionLoreGallery: React.FC<FactionLoreGalleryProps> = ({
               {isActive && (
                 <motion.div
                   layoutId="activeSection"
-                  className={`absolute bottom-0 left-0 right-0 h-0.5 bg-${section.color}-400`}
+                  className={cn('absolute bottom-0 left-0 right-0 h-0.5', `bg-${section.color}-400`)}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 />
               )}

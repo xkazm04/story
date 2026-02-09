@@ -8,6 +8,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Users } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { Character } from '@/app/types/Character';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { factionApi } from '@/app/api/factions';
@@ -59,11 +60,12 @@ const CharactersList: React.FC<CharactersListProps> = ({ characters }) => {
         <div className="flex gap-1.5 flex-wrap">
           <button
             onClick={() => setSelectedFaction(null)}
-            className={`px-2.5 py-1 rounded-md font-mono text-xs uppercase tracking-wide transition-all duration-200 ${
+            className={cn(
+              'px-2.5 py-1 rounded-md font-mono text-xs uppercase tracking-wide transition-all duration-200',
               selectedFaction === null
                 ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
                 : 'text-slate-400 border border-slate-700/50 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
+            )}
           >
             all ({characters.length})
           </button>
@@ -71,22 +73,24 @@ const CharactersList: React.FC<CharactersListProps> = ({ characters }) => {
             <button
               key={faction.id}
               onClick={() => setSelectedFaction(faction.id)}
-              className={`px-2.5 py-1 rounded-md font-mono text-xs uppercase tracking-wide transition-all duration-200 ${
+              className={cn(
+                'px-2.5 py-1 rounded-md font-mono text-xs uppercase tracking-wide transition-all duration-200',
                 selectedFaction === faction.id
                   ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
                   : 'text-slate-400 border border-slate-700/50 hover:text-slate-200 hover:bg-slate-800/50'
-              }`}
+              )}
             >
               {faction.name.toLowerCase()} ({organizedCharacters[faction.id]?.length || 0})
             </button>
           ))}
           <button
             onClick={() => setSelectedFaction('independent')}
-            className={`px-2.5 py-1 rounded-md font-mono text-xs uppercase tracking-wide transition-all duration-200 ${
+            className={cn(
+              'px-2.5 py-1 rounded-md font-mono text-xs uppercase tracking-wide transition-all duration-200',
               selectedFaction === 'independent'
                 ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
                 : 'text-slate-400 border border-slate-700/50 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
+            )}
           >
             independent ({organizedCharacters.independent?.length || 0})
           </button>

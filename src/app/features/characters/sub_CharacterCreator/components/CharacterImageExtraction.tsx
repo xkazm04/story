@@ -8,6 +8,7 @@ import { ImageExtractionConfig } from '../types';
 import { Appearance } from '@/app/types/Character';
 import { extractFromImage, mergeExtractionResults } from '@/app/lib/services/imageExtraction';
 import { characterAppearanceSchema, extractedDataToAppearance } from '@/app/lib/schemas/extractionSchemas';
+import { cn } from '@/app/lib/utils';
 
 interface CharacterImageExtractionProps {
   onExtracted: (appearance: Partial<Appearance>, prompt: string) => void;
@@ -97,11 +98,12 @@ export function CharacterImageExtraction({
         whileTap={{ scale: 0.98 }}
         onClick={handleExtract}
         disabled={!selectedFile || isExtracting}
-        className={`w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-300
-          ${!selectedFile || isExtracting
+        className={cn(
+          'w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-300',
+          !selectedFile || isExtracting
             ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
             : 'bg-purple-600 text-white hover:bg-purple-700 shadow-lg hover:shadow-purple-600/20'
-          }`}
+        )}
       >
         {isExtracting ? (
           <>

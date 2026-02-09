@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Filter } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { RelationshipType, RelationshipTypeConfig } from '../types';
 
 interface RelationshipTypeFilterProps {
@@ -63,14 +64,12 @@ const RelationshipTypeFilter: React.FC<RelationshipTypeFilterProps> = ({
             return (
               <label
                 key={type}
-                className={`
-                  flex items-center gap-3 p-2 rounded-lg cursor-pointer
-                  transition-all duration-200
-                  ${isActive
+                className={cn(
+                  'flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all duration-200',
+                  isActive
                     ? 'bg-white/20 shadow-md'
                     : 'bg-white/5 hover:bg-white/10'
-                  }
-                `}
+                )}
               >
                 {/* Custom Checkbox */}
                 <div className="relative">
@@ -81,14 +80,12 @@ const RelationshipTypeFilter: React.FC<RelationshipTypeFilterProps> = ({
                     className="sr-only"
                   />
                   <div
-                    className={`
-                      w-5 h-5 rounded border-2 flex items-center justify-center
-                      transition-all duration-200
-                      ${isActive
+                    className={cn(
+                      'w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200',
+                      isActive
                         ? 'border-white bg-white/30 scale-110'
                         : 'border-white/50 bg-transparent'
-                      }
-                    `}
+                    )}
                   >
                     {isActive && (
                       <svg

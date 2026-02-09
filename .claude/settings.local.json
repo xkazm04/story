@@ -14,7 +14,14 @@
       "Bash(done)",
       "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && head -50 \"\"{}\"\"')",
       "Bash(npm install:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(git push:*)",
+      "Bash(dir /b /s \"C:\\\\Users\\\\kazda\\\\kiro\\\\simulator\\\\app\")",
+      "Bash(findstr:*)",
+      "WebFetch(domain:ai.google.dev)",
+      "Bash(npm run lint)",
+      "Bash(timeout 15 npm run dev:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

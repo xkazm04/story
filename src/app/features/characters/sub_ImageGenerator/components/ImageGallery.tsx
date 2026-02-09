@@ -8,6 +8,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Images, Trash2, Star, X, Download } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 
 export interface GalleryImage {
   id: string;
@@ -63,11 +64,12 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
             <h3 className="font-mono text-sm uppercase tracking-wide text-slate-300">
               image_gallery
             </h3>
-            <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${
+            <span className={cn(
+              'font-mono text-[10px] px-1.5 py-0.5 rounded',
               images.length >= maxImages
                 ? 'text-amber-400 bg-amber-500/10 border border-amber-500/20'
                 : 'text-slate-500'
-            }`}>
+            )}>
               {images.length}/{maxImages}
             </span>
           </div>
@@ -86,12 +88,12 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
               >
                 <button
                   onClick={() => setSelectedImage(image)}
-                  className={`w-full h-full rounded-md overflow-hidden border-2 transition-all duration-200
-                    ${image.isPrimary
+                  className={cn(
+                    'w-full h-full rounded-md overflow-hidden border-2 transition-all duration-200',
+                    image.isPrimary
                       ? 'border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
                       : 'border-slate-700/50 hover:border-slate-600'
-                    }
-                  `}
+                  )}
                 >
                   <img
                     src={image.url}

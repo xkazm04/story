@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Search, Filter, Edit, Plus, Scroll, Tag, X } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { FactionLore } from '@/app/types/Faction';
 import LoreSummaryPanel from './LoreSummaryPanel';
 
@@ -146,11 +147,11 @@ const LoreRepository: React.FC<LoreRepositoryProps> = ({
           <Filter size={16} className="text-gray-500" />
           <button
             onClick={() => setSelectedCategory(null)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={cn('px-4 py-2 rounded-lg text-sm font-medium transition-colors',
               selectedCategory === null
                 ? 'bg-purple-600 text-white'
                 : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
+            )}
             data-testid="category-filter-all"
           >
             All ({loreEntries.length})
@@ -159,11 +160,11 @@ const LoreRepository: React.FC<LoreRepositoryProps> = ({
             <button
               key={key}
               onClick={() => setSelectedCategory(key as keyof typeof categoryLabels)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={cn('px-4 py-2 rounded-lg text-sm font-medium transition-colors',
                 selectedCategory === key
                   ? 'bg-purple-600 text-white'
                   : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-              }`}
+              )}
               data-testid={`category-filter-${key}`}
             >
               {label} ({categoryCounts[key] || 0})
@@ -185,11 +186,11 @@ const LoreRepository: React.FC<LoreRepositoryProps> = ({
                   <button
                     key={tag}
                     onClick={() => toggleTag(tag)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    className={cn('px-3 py-1.5 rounded-full text-xs font-medium transition-all',
                       isSelected
                         ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white border border-purple-500'
                         : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700'
-                    }`}
+                    )}
                     data-testid={`tag-filter-${tag}`}
                   >
                     {tag}
@@ -247,7 +248,7 @@ const LoreRepository: React.FC<LoreRepositoryProps> = ({
               >
                 <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
                   {/* Colored top border */}
-                  <div className={`h-1 bg-gradient-to-r ${gradient}`} />
+                  <div className={cn('h-1 bg-gradient-to-r', gradient)} />
 
                   <div className="p-6">
                     {/* Header */}
@@ -256,7 +257,7 @@ const LoreRepository: React.FC<LoreRepositoryProps> = ({
                         <div className="flex items-center gap-2 mb-2">
                           <Scroll size={18} className="text-purple-400" />
                           <span
-                            className={`px-2 py-0.5 bg-gradient-to-r ${gradient} bg-opacity-20 rounded text-xs font-medium text-white`}
+                            className={cn('px-2 py-0.5 bg-gradient-to-r bg-opacity-20 rounded text-xs font-medium text-white', gradient)}
                           >
                             {categoryLabels[lore.category]}
                           </span>
@@ -300,9 +301,9 @@ const LoreRepository: React.FC<LoreRepositoryProps> = ({
                           animate={{
                             opacity: isExpanded ? 1 : 0.9,
                           }}
-                          className={`text-gray-300 leading-relaxed whitespace-pre-wrap ${
-                            !isExpanded ? 'line-clamp-3' : ''
-                          }`}
+                          className={cn('text-gray-300 leading-relaxed whitespace-pre-wrap',
+                            !isExpanded && 'line-clamp-3'
+                          )}
                         >
                           {lore.content}
                         </motion.div>
@@ -331,7 +332,7 @@ const LoreRepository: React.FC<LoreRepositoryProps> = ({
                     <motion.div
                       initial={{ scaleX: 0 }}
                       animate={{ scaleX: 1 }}
-                      className={`h-0.5 bg-gradient-to-r ${gradient}`}
+                      className={cn('h-0.5 bg-gradient-to-r', gradient)}
                     />
                   )}
                 </div>

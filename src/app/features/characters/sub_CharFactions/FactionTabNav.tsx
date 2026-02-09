@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Users, Image as ImageIcon, Trophy, Search, Edit, Network, BarChart3, Handshake } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 
 export type FactionTabType = 'info' | 'members' | 'media' | 'branding' | 'history' | 'search' | 'politics' | 'influence' | 'diplomacy';
 
@@ -65,7 +66,7 @@ const FactionTabNav: React.FC<FactionTabNavProps> = ({
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${getTabClasses(tab)}`}
+            className={cn('flex items-center gap-2 px-6 py-3 font-medium transition-all', getTabClasses(tab))}
             data-testid={`${tab.id}-tab-btn`}
           >
             {Icon && <Icon size={18} />}

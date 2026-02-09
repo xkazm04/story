@@ -3,6 +3,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, X, FileImage, FileText, AlertCircle, Check } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
 
 interface MediaUploadFormProps {
@@ -214,13 +215,13 @@ const MediaUploadForm: React.FC<MediaUploadFormProps> = ({
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={handleUploadClick}
-                className={`relative border-2 border-dashed rounded-lg p-8 cursor-pointer transition-all ${
+                className={cn('relative border-2 border-dashed rounded-lg p-8 cursor-pointer transition-all',
                   isDragging
                     ? 'border-purple-500 bg-purple-500/10'
                     : selectedFile
                     ? 'border-green-500 bg-green-500/10'
                     : 'border-gray-700 hover:border-gray-600 bg-gray-800/50'
-                }`}
+                )}
               >
                 <input
                   ref={fileInputRef}
@@ -265,11 +266,11 @@ const MediaUploadForm: React.FC<MediaUploadFormProps> = ({
                     type="button"
                     onClick={() => setMediaType(type.value)}
                     disabled={isUploading}
-                    className={`px-4 py-3 rounded-lg transition-all ${
+                    className={cn('px-4 py-3 rounded-lg transition-all',
                       mediaType === type.value
                         ? 'bg-purple-600 text-white'
                         : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                    }`}
+                    )}
                   >
                     {type.label}
                   </button>

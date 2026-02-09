@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Save, RotateCcw, Palette, AlertCircle } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { FactionBranding } from '@/app/types/Faction';
 import FactionCard from './FactionCard';
 import { validateFactionBrandingColors } from '@/app/utils/colorValidation';
@@ -161,11 +162,11 @@ const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                   key={color}
                   type="button"
                   onClick={() => handleColorChange('primary', color)}
-                  className={`w-8 h-8 rounded-lg transition-all ${
+                  className={cn('w-8 h-8 rounded-lg transition-all',
                     primaryColor === color
                       ? 'ring-2 ring-white scale-110'
                       : 'hover:scale-105'
-                  }`}
+                  )}
                   style={{ backgroundColor: color }}
                   data-testid={`primary-preset-${color}`}
                 />
@@ -201,11 +202,11 @@ const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                   key={color}
                   type="button"
                   onClick={() => handleColorChange('secondary', color)}
-                  className={`w-8 h-8 rounded-lg transition-all ${
+                  className={cn('w-8 h-8 rounded-lg transition-all',
                     secondaryColor === color
                       ? 'ring-2 ring-white scale-110'
                       : 'hover:scale-105'
-                  }`}
+                  )}
                   style={{ backgroundColor: color }}
                   data-testid={`secondary-preset-${color}`}
                 />
@@ -241,11 +242,11 @@ const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                   key={color}
                   type="button"
                   onClick={() => handleColorChange('accent', color)}
-                  className={`w-8 h-8 rounded-lg transition-all ${
+                  className={cn('w-8 h-8 rounded-lg transition-all',
                     accentColor === color
                       ? 'ring-2 ring-white scale-110'
                       : 'hover:scale-105'
-                  }`}
+                  )}
                   style={{ backgroundColor: color }}
                   data-testid={`accent-preset-${color}`}
                 />

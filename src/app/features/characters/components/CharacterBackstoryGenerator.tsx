@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Loader2 } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { useLLM } from '@/app/hooks/useLLM';
 import { characterBackstoryPrompt } from '@/prompts';
 
@@ -79,14 +80,12 @@ const CharacterBackstoryGenerator: React.FC<CharacterBackstoryGeneratorProps> = 
             <button
               key={length}
               onClick={() => setBackstoryLength(length)}
-              className={`
-                px-2 py-1 rounded text-xs font-medium capitalize
-                transition-colors duration-200
-                ${backstoryLength === length
+              className={cn(
+                'px-2 py-1 rounded text-xs font-medium capitalize transition-colors duration-200',
+                backstoryLength === length
                   ? 'bg-amber-600 text-white'
                   : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                }
-              `}
+              )}
             >
               {length}
             </button>
@@ -136,14 +135,12 @@ const CharacterBackstoryGenerator: React.FC<CharacterBackstoryGeneratorProps> = 
         disabled={isLoading}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className={`
-          w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
-          transition-colors duration-200
-          ${isLoading
+        className={cn(
+          'w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200',
+          isLoading
             ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
             : 'bg-amber-600 hover:bg-amber-700 text-white'
-          }
-        `}
+        )}
       >
         {isLoading ? (
           <>

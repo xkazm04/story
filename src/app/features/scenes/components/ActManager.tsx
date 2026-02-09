@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, ChevronDown } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { actApi } from '@/app/hooks/integration/useActs';
 import { sceneApi } from '@/app/hooks/integration/useScenes';
@@ -177,7 +178,7 @@ const ActManager: React.FC = () => {
                   +{acts.length - visibleActs.length}
                   <ChevronDown
                     size={14}
-                    className={`transition-transform ${showActsList ? 'rotate-180' : ''}`}
+                    className={cn('transition-transform', showActsList && 'rotate-180')}
                   />
                 </motion.div>
               )}

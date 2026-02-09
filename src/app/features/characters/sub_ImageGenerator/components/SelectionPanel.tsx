@@ -13,6 +13,7 @@ import {
   EXPRESSION_OPTIONS,
   GenerationSelections,
 } from '../../lib/promptComposer';
+import { cn } from '@/app/lib/utils';
 
 interface SelectionPanelProps {
   selections: GenerationSelections;
@@ -49,13 +50,13 @@ const SelectionGroup: React.FC<SelectionGroupProps> = ({
             disabled={disabled}
             whileHover={{ scale: disabled ? 1 : 1.02 }}
             whileTap={{ scale: disabled ? 1 : 0.98 }}
-            className={`px-2.5 py-1.5 rounded-md font-mono text-xs transition-all duration-200
-              ${isSelected
+            className={cn(
+              'px-2.5 py-1.5 rounded-md font-mono text-xs transition-all duration-200',
+              isSelected
                 ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40'
-                : 'bg-slate-800/60 text-slate-400 border border-slate-700/50 hover:text-slate-200 hover:border-slate-600'
-              }
-              ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-            `}
+                : 'bg-slate-800/60 text-slate-400 border border-slate-700/50 hover:text-slate-200 hover:border-slate-600',
+              disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+            )}
             title={option.description}
           >
             <span className="uppercase tracking-wide">{option.label}</span>

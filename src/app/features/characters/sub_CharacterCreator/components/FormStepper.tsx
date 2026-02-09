@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { FormSectionConfig, SectionColor } from '../lib/formConfig';
 
 interface FormStepperProps {
@@ -49,20 +50,22 @@ export function FormStepper({
             <React.Fragment key={section.id}>
               <button
                 onClick={() => onStepChange(index)}
-                className={`relative flex flex-col items-center group transition-all duration-200 ${
+                className={cn(
+                  'relative flex flex-col items-center group transition-all duration-200',
                   isActive ? 'scale-105' : 'hover:scale-102'
-                }`}
+                )}
                 title={section.title}
               >
                 {/* Step Circle */}
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
+                  className={cn(
+                    'w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-200',
                     isActive
-                      ? `${colors.bg} border-transparent text-white shadow-lg`
+                      ? cn(colors.bg, 'border-transparent text-white shadow-lg')
                       : isCompleted || isPast
-                      ? `bg-gray-800 ${colors.border} ${colors.text}`
+                      ? cn('bg-gray-800', colors.border, colors.text)
                       : 'bg-gray-800 border-gray-600 text-gray-500'
-                  }`}
+                  )}
                 >
                   {isCompleted ? (
                     <Check size={18} />
@@ -73,13 +76,14 @@ export function FormStepper({
 
                 {/* Step Label */}
                 <span
-                  className={`mt-2 text-xs font-medium transition-colors duration-200 ${
+                  className={cn(
+                    'mt-2 text-xs font-medium transition-colors duration-200',
                     isActive
                       ? 'text-white'
                       : isCompleted || isPast
                       ? colors.text
                       : 'text-gray-500'
-                  }`}
+                  )}
                 >
                   {section.title}
                 </span>
@@ -88,7 +92,7 @@ export function FormStepper({
                 {isActive && (
                   <motion.div
                     layoutId="activeStep"
-                    className={`absolute -bottom-1 w-full h-0.5 ${colors.bg} rounded-full`}
+                    className={cn('absolute -bottom-1 w-full h-0.5 rounded-full', colors.bg)}
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   />
                 )}
@@ -97,9 +101,10 @@ export function FormStepper({
               {/* Connector Line */}
               {index < sections.length - 1 && (
                 <div
-                  className={`flex-1 h-0.5 mx-2 rounded-full transition-colors duration-200 ${
+                  className={cn(
+                    'flex-1 h-0.5 mx-2 rounded-full transition-colors duration-200',
                     isPast ? colors.bg : 'bg-gray-700'
-                  }`}
+                  )}
                 />
               )}
             </React.Fragment>
@@ -112,11 +117,12 @@ export function FormStepper({
         <button
           onClick={() => canGoBack && onStepChange(currentStep - 1)}
           disabled={!canGoBack}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+          className={cn(
+            'flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors',
             canGoBack
               ? 'bg-gray-700 hover:bg-gray-600 text-white'
               : 'bg-gray-800 text-gray-500 cursor-not-allowed'
-          }`}
+          )}
         >
           <ChevronLeft size={16} />
           Previous
@@ -129,11 +135,12 @@ export function FormStepper({
         <button
           onClick={() => canGoForward && onStepChange(currentStep + 1)}
           disabled={!canGoForward}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+          className={cn(
+            'flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors',
             canGoForward
               ? 'bg-blue-600 hover:bg-blue-700 text-white'
               : 'bg-gray-800 text-gray-500 cursor-not-allowed'
-          }`}
+          )}
         >
           Next
           <ChevronRight size={16} />

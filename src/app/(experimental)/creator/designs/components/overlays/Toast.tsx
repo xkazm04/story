@@ -1,22 +1,19 @@
-/**
- * Toast - Notification component
- */
-
 'use client';
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, Zap } from 'lucide-react';
-import { useCreator } from '../../context/CreatorContext';
+import { useCreatorToastStore } from '../../store/creatorToastStore';
 
 export function ToastContainer() {
-  const { state, removeToast } = useCreator();
+  const toasts = useCreatorToastStore((s) => s.toasts);
+  const removeToast = useCreatorToastStore((s) => s.removeToast);
 
   return (
     <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2">
       <AnimatePresence>
-        {state.toasts.map((toast) => (
-          <Toast
+        {toasts.map((toast) => (
+          <ToastItem
             key={toast.id}
             id={toast.id}
             message={toast.message}
@@ -29,14 +26,14 @@ export function ToastContainer() {
   );
 }
 
-interface ToastProps {
+interface ToastItemProps {
   id: string;
   message: string;
   type: 'success' | 'error' | 'info';
   onClose: () => void;
 }
 
-function Toast({ message, type, onClose }: ToastProps) {
+function ToastItem({ message, type, onClose }: ToastItemProps) {
   const icons = {
     success: <Check size={20} className="text-emerald-400" />,
     error: <X size={20} className="text-red-400" />,

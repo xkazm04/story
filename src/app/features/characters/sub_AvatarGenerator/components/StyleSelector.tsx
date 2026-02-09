@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { cn } from '@/app/lib/utils';
 import { AVATAR_STYLES } from '../../lib/promptComposer';
 
 interface StyleSelectorProps {
@@ -39,17 +40,18 @@ const StyleSelector: React.FC<StyleSelectorProps> = ({
               disabled={disabled}
               whileHover={{ scale: disabled ? 1 : 1.02 }}
               whileTap={{ scale: disabled ? 1 : 0.98 }}
-              className={`p-3 rounded-lg border transition-all duration-200 text-left
-                ${isSelected
+              className={cn(
+                'p-3 rounded-lg border transition-all duration-200 text-left',
+                isSelected
                   ? 'bg-cyan-500/15 border-cyan-500/40'
-                  : 'bg-slate-800/40 border-slate-700/50 hover:border-slate-600 hover:bg-slate-800/60'
-                }
-                ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-              `}
+                  : 'bg-slate-800/40 border-slate-700/50 hover:border-slate-600 hover:bg-slate-800/60',
+                disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+              )}
             >
-              <div className={`font-mono text-xs uppercase tracking-wide mb-1 ${
+              <div className={cn(
+                'font-mono text-xs uppercase tracking-wide mb-1',
                 isSelected ? 'text-cyan-400' : 'text-slate-300'
-              }`}>
+              )}>
                 {style.label}
               </div>
               <div className="font-mono text-[10px] text-slate-500 leading-relaxed">

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Heart, Filter } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { relationshipApi } from '@/app/api/relationships';
 import { characterApi } from '@/app/api/characters';
 import { CharRelationship } from '@/app/types/Character';
@@ -106,11 +107,12 @@ const CharacterRelationships: React.FC<CharacterRelationshipsProps> = ({
             <button
               key={type}
               onClick={() => setFilter(type)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
                 filter === type
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-              }`}
+              )}
             >
               {type.charAt(0).toUpperCase() + type.slice(1)}
               {type === 'all' && ` (${relationships.length})`}

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ReactFlowProvider } from 'reactflow';
 import { Loader2, AlertCircle, Zap } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 
 import RelationshipMapCanvas from './components/RelationshipMapCanvas';
 import RelationshipTypeFilter from './components/RelationshipTypeFilter';
@@ -238,18 +239,15 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({ projectId }) => {
         <div className="absolute top-4 left-4 z-10">
           <button
             onClick={handleToggleForceLayout}
-            className={`
-              flex items-center gap-2 px-4 py-2 rounded-lg
-              backdrop-blur-xl border shadow-lg
-              transition-all duration-300
-              ${useForceLayout
+            className={cn(
+              'flex items-center gap-2 px-4 py-2 rounded-lg backdrop-blur-xl border shadow-lg transition-all duration-300',
+              useForceLayout
                 ? 'bg-yellow-500/30 border-yellow-400 text-yellow-200'
                 : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
-              }
-            `}
+            )}
             title="Toggle force-directed layout"
           >
-            <Zap className={`w-4 h-4 ${useForceLayout ? 'animate-pulse' : ''}`} />
+            <Zap className={cn('w-4 h-4', useForceLayout && 'animate-pulse')} />
             <span className="text-sm font-medium">
               {useForceLayout ? 'Force Layout Active' : 'Enable Force Layout'}
             </span>

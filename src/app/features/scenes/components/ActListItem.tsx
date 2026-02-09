@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Trash2, Edit2, Check, X } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { Act } from '@/app/types/Act';
 import { actApi } from '@/app/hooks/integration/useActs';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
@@ -57,11 +58,13 @@ const ActListItem: React.FC<ActListItemProps> = ({ act, onSelect, onRefetch }) =
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 10 }}
-      className={`group flex items-center justify-between p-3 rounded-lg mb-1 cursor-pointer transition-all ${
+      className={cn(
+        'group flex items-center justify-between p-3 rounded-lg mb-1 cursor-pointer transition-all',
         isSelected
           ? 'bg-blue-600 text-white'
-          : 'bg-gray-800/50 text-gray-300 hover:bg-gray-800'
-      } ${isDeleting ? 'opacity-50' : ''}`}
+          : 'bg-gray-800/50 text-gray-300 hover:bg-gray-800',
+        isDeleting && 'opacity-50'
+      )}
       onClick={() => !isEditing && onSelect(act)}
     >
       {isEditing ? (
@@ -105,9 +108,10 @@ const ActListItem: React.FC<ActListItemProps> = ({ act, onSelect, onRefetch }) =
                 e.stopPropagation();
                 setIsEditing(true);
               }}
-              className={`p-1.5 rounded hover:bg-gray-700 transition-colors ${
+              className={cn(
+                'p-1.5 rounded hover:bg-gray-700 transition-colors',
                 isSelected ? 'text-white' : 'text-gray-400'
-              }`}
+              )}
               title="Rename"
             >
               <Edit2 size={14} />
@@ -118,9 +122,10 @@ const ActListItem: React.FC<ActListItemProps> = ({ act, onSelect, onRefetch }) =
                 handleDelete();
               }}
               disabled={isDeleting}
-              className={`p-1.5 rounded hover:bg-red-600 transition-colors ${
+              className={cn(
+                'p-1.5 rounded hover:bg-red-600 transition-colors',
                 isSelected ? 'text-white' : 'text-gray-400'
-              }`}
+              )}
               title="Delete"
             >
               <Trash2 size={14} />

@@ -22,6 +22,7 @@ import { useAISuggestionStream } from '@/app/hooks/useAISuggestionStream';
 import { AISuggestion } from '@/app/services/aiSuggestionService';
 import AISuggestionSidebar from '../components/AISuggestionSidebar';
 import { IconButton } from '@/app/components/UI/Button';
+import { cn } from '@/app/lib/utils';
 
 interface TraitPromptSectionProps {
   section: PromptSection;
@@ -278,9 +279,10 @@ const TraitPromptSection: React.FC<TraitPromptSectionProps> = ({
       {/* Save Button and Character Count */}
       <div className="flex items-center justify-between">
         <span
-          className={`text-sm ${
+          className={cn(
+            'text-sm',
             isOverLimit ? 'text-red-500 font-semibold' : 'text-gray-400'
-          }`}
+          )}
         >
           {value.length} / {maxLength} characters
           {isOverLimit && <span className="ml-2">Too long!</span>}

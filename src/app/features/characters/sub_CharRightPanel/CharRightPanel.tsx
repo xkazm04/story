@@ -12,6 +12,7 @@ import { useProjectStore } from '@/app/store/projectStore';
 import { characterApi } from '@/app/hooks/integration/useCharacters';
 import { useCharacterStore } from '@/app/store/characterStore';
 import type { Character } from '@/app/types/Character';
+import { cn } from '@/app/lib/utils';
 
 const CharRightPanel: React.FC = () => {
   const { selectedProject } = useProjectStore();
@@ -97,20 +98,22 @@ const CharRightPanel: React.FC = () => {
                   onClick={() => handleCharacterClick(character.id)}
                   whileHover={{ x: 2 }}
                   whileTap={{ scale: 0.98 }}
-                  className={`w-full p-2.5 rounded-md text-left transition-all duration-200 border ${
+                  className={cn(
+                    'w-full p-2.5 rounded-md text-left transition-all duration-200 border',
                     isSelected
                       ? 'bg-cyan-500/15 border-cyan-500/30 text-slate-100'
                       : 'bg-slate-900/50 border-slate-800/50 text-slate-300 hover:bg-slate-800/50 hover:border-slate-700'
-                  }`}
+                  )}
                 >
                   <div className="flex items-center gap-2.5">
                     {/* Avatar */}
                     <div
-                      className={`w-8 h-8 rounded-md flex items-center justify-center text-xs font-mono font-medium ${
+                      className={cn(
+                        'w-8 h-8 rounded-md flex items-center justify-center text-xs font-mono font-medium',
                         isSelected
                           ? 'bg-cyan-500/20 text-cyan-400'
                           : 'bg-slate-800/80 text-slate-400'
-                      }`}
+                      )}
                     >
                       {character.name.charAt(0).toUpperCase()}
                     </div>
@@ -125,11 +128,12 @@ const CharRightPanel: React.FC = () => {
                     {/* Type Badge */}
                     {character.type && (
                       <span
-                        className={`font-mono text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded ${
+                        className={cn(
+                          'font-mono text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded',
                           isSelected
                             ? 'bg-cyan-500/20 text-cyan-400'
                             : 'bg-slate-800/80 text-slate-500'
-                        }`}
+                        )}
                       >
                         {character.type}
                       </span>

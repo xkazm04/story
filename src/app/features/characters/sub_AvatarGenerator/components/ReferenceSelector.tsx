@@ -8,6 +8,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Image, X, Link2 } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 
 interface ReferenceSelectorProps {
   referenceImage: string | null;
@@ -50,9 +51,10 @@ const ReferenceSelector: React.FC<ReferenceSelectorProps> = ({
 
       <div className="flex gap-3">
         {/* Reference preview */}
-        <div className={`w-20 h-20 rounded-lg border-2 border-dashed flex-shrink-0 overflow-hidden
-          ${hasReference ? 'border-cyan-500/40' : 'border-slate-700/50'}
-        `}>
+        <div className={cn(
+          'w-20 h-20 rounded-lg border-2 border-dashed flex-shrink-0 overflow-hidden',
+          hasReference ? 'border-cyan-500/40' : 'border-slate-700/50'
+        )}>
           {hasReference ? (
             <img
               src={referenceImage}

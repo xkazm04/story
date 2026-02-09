@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Check, X, Loader2, ChevronRight, Lightbulb } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { AISuggestion } from '@/app/services/aiSuggestionService';
 import { Card, CardHeader, CardContent } from '@/app/components/UI/Card';
 import { Button, IconButton } from '@/app/components/UI/Button';
@@ -47,7 +48,7 @@ const AISuggestionSidebar: React.FC<AISuggestionSidebarProps> = ({
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: position === 'left' ? -320 : 320, opacity: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className={`fixed top-0 ${positionClasses} h-full w-80 bg-slate-950/95 backdrop-blur-xl border-cyan-500/20 shadow-2xl z-50 flex flex-col`}
+      className={cn('fixed top-0', positionClasses, 'h-full w-80 bg-slate-950/95 backdrop-blur-xl border-cyan-500/20 shadow-2xl z-50 flex flex-col')}
       data-testid="ai-suggestion-sidebar"
     >
       {/* Header */}
@@ -111,9 +112,10 @@ const AISuggestionSidebar: React.FC<AISuggestionSidebarProps> = ({
                 <Card
                   variant="bordered"
                   padding="none"
-                  className={`overflow-hidden transition-all ${
-                    isApplied ? 'opacity-50 bg-green-500/5' : ''
-                  }`}
+                  className={cn(
+                    'overflow-hidden transition-all',
+                    isApplied && 'opacity-50 bg-green-500/5'
+                  )}
                   data-testid={`suggestion-card-${index}`}
                 >
                   {/* Suggestion Header */}

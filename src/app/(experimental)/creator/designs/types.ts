@@ -1,7 +1,3 @@
-/**
- * Type definitions for Character Creator
- */
-
 // Category system
 export type CategoryId =
   | 'hair' | 'eyes' | 'nose' | 'mouth' | 'expression'
@@ -20,7 +16,8 @@ export interface Category {
 export interface CategoryOption {
   id: string | number;
   name: string;
-  preview?: string; // emoji or icon
+  /** Icon registry key rendered by CreatorIcon (e.g. 'hair-longWavy') */
+  preview?: string;
   description?: string;
   promptValue: string; // The value used in prompt composition
   metadata?: Record<string, unknown>;
@@ -52,7 +49,6 @@ export interface UIState {
   activeCategory: CategoryId | null;
   leftSidebarOpen: boolean;
   rightSidebarOpen: boolean;
-  bottomPanelOpen: boolean;
   showPromptPreview: boolean;
   zoom: number;
   isGenerating: boolean;
@@ -65,34 +61,6 @@ export interface Toast {
   id: string;
   message: string;
   type: 'success' | 'error' | 'info';
-}
-
-// Command for command palette
-export interface Command {
-  id: string;
-  label: string;
-  icon: string;
-  shortcut: string;
-  category: string;
-  action: () => void;
-}
-
-// Slider value
-export interface SliderConfig {
-  id: string;
-  label: string;
-  min: number;
-  max: number;
-  value: number;
-  unit?: string;
-}
-
-// Color option
-export interface ColorOption {
-  id: number;
-  type: 'solid' | 'gradient' | 'conic';
-  value: string;
-  name: string;
 }
 
 // Preset character template

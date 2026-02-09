@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Loader2 } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { useLLM } from '@/app/hooks/useLLM';
 import { sceneDescriptionPrompt } from '@/prompts';
 
@@ -94,14 +95,12 @@ const SceneDescriptionEnhancer: React.FC<SceneDescriptionEnhancerProps> = ({
         disabled={isLoading || !currentDescription.trim()}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className={`
-          w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
-          transition-colors duration-200
-          ${isLoading || !currentDescription.trim()
+        className={cn(
+          'w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200',
+          isLoading || !currentDescription.trim()
             ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
             : 'bg-blue-600 hover:bg-blue-700 text-white'
-          }
-        `}
+        )}
       >
         {isLoading ? (
           <>

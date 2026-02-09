@@ -1,20 +1,18 @@
-/**
- * GenerationProgress - AI generation overlay with step progress
- */
-
 'use client';
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, Loader2, Check } from 'lucide-react';
-import { useCreator } from '../../context/CreatorContext';
+import { useCreatorUIStore } from '../../store/creatorUIStore';
 import { GENERATION_STEPS } from '../../constants';
 
 export function GenerationProgress() {
-  const { state, cancelGeneration } = useCreator();
-  const { ui } = state;
+  const isGenerating = useCreatorUIStore((s) => s.isGenerating);
+  const generationStep = useCreatorUIStore((s) => s.generationStep);
+  const generationProgress = useCreatorUIStore((s) => s.generationProgress);
+  const cancelGeneration = useCreatorUIStore((s) => s.cancelGeneration);
 
-  if (!ui.isGenerating) return null;
+  if (!isGenerating) return null;
 
   return (
     <AnimatePresence>
@@ -29,7 +27,6 @@ export function GenerationProgress() {
           animate={{ scale: 1, opacity: 1 }}
           className="w-[400px] p-6 bg-[#0a0a0a]/90 rounded-2xl border border-white/10"
         >
-          {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <motion.div
@@ -52,11 +49,10 @@ export function GenerationProgress() {
             </button>
           </div>
 
-          {/* Progress Steps */}
           <div className="space-y-3 mb-6">
             {GENERATION_STEPS.map((step, idx) => {
-              const isActive = idx === ui.generationStep;
-              const isComplete = idx < ui.generationStep;
+              const isActive = idx === generationStep;
+              const isComplete = idx < generationStep;
               return (
                 <div key={step.id} className="flex items-center gap-3">
                   <div
@@ -101,7 +97,7 @@ export function GenerationProgress() {
                       <motion.div
                         className="h-full bg-amber-500"
                         initial={{ width: 0 }}
-                        animate={{ width: `${ui.generationProgress}%` }}
+                        animate={{ width: `${generationProgress}%` }}
                         transition={{ duration: 0.3 }}
                       />
                     </motion.div>
@@ -111,16 +107,15 @@ export function GenerationProgress() {
             })}
           </div>
 
-          {/* Overall Progress Bar */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm text-slate-500">
               <span>Overall Progress</span>
-              <span>{Math.round((ui.generationStep / GENERATION_STEPS.length) * 100)}%</span>
+              <span>{Math.round((generationStep / GENERATION_STEPS.length) * 100)}%</span>
             </div>
             <div className="h-2 bg-white/5 rounded-full overflow-hidden">
               <motion.div
                 className="h-full bg-gradient-to-r from-amber-600 to-orange-500"
-                style={{ width: `${(ui.generationStep / GENERATION_STEPS.length) * 100}%` }}
+                style={{ width: `${(generationStep / GENERATION_STEPS.length) * 100}%` }}
                 transition={{ duration: 0.5 }}
               />
             </div>

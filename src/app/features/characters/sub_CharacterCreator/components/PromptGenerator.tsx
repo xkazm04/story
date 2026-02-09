@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Sparkles, Loader2 } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { Appearance } from '@/app/types/Character';
 import { generateFacialFeaturesPrompt, generateClothingPrompt } from '../lib/promptGenerators';
 
@@ -44,7 +45,7 @@ export function PromptGenerator({ type, appearance, onPromptGenerated }: PromptG
     <button
       onClick={handleGenerate}
       disabled={isGenerating}
-      className={`flex items-center gap-2 px-3 py-1.5 ${colorClasses} disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg font-medium transition-colors text-xs`}
+      className={cn('flex items-center gap-2 px-3 py-1.5', colorClasses, 'disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg font-medium transition-colors text-xs')}
       title={`Generate prompt for ${label}`}
     >
       {isGenerating ? (

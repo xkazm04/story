@@ -1,106 +1,145 @@
 /**
- * Generate Images API Route
- * Generate images using Leonardo AI API
+ * POST /api/ai/generate-images
+ * Start image generation for multiple prompts using Leonardo AI
+ *
+ * Uses the unified AI provider layer for consistent error handling,
+ * rate limiting, and cost tracking.
+ *
+ * GET /api/ai/generate-images?generationId=xxx
+ * Check status of a generation
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { LeonardoService } from '@/lib/services/leonardo';
-import { logger } from '@/app/utils/logger';
-import {
-  createErrorResponse,
-  HTTP_STATUS,
-} from '@/app/utils/apiErrorHandling';
+import { getLeonardoProvider, isLeonardoAvailable, AIError, checkGenerationStatus, deleteGenerations } from '@/app/lib/ai';
+
+interface GenerateRequest {
+  prompts: Array<{
+    id: string;  // Prompt ID to track which prompt this is for
+    text: string;
+  }>;
+  width?: number;
+  height?: number;
+}
+
+interface GenerationResult {
+  promptId: string;
+  generationId: string;
+  status: 'started' | 'failed';
+  error?: string;
+}
 
 /**
- * POST /api/ai/generate-images
- * Generate images using Leonardo AI API directly
+ * POST - Start generations for multiple prompts
  */
 export async function POST(request: NextRequest) {
   try {
-    // Check if Leonardo API is available
-    if (!LeonardoService.isAvailable()) {
-      return createErrorResponse(
-        'Leonardo API is not configured. Please set LEONARDO_API_KEY environment variable.',
-        HTTP_STATUS.INTERNAL_SERVER_ERROR
+    // Check if Leonardo API is available via unified provider
+    if (!isLeonardoAvailable()) {
+      return NextResponse.json(
+        { success: false, error: 'Leonardo API key not configured' },
+        { status: 503 }
       );
     }
 
-    // Parse request body
-    const body = await request.json();
-    const {
-      prompt,
-      numImages = 2,
-      width = 1184,
-      height = 672,
-      model,
-      presetStyle,
-      negativePrompt,
-      referenceImages,
-      referenceStrength = 0.75,
-    } = body;
+    const body: GenerateRequest = await request.json();
+    const { prompts, width = 768, height = 768 } = body;
 
-    if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
-      return createErrorResponse('Prompt is required', HTTP_STATUS.BAD_REQUEST);
+    if (!prompts || !Array.isArray(prompts) || prompts.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'prompts array is required' },
+        { status: 400 }
+      );
     }
 
-    // Initialize Leonardo service
-    const leonardo = new LeonardoService();
+    const leonardo = getLeonardoProvider();
 
-    // Generate images
-    const result = await leonardo.generateImages({
-      prompt: prompt.trim(),
-      width,
-      height,
-      numImages: Math.min(Math.max(numImages, 1), 8), // Clamp between 1-8
-      model,
-      presetStyle,
-      negativePrompt,
-      referenceImages: referenceImages?.slice(0, 4), // Max 4 references
-      referenceStrength,
+    // Start all generations in parallel (non-blocking)
+    const generationPromises = prompts.map(async (prompt) => {
+      try {
+        const result = await leonardo.startGeneration({
+          type: 'image-generation',
+          prompt: prompt.text,
+          width,
+          height,
+          numImages: 1,
+          metadata: { feature: 'generate-images', promptId: prompt.id },
+        });
+
+        return {
+          promptId: prompt.id,
+          generationId: result.generationId,
+          status: 'started' as const,
+        };
+      } catch (error) {
+        const errorMessage = error instanceof AIError
+          ? `${error.code}: ${error.message}`
+          : error instanceof Error
+            ? error.message
+            : 'Unknown error';
+        return {
+          promptId: prompt.id,
+          generationId: '',
+          status: 'failed' as const,
+          error: errorMessage,
+        };
+      }
     });
 
-    if (!result.success || result.images.length === 0) {
-      return createErrorResponse(
-        result.error || 'No images generated',
-        HTTP_STATUS.INTERNAL_SERVER_ERROR
-      );
-    }
+    const generationResults = await Promise.all(generationPromises);
 
     return NextResponse.json({
       success: true,
-      images: result.images,
-      generationId: result.generationId,
-      provider: result.provider,
-      prompt: result.prompt,
+      generations: generationResults,
     });
   } catch (error) {
-    logger.apiError('/api/ai/generate-images', error);
+    console.error('Generate images error:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to start image generation'
+      },
+      { status: 500 }
+    );
+  }
+}
 
-    // Handle specific error types
-    if (error instanceof Error) {
-      if (error.message.includes('API key')) {
-        return createErrorResponse(
-          'Leonardo API is not properly configured',
-          HTTP_STATUS.INTERNAL_SERVER_ERROR
-        );
-      }
-      if (error.message.includes('timed out')) {
-        return createErrorResponse(
-          'Image generation timed out. Please try again.',
-          504
-        );
-      }
-      if (error.message.includes('failed')) {
-        return createErrorResponse(
-          'Image generation failed. Please try a different prompt.',
-          HTTP_STATUS.INTERNAL_SERVER_ERROR
-        );
-      }
+/**
+ * GET - Check generation status
+ * Uses shared utility for consistent status checking across all generation types.
+ */
+export async function GET(request: NextRequest) {
+  const generationId = new URL(request.url).searchParams.get('generationId');
+  return checkGenerationStatus(generationId, 'image');
+}
+
+/**
+ * DELETE - Delete multiple generations from Leonardo (cleanup)
+ * Body: { generationIds: string[] }
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const result = await deleteGenerations(body.generationIds);
+
+    // Return appropriate HTTP status based on result
+    if (result.error === 'generationIds array is required') {
+      return NextResponse.json(result, { status: 400 });
+    }
+    if (result.error === 'Leonardo API is not configured') {
+      return NextResponse.json(result, { status: 503 });
     }
 
-    return createErrorResponse(
-      'Failed to generate images',
-      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('Delete generations error:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete generations',
+        deleted: [],
+        failed: [],
+      },
+      { status: 500 }
     );
   }
 }

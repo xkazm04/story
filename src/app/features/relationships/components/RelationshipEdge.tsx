@@ -9,6 +9,7 @@ import {
   useReactFlow
 } from 'reactflow';
 import { Edit2, Trash2, X, Check } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { RelationshipEdgeData, RelationshipType, RelationshipTypeConfig } from '../types';
 
 const RelationshipEdge = memo(({
@@ -94,15 +95,12 @@ const RelationshipEdge = memo(({
           {!isEditing ? (
             // Display Mode
             <div
-              className={`
-                flex items-center gap-2 px-3 py-1.5 rounded-full
-                backdrop-blur-md border shadow-lg
-                transition-all duration-300
-                ${selected
+              className={cn(
+                'flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-md border shadow-lg transition-all duration-300',
+                selected
                   ? 'scale-110 shadow-2xl'
                   : 'hover:scale-105'
-                }
-              `}
+              )}
               style={{
                 backgroundColor: `${edgeColor}30`,
                 borderColor: edgeColor,
@@ -146,13 +144,12 @@ const RelationshipEdge = memo(({
                   <button
                     key={type}
                     onClick={() => setSelectedType(type as RelationshipType)}
-                    className={`
-                      px-2 py-1 rounded text-xs font-medium transition-all
-                      ${selectedType === type
+                    className={cn(
+                      'px-2 py-1 rounded text-xs font-medium transition-all',
+                      selectedType === type
                         ? 'ring-2 ring-white shadow-lg scale-105'
                         : 'hover:scale-102'
-                      }
-                    `}
+                    )}
                     style={{
                       backgroundColor: `${config.color}50`,
                       borderColor: config.color,

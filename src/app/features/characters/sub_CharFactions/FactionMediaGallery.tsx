@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, Image as ImageIcon, FileText, Shield, Camera, Trash2 } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { FactionMedia } from '@/app/types/Faction';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
 import MediaGallery, { MediaItem } from '@/app/components/UI/MediaGallery';
@@ -148,11 +149,11 @@ const FactionMediaGallery: React.FC<FactionMediaGalleryProps> = ({
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setSelectedFilter('all')}
-          className={`px-4 py-2 rounded-lg transition-all ${
+          className={cn('px-4 py-2 rounded-lg transition-all',
             selectedFilter === 'all'
               ? 'bg-purple-600 text-white'
               : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-          }`}
+          )}
           data-testid="filter-all-btn"
         >
           All ({media.length})
@@ -164,11 +165,11 @@ const FactionMediaGallery: React.FC<FactionMediaGalleryProps> = ({
             <button
               key={type}
               onClick={() => setSelectedFilter(type as MediaTypeFilter)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              className={cn('flex items-center gap-2 px-4 py-2 rounded-lg transition-all',
                 selectedFilter === type
                   ? 'bg-purple-600 text-white'
                   : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-              }`}
+              )}
               data-testid={`filter-${type}-btn`}
             >
               <Icon size={14} />

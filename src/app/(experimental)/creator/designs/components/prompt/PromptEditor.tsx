@@ -1,28 +1,24 @@
-/**
- * PromptEditor - Inline prompt editor for custom category values
- * Shows in the header, allows overriding the selected category's prompt
- */
-
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Edit3, Check, X, Sparkles } from 'lucide-react';
-import { useCreator } from '../../context/CreatorContext';
+import { useCreatorCharacterStore } from '../../store/creatorCharacterStore';
+import { useCreatorUIStore } from '../../store/creatorUIStore';
 import { getCategoryById } from '../../constants';
 
 export function PromptEditor() {
-  const { state, setCustomPrompt, clearCustomPrompt } = useCreator();
-  const { ui, character } = state;
-  const activeCategory = ui.activeCategory;
+  const activeCategory = useCreatorUIStore((s) => s.activeCategory);
+  const selections = useCreatorCharacterStore((s) => s.selections);
+  const setCustomPrompt = useCreatorCharacterStore((s) => s.setCustomPrompt);
+  const clearCustomPrompt = useCreatorCharacterStore((s) => s.clearCustomPrompt);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const category = activeCategory ? getCategoryById(activeCategory) : null;
-  const selection = activeCategory ? character.selections[activeCategory] : null;
+  const selection = activeCategory ? selections[activeCategory] : null;
 
-  // Update edit value when category changes
   useEffect(() => {
     if (selection?.isCustom && selection.customPrompt) {
       setEditValue(selection.customPrompt);
@@ -31,7 +27,6 @@ export function PromptEditor() {
     }
   }, [activeCategory, selection?.isCustom, selection?.customPrompt]);
 
-  // Focus input when editing starts
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
@@ -73,14 +68,12 @@ export function PromptEditor() {
 
   return (
     <div className="flex items-center gap-2">
-      {/* Category Label */}
       <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 rounded-lg border border-amber-500/20">
         <span className="text-xs font-medium text-amber-400 uppercase tracking-wide">
           {category.label}
         </span>
       </div>
 
-      {/* Editor Input */}
       <div className="flex-1 relative">
         {isEditing ? (
           <div className="flex items-center gap-2">
@@ -125,7 +118,6 @@ export function PromptEditor() {
         )}
       </div>
 
-      {/* Clear Custom Button */}
       {selection?.isCustom && !isEditing && (
         <button
           onClick={handleClear}

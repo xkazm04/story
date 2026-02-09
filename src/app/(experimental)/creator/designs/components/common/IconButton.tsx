@@ -1,9 +1,6 @@
-/**
- * IconButton - Reusable icon button with optional label
- */
-
 import React from 'react';
 import type { LucideIcon } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 
 interface IconButtonProps {
   icon: LucideIcon;
@@ -42,20 +39,23 @@ export function IconButton({
       title={tooltip}
     >
       <div
-        className={`${button} rounded-xl flex items-center justify-center transition-all duration-300
-          ${active
+        className={cn(
+          button,
+          'rounded-xl flex items-center justify-center transition-all duration-300',
+          active
             ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.2)]'
-            : 'bg-white/[0.03] text-slate-400 border border-transparent hover:bg-white/[0.08] hover:text-slate-200 hover:border-white/10'
-          }
-          ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            : 'bg-white/[0.03] text-slate-400 border border-transparent hover:bg-white/[0.08] hover:text-slate-200 hover:border-white/10',
+          disabled && 'opacity-50 cursor-not-allowed'
+        )}
       >
         <Icon size={icon} strokeWidth={1.5} />
       </div>
       {label && (
         <span
-          className={`text-xs font-medium transition-colors ${
+          className={cn(
+            'text-xs font-medium transition-colors',
             active ? 'text-amber-400' : 'text-slate-500 group-hover:text-slate-300'
-          }`}
+          )}
         >
           {label}
         </span>

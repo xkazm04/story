@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Palette, Shield, Layout, Crown, AlertCircle } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { Faction, FactionBranding } from '@/app/types/Faction';
 import { factionApi } from '@/app/api/factions';
 import ColorCustomizer from './ColorCustomizer';
@@ -178,33 +179,33 @@ const FactionBrandingPanel: React.FC<FactionBrandingPanelProps> = ({
       <div className="flex gap-2 border-b border-gray-800">
         <button
           onClick={() => setActiveTab('colors')}
-          className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${
+          className={cn('flex items-center gap-2 px-6 py-3 font-medium transition-all',
             activeTab === 'colors'
               ? 'text-blue-400 border-b-2 border-blue-400'
               : 'text-gray-400 hover:text-gray-300'
-          }`}
+          )}
         >
           <Palette size={18} />
           Colors
         </button>
         <button
           onClick={() => setActiveTab('emblem')}
-          className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${
+          className={cn('flex items-center gap-2 px-6 py-3 font-medium transition-all',
             activeTab === 'emblem'
               ? 'text-purple-400 border-b-2 border-purple-400'
               : 'text-gray-400 hover:text-gray-300'
-          }`}
+          )}
         >
           <Shield size={18} />
           Emblem
         </button>
         <button
           onClick={() => setActiveTab('templates')}
-          className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${
+          className={cn('flex items-center gap-2 px-6 py-3 font-medium transition-all',
             activeTab === 'templates'
               ? 'text-green-400 border-b-2 border-green-400'
               : 'text-gray-400 hover:text-gray-300'
-          }`}
+          )}
         >
           <Layout size={18} />
           Templates
@@ -214,11 +215,11 @@ const FactionBrandingPanel: React.FC<FactionBrandingPanelProps> = ({
             setActiveTab('preview');
             setIsPreviewMode(true);
           }}
-          className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ml-auto ${
+          className={cn('flex items-center gap-2 px-6 py-3 font-medium transition-all ml-auto',
             activeTab === 'preview'
               ? 'text-orange-400 border-b-2 border-orange-400'
               : 'text-gray-400 hover:text-gray-300'
-          }`}
+          )}
         >
           Preview Mode
         </button>
@@ -278,11 +279,11 @@ const FactionBrandingPanel: React.FC<FactionBrandingPanelProps> = ({
                     key={template.id}
                     type="button"
                     onClick={() => setSelectedTemplate(template.id)}
-                    className={`relative p-6 rounded-lg border-2 transition-all text-left ${
+                    className={cn('relative p-6 rounded-lg border-2 transition-all text-left',
                       selectedTemplate === template.id
                         ? 'border-green-500 bg-green-500/10'
                         : 'border-gray-700 bg-gray-800 hover:border-gray-600'
-                    }`}
+                    )}
                   >
                     <div className="space-y-2">
                       <div className="font-medium text-white">{template.name}</div>

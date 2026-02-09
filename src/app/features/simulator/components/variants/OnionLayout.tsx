@@ -1,0 +1,350 @@
+/**
+ * OnionLayout - Main simulator layout composition
+ *
+ * Uses React Context for state management, dramatically reducing props.
+ * Composes the simulator UI from smaller focused components:
+ * - PromptSection: Top/bottom prompt grids (from subfeature_prompts)
+ * - DimensionColumn: Left/right dimension parameters (from subfeature_dimensions)
+ * - CentralBrain: Source analysis + director control (from subfeature_brain)
+ * - SidePanel: Left/right image panels
+ */
+
+'use client';
+
+import React, { useEffect, useCallback, memo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  GeneratedPrompt,
+  GeneratedImage,
+  ProjectPoster,
+  PanelSlot,
+  SavedPanelImage,
+} from '../../types';
+import { PosterGeneration } from '../../hooks/usePoster';
+import { SidePanel, UploadImageModal } from '../../subfeature_panels';
+import { Toast, useToast } from '@/app/components/UI/SimToast';
+import { useResponsivePanels } from '../../lib/useResponsivePanels';
+
+// Core view component
+import { CmdCore } from './CmdCore';
+
+// Overlay components for poster and whatif modes
+import { PosterFullOverlay } from '../../subfeature_brain/components/PosterFullOverlay';
+import { WhatIfPanel } from '../../subfeature_brain/components/WhatIfPanel';
+
+// Context for simulator actions
+import { useSimulatorContext } from '../../SimulatorContext';
+import { useProjectContext } from '../../contexts';
+
+// Module-level constants to avoid creating new objects on every render
+const EMPTY_PANEL_SLOTS: PanelSlot[] = [];
+const EMPTY_IMAGES: GeneratedImage[] = [];
+const EMPTY_SET = new Set<string>();
+const EMPTY_POSTER_GENS: PosterGeneration[] = [];
+const NOOP = () => {};
+
+// Zustand store for view mode
+import { useViewModeStore } from '../../stores';
+
+export interface OnionLayoutProps {
+  // Side panel props (external to subfeatures)
+  leftPanelSlots?: PanelSlot[];
+  rightPanelSlots?: PanelSlot[];
+  onRemovePanelImage?: (imageId: string) => void;
+  onViewPanelImage?: (image: SavedPanelImage) => void;
+  onPanelImageError?: (imageId: string) => void;
+
+  // Image generation props (external service)
+  generatedImages?: GeneratedImage[];
+  isGeneratingImages?: boolean;
+  onStartImage?: (promptId: string) => void;
+  onDeleteImage?: (promptId: string) => void;
+  savedPromptIds?: Set<string>;
+  onDeleteGenerations?: () => void;
+
+  // Poster props (project-level)
+  projectPoster?: ProjectPoster | null;
+  showPosterOverlay?: boolean;
+  onTogglePosterOverlay?: () => void;
+  isGeneratingPoster?: boolean;
+  onUploadPoster?: (imageDataUrl: string) => void;
+  onGeneratePoster?: () => Promise<void>;
+
+  // Poster generation state (for 2x2 grid selection)
+  posterGenerations?: PosterGeneration[];
+  selectedPosterIndex?: number | null;
+  isSavingPoster?: boolean;
+  onSelectPoster?: (index: number) => void;
+  onSavePoster?: () => void;
+  onCancelPosterGeneration?: () => void;
+
+  // Comparison props
+  onOpenComparison?: () => void;
+
+  // Modal handlers
+  onViewPrompt: (prompt: GeneratedPrompt) => void;
+
+  // Upload image to panel
+  onUploadImageToPanel?: (side: 'left' | 'right', slotIndex: number, imageUrl: string, prompt?: string) => void;
+
+  // Autoplay orchestrator props (legacy single-mode)
+  autoplay?: {
+    isRunning: boolean;
+    canStart: boolean;
+    canStartReason: string | null;
+    status: string;
+    currentIteration: number;
+    maxIterations: number;
+    totalSaved: number;
+    targetSaved: number;
+    completionReason: string | null;
+    error: string | undefined;
+    onStart: (config: { targetSavedCount: number; maxIterations: number }) => void;
+    onStop: () => void;
+    onReset: () => void;
+  };
+
+  // Multi-phase autoplay props
+  multiPhaseAutoplay?: {
+    isRunning: boolean;
+    canStart: boolean;
+    canStartReason: string | null;
+    hasContent: boolean;
+    phase: string;
+    sketchProgress: { saved: number; target: number };
+    gameplayProgress: { saved: number; target: number };
+    posterSelected: boolean;
+    hudGenerated: number;
+    error?: string;
+    errorPhase?: string;
+    onStart: (config: import('../../types').ExtendedAutoplayConfig) => void;
+    onStop: () => void;
+    onReset: () => void;
+    onRetry?: () => void;
+    currentIteration?: number;
+    maxIterations?: number;
+    currentImageInPhase?: number;
+    phaseTarget?: number;
+    singlePhaseStatus?: string;
+    // Event log for activity modal
+    eventLog?: {
+      textEvents: import('../../types').AutoplayLogEntry[];
+      imageEvents: import('../../types').AutoplayLogEntry[];
+      clearEvents: () => void;
+    };
+  };
+}
+
+function OnionLayoutComponent({
+  // Side panel props
+  leftPanelSlots = EMPTY_PANEL_SLOTS,
+  rightPanelSlots = EMPTY_PANEL_SLOTS,
+  onRemovePanelImage,
+  onViewPanelImage,
+  onPanelImageError,
+  // Image generation props
+  generatedImages = EMPTY_IMAGES,
+  isGeneratingImages = false,
+  onStartImage,
+  onDeleteImage,
+  savedPromptIds = EMPTY_SET,
+  onDeleteGenerations,
+  // Poster props
+  projectPoster,
+  showPosterOverlay = false,
+  onTogglePosterOverlay,
+  isGeneratingPoster = false,
+  onUploadPoster,
+  onGeneratePoster,
+  // Poster generation state
+  posterGenerations = EMPTY_POSTER_GENS,
+  selectedPosterIndex = null,
+  isSavingPoster = false,
+  onSelectPoster,
+  onSavePoster,
+  onCancelPosterGeneration,
+  // Comparison props
+  onOpenComparison,
+  // Modal handlers
+  onViewPrompt,
+  // Upload image to panel
+  onUploadImageToPanel,
+  // Autoplay props
+  autoplay,
+  // Multi-phase autoplay props
+  multiPhaseAutoplay,
+}: OnionLayoutProps) {
+  // Get simulator actions from context
+  const simulator = useSimulatorContext();
+  const project = useProjectContext();
+
+  // Get view mode from store
+  const { viewMode, setViewMode } = useViewModeStore();
+
+  // Responsive panel management
+  const panels = useResponsivePanels();
+
+  // Toast for copy confirmation
+  const { showToast, toastProps } = useToast();
+
+  // Upload modal state
+  const [uploadModalState, setUploadModalState] = useState<{
+    isOpen: boolean;
+    side: 'left' | 'right';
+    slotIndex: number;
+  }>({ isOpen: false, side: 'left', slotIndex: 0 });
+
+  // Handle empty slot click - opens upload modal
+  const handleEmptySlotClick = useCallback((side: 'left' | 'right', slotIndex: number) => {
+    setUploadModalState({ isOpen: true, side, slotIndex });
+  }, []);
+
+  // Handle upload from modal
+  const handleUploadImage = useCallback((imageUrl: string) => {
+    if (onUploadImageToPanel) {
+      onUploadImageToPanel(
+        uploadModalState.side,
+        uploadModalState.slotIndex,
+        imageUrl,
+        'Uploaded image'
+      );
+    }
+  }, [onUploadImageToPanel, uploadModalState.side, uploadModalState.slotIndex]);
+
+  // Close upload modal
+  const closeUploadModal = useCallback(() => {
+    setUploadModalState(prev => ({ ...prev, isOpen: false }));
+  }, []);
+
+  // Auto-expand prompt bars when images are generated
+  useEffect(() => {
+    if (generatedImages.length > 0 && !isGeneratingImages) {
+      panels.expandPromptBars();
+    }
+  }, [generatedImages.length, isGeneratingImages, panels.expandPromptBars]);
+
+  return (
+    <div className="h-full w-full bg-surface-primary text-slate-200 flex overflow-hidden p-lg gap-lg font-sans selection:bg-amber-900/50 selection:text-amber-100 relative">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900/20 via-surface-primary to-surface-primary pointer-events-none" />
+
+      {/* Copy Toast */}
+      <Toast {...toastProps} data-testid="copy-toast" />
+
+      {/* Left Border: Image Placeholders */}
+      <SidePanel
+        side="left"
+        slots={leftPanelSlots}
+        onRemoveImage={onRemovePanelImage}
+        onViewImage={onViewPanelImage}
+        onEmptySlotClick={handleEmptySlotClick}
+        onImageError={onPanelImageError}
+      />
+
+      {/* Main Layout - always CmdCore, content switches via viewMode in CentralBrain */}
+      <CmdCore
+        generatedImages={generatedImages}
+        isGeneratingImages={isGeneratingImages}
+        onStartImage={onStartImage}
+        onDeleteImage={onDeleteImage}
+        savedPromptIds={savedPromptIds}
+        onDeleteGenerations={onDeleteGenerations}
+        isGeneratingPoster={isGeneratingPoster}
+        onGeneratePoster={onGeneratePoster}
+        onOpenComparison={onOpenComparison}
+        onViewPrompt={onViewPrompt}
+        leftPanelSlots={leftPanelSlots}
+        rightPanelSlots={rightPanelSlots}
+        autoplay={autoplay}
+        multiPhaseAutoplay={multiPhaseAutoplay}
+      />
+
+      {/* Poster Overlay - covers center when poster tab is active */}
+      <AnimatePresence>
+        {viewMode === 'poster' && (
+          <PosterFullOverlay
+            isOpen={true}
+            onClose={() => setViewMode('cmd')}
+            poster={projectPoster || null}
+            posterGenerations={posterGenerations}
+            selectedIndex={selectedPosterIndex}
+            isGenerating={isGeneratingPoster}
+            isSaving={isSavingPoster}
+            onSelect={onSelectPoster || NOOP}
+            onSave={onSavePoster || NOOP}
+            onCancel={onCancelPosterGeneration || NOOP}
+            onUpload={onUploadPoster}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* WhatIf Overlay - covers center when whatif tab is active */}
+      <AnimatePresence>
+        {viewMode === 'whatif' && (
+          <motion.div
+            key="whatif-overlay"
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.97 }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            className="absolute inset-0 z-20 bg-surface-overlay backdrop-blur-md flex flex-col rounded-lg border border-slate-700 shadow-floating overflow-hidden"
+          >
+            <WhatIfPanel projectId={project.currentProject?.id || null} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Right Border: Image Placeholders */}
+      <SidePanel
+        side="right"
+        slots={rightPanelSlots}
+        onRemoveImage={onRemovePanelImage}
+        onViewImage={onViewPanelImage}
+        onEmptySlotClick={handleEmptySlotClick}
+        onImageError={onPanelImageError}
+      />
+
+      {/* Upload Image Modal */}
+      <UploadImageModal
+        isOpen={uploadModalState.isOpen}
+        onClose={closeUploadModal}
+        onUpload={handleUploadImage}
+        side={uploadModalState.side}
+        slotIndex={uploadModalState.slotIndex}
+      />
+    </div>
+  );
+}
+
+/**
+ * Custom comparison function for React.memo
+ * Only re-render when significant props change
+ */
+function arePropsEqual(
+  prevProps: OnionLayoutProps,
+  nextProps: OnionLayoutProps
+): boolean {
+  // Compare panel slots by reference
+  if (prevProps.leftPanelSlots !== nextProps.leftPanelSlots) return false;
+  if (prevProps.rightPanelSlots !== nextProps.rightPanelSlots) return false;
+
+  // Compare generated images by reference
+  if (prevProps.generatedImages !== nextProps.generatedImages) return false;
+
+  // Compare boolean flags
+  if (prevProps.isGeneratingImages !== nextProps.isGeneratingImages) return false;
+  if (prevProps.isGeneratingPoster !== nextProps.isGeneratingPoster) return false;
+  if (prevProps.showPosterOverlay !== nextProps.showPosterOverlay) return false;
+
+  // Compare saved prompt IDs by size first (fast check)
+  if (prevProps.savedPromptIds?.size !== nextProps.savedPromptIds?.size) return false;
+
+  // Compare poster by reference
+  if (prevProps.projectPoster !== nextProps.projectPoster) return false;
+
+  // Compare autoplay by reference
+  if (prevProps.autoplay !== nextProps.autoplay) return false;
+
+  return true;
+}
+
+export const OnionLayout = memo(OnionLayoutComponent, arePropsEqual);

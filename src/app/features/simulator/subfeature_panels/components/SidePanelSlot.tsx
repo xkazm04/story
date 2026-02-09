@@ -1,0 +1,147 @@
+/**
+ * SidePanelSlot - Individual slot in the side panel for saved images
+ * Design: Clean Manuscript style
+ *
+ * Semantic Colors:
+ * - cyan: Primary action (view)
+ * - red: Destructive action (remove)
+ * - amber: Empty slot hover (attention/action needed)
+ *
+ * Shows either:
+ * - Empty placeholder with hover effect
+ * - Saved image with view/delete options
+ */
+
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { Image as ImageIcon, X, Eye, AlertTriangle } from 'lucide-react';
+import { SavedPanelImage } from '../../types';
+import { semanticColors } from '../../lib/semanticColors';
+import { cn } from '@/app/lib/utils';
+
+interface SidePanelSlotProps {
+  image: SavedPanelImage | null;
+  slotIndex: number;
+  side: 'left' | 'right';
+  onRemove?: (imageId: string) => void;
+  onView?: (image: SavedPanelImage) => void;
+  /** Callback when empty slot is clicked - for upload functionality */
+  onEmptySlotClick?: (side: 'left' | 'right', slotIndex: number) => void;
+  /** Called when image fails to load (e.g. 403 from CDN) */
+  onImageError?: (imageId: string) => void;
+}
+
+export function SidePanelSlot({
+  image,
+  slotIndex,
+  side,
+  onRemove,
+  onView,
+  onEmptySlotClick,
+  onImageError,
+}: SidePanelSlotProps) {
+  const [hasError, setHasError] = useState(false);
+
+  // Reset error state when image URL changes (e.g. new image hydrated into same slot)
+  useEffect(() => {
+    setHasError(false);
+  }, [image?.url]);
+
+  if (image) {
+    return (
+      <div
+        className="relative aspect-square radius-lg border border-slate-700/60 overflow-hidden
+                   group cursor-pointer transition-all duration-300
+                   hover:border-cyan-500/30 hover:shadow-elevated hover:shadow-cyan-900/20"
+        onClick={() => onView?.(image)}
+        data-testid={`side-panel-slot-${side}-${slotIndex}`}
+      >
+        {/* Error fallback */}
+        {hasError && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 bg-slate-800/80">
+            <AlertTriangle size={16} className="text-slate-500" />
+            <span className="text-[8px] font-mono text-slate-500">Unavailable</span>
+          </div>
+        )}
+
+        {/* Image */}
+        <Image
+          src={image.url}
+          alt={`Saved image ${slotIndex + 1}`}
+          fill
+          className={hasError ? "object-cover opacity-0" : "object-cover"}
+          onError={() => { setHasError(true); onImageError?.(image.id); }}
+        />
+
+        {/* Hover overlay */}
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100
+                        transition-opacity flex items-center justify-center gap-2">
+          {/* View button - cyan for primary action */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onView?.(image);
+            }}
+            data-testid={`view-image-${image.id}`}
+            className={cn(
+              'p-2 radius-md hover:bg-cyan-500/30 transition-colors',
+              semanticColors.primary.bgHover,
+              semanticColors.primary.text
+            )}
+            title="View"
+          >
+            <Eye size={14} />
+          </button>
+          {/* Remove button - red for destructive action */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove?.(image.id);
+            }}
+            data-testid={`remove-image-${image.id}`}
+            className={cn(
+              'p-2 radius-md hover:bg-red-500/30 transition-colors',
+              semanticColors.error.bgHover,
+              semanticColors.error.text
+            )}
+            title="Remove"
+          >
+            <X size={14} />
+          </button>
+        </div>
+
+        {/* Slot indicator */}
+        <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/70 radius-sm
+                        font-mono type-label text-slate-400">
+          {side[0].toUpperCase()}{slotIndex + 1}
+        </div>
+      </div>
+    );
+  }
+
+  // Empty slot - amber for attention/action needed
+  return (
+    <div
+      data-testid={`side-panel-slot-empty-${side}-${slotIndex}`}
+      onClick={() => onEmptySlotClick?.(side, slotIndex)}
+      className="aspect-square bg-slate-900/40 radius-lg border border-slate-800/60
+                 flex flex-col items-center justify-center gap-1
+                 opacity-40 hover:opacity-100 hover:scale-105 hover:border-amber-500/30
+                 hover:shadow-elevated hover:shadow-amber-900/20
+                 transition-all duration-300 cursor-pointer group backdrop-blur-sm"
+      title="Click to upload image"
+    >
+      <ImageIcon
+        size={20}
+        className="text-slate-700 group-hover:text-amber-400 transition-colors"
+      />
+      <span className="font-mono text-[8px] text-slate-700 group-hover:text-amber-400 uppercase tracking-wider transition-colors">
+        Upload
+      </span>
+    </div>
+  );
+}
+
+export default SidePanelSlot;

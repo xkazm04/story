@@ -15,6 +15,7 @@ import DynamicComponentLoader from '@/app/components/UI/DynamicComponentLoader';
 import SkeletonLoader from '@/app/components/UI/SkeletonLoader';
 import { CharacterCardSkeletonGrid } from './components/CharacterCardSkeleton';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/app/lib/utils';
 import { useCharacterRecommendations } from '@/app/hooks/useRecommendations';
 import { RecommendationPanel } from '@/app/components/recommendations/RecommendationPanel';
 
@@ -131,14 +132,15 @@ const CharactersFeature: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(index)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200 font-mono text-xs ${
+                className={cn(
+                  'flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200 font-mono text-xs',
                   isActive
                     ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
                     : 'text-slate-400 border border-transparent hover:text-slate-200 hover:bg-slate-800/50'
-                }`}
+                )}
                 data-testid={`character-tab-${tab.id}`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-400' : ''}`} />
+                <Icon className={cn('w-4 h-4', isActive && 'text-cyan-400')} />
                 <span className="uppercase tracking-wide">{tab.label}</span>
               </button>
             );
@@ -148,11 +150,12 @@ const CharactersFeature: React.FC = () => {
         {/* Recommendations Toggle */}
         <button
           onClick={() => setShowRecommendations(!showRecommendations)}
-          className={`relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-md font-mono text-xs transition-all ${
+          className={cn(
+            'relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-md font-mono text-xs transition-all',
             showRecommendations
               ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
               : 'text-slate-400 border border-transparent hover:text-slate-200 hover:bg-slate-800/50'
-          }`}
+          )}
           title="Toggle Suggestions"
         >
           <Lightbulb className="w-3.5 h-3.5" />

@@ -13,6 +13,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { AIGeneratedFaction, FactionWizardResponse } from '@/app/types/Faction';
+import { cn } from '@/app/lib/utils';
 
 interface WizardStepPreviewProps {
   faction: AIGeneratedFaction;
@@ -120,11 +121,11 @@ const WizardStepPreview: React.FC<WizardStepPreviewProps> = ({
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as typeof activeTab)}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+            className={cn('flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors',
               activeTab === tab.id
                 ? 'text-purple-400 border-b-2 border-purple-400'
                 : 'text-gray-400 hover:text-gray-300'
-            }`}
+            )}
             data-testid={`preview-tab-${tab.id}`}
           >
             <tab.icon size={16} />

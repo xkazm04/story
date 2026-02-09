@@ -113,18 +113,50 @@ src/app/
 ## 📋 Features
 
 ### ✅ Implemented
+
+#### Core Features
 - **3-Panel Resizable Layout**: Adjustable workspace with left/center/right panels
-- **Character Management**:
-  - Create, view, edit, delete characters
-  - Organize by factions
-  - Filter by faction or independent
-  - Card-based grid layout
-  - Character details view
-- **Faction Support**:
-  - View factions list
-  - Filter characters by faction
+- **Character Management**: Create, view, edit, delete characters with faction organization
+- **Faction Support**: View factions list, filter characters by faction
 - **Type-Safe API Layer**: Centralized API with TypeScript
 - **Modern UI**: Clean, dark theme with smooth animations
+
+#### Simulator - "What If" Image Visualization
+The Simulator is a creative tool for generating concept art prompts and images:
+
+- **Smart Breakdown**: AI-powered parsing of creative vision into structured dimensions
+  - Enter natural language descriptions (e.g., "Baldur's Gate but in Star Wars universe")
+  - LLM extracts base format, dimensions, and output mode automatically
+
+- **Dimension System**: Remix any aspect of your base image
+  - Environment, Art Style, Characters, Mood, Action, Technology
+  - Era, Genre, Creatures, Game UI, Camera, Custom dimensions
+  - Each dimension accepts cultural references for content-swap approach
+
+- **Prompt Generation**: Creates 4-5 diverse scene prompts
+  - Cinematic Wide Shot, Hero Portrait, Action Sequence
+  - Environmental Storytelling, Dramatic Close-Up, Group Composition
+  - Output modes: Gameplay (with UI) or Concept Art (clean)
+
+- **Iterative Refinement**:
+  - Lock entire prompts or individual elements
+  - Preserve/Change feedback inputs processed by LLM
+  - Feedback redesigns dimensions intelligently (not just appending)
+  - Accept extracted elements to refine dimensions
+
+- **Image Management**:
+  - Left/Right saved image panels (5 slots each)
+  - localStorage persistence across sessions
+  - Lock prompts to auto-save placeholder images
+
+- **Gemini Image Regeneration**:
+  - Click saved images to open regeneration modal
+  - Enter modification prompts for new versions
+  - Before/after comparison view
+  - Replace original with generated version
+  - Uses `gemini-2.5-flash-preview-05-20` model
+
+- **Debug Logging**: Writes to `/log/simulator-debug.txt` for iteration analysis
 
 ### 🚧 Planned Features
 - Character appearance editor
@@ -136,6 +168,7 @@ src/app/
 - Avatar upload/generation
 - Authentication (Clerk integration)
 - Real-time collaboration (SSE)
+- Leonardo AI integration for actual image generation
 
 ## 🔧 Development
 

@@ -5,6 +5,7 @@ import { motion, AnimatePresence, Variants } from "framer-motion";
 import { ImagePlus, X, Sparkles } from "lucide-react";
 import NextImage from "next/image";
 import { useRef, useState, DragEvent, useEffect } from "react";
+import { cn } from '@/app/lib/utils';
 
 const dropzoneVariants: Variants = {
   initial: { opacity: 0 },
@@ -156,9 +157,10 @@ function DropzoneEmpty({
       initial="initial"
       animate="animate"
       exit="exit"
-      className={`absolute min-h-[250px] inset-0 border-2 border-dashed rounded-lg p-6 cursor-pointer flex flex-col items-center justify-center transition-colors
-        ${isDragActive ? 'border-purple-500 bg-purple-500/10' : 'border-gray-700 hover:border-gray-600'}
-      `}
+      className={cn(
+        'absolute min-h-[250px] inset-0 border-2 border-dashed rounded-lg p-6 cursor-pointer flex flex-col items-center justify-center transition-colors',
+        isDragActive ? 'border-purple-500 bg-purple-500/10' : 'border-gray-700 hover:border-gray-600'
+      )}
       onClick={() => fileInputRef.current?.click()}
       onDrop={onDrop}
       onDragOver={onDragOver}

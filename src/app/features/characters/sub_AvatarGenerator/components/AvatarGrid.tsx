@@ -9,6 +9,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, User } from 'lucide-react';
 import { GeneratedAvatar } from '../../hooks/useAvatarGenerator';
+import { cn } from '@/app/lib/utils';
 
 interface AvatarGridProps {
   avatars: GeneratedAvatar[];
@@ -98,12 +99,12 @@ const AvatarGrid: React.FC<AvatarGridProps> = ({
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ delay: index * 0.1 }}
                 onClick={() => onSelectAvatar(avatar)}
-                className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all duration-200
-                  ${isSelected
+                className={cn(
+                  'relative aspect-square rounded-lg overflow-hidden border-2 transition-all duration-200',
+                  isSelected
                     ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)]'
                     : 'border-slate-700/50 hover:border-slate-600'
-                  }
-                `}
+                )}
               >
                 <img
                   src={avatar.url}
@@ -130,7 +131,7 @@ const AvatarGrid: React.FC<AvatarGridProps> = ({
                 </div>
 
                 {/* Hover overlay */}
-                <div className={`absolute inset-0 bg-cyan-500/10 opacity-0 hover:opacity-100 transition-opacity ${isSelected ? 'opacity-100' : ''}`} />
+                <div className={cn('absolute inset-0 bg-cyan-500/10 opacity-0 hover:opacity-100 transition-opacity', isSelected && 'opacity-100')} />
               </motion.button>
             );
           })}

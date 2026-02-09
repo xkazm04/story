@@ -1,21 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { sceneApi } from '@/app/hooks/integration/useScenes';
 import { SmartGenerateButton } from '@/app/components/UI/SmartGenerateButton';
-import { useLLM } from '@/app/hooks/useLLM';
-import {
-    smartSceneGenerationPrompt,
-    generateDialoguePrompt,
-    generateOverviewPrompt,
-    gatherProjectContext,
-    gatherStoryContext,
-    gatherSceneContext,
-    gatherSceneCharacters
-} from '@/prompts';
 import { ScriptQuickActions } from './ScriptQuickActions';
 import { DialogueViewer } from './DialogueViewer';
+import { useScriptGeneration } from './useScriptGeneration';
 
 const ScriptEditor = () => {
     const { selectedScene, selectedProject, selectedAct } = useProjectStore();
@@ -24,169 +14,30 @@ const ScriptEditor = () => {
         selectedAct?.id || '',
         !!selectedProject && !!selectedAct
     );
-    const [script, setScript] = useState(selectedScene?.script || '');
-    const [overview, setOverview] = useState('');
-    const [dialogueLines, setDialogueLines] = useState<any[]>([]);
-    const [error, setError] = useState('');
-    const [isGeneratingDialogue, setIsGeneratingDialogue] = useState(false);
-    const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
 
-    const { generateFromTemplate, isLoading: isGenerating } = useLLM();
+    const {
+        script,
+        setScript,
+        overview,
+        dialogueLines,
+        error,
+        isGenerating,
+        isGeneratingDialogue,
+        isGeneratingDescription,
+        handleSmartGenerate,
+        handleGenerateDialogue,
+        handleAddDescription,
+        handleFormat,
+        handleExport,
+    } = useScriptGeneration({
+        selectedScene,
+        selectedProjectId: selectedProject?.id,
+        scenes,
+    });
 
     const handleSave = () => {
         // TODO: Implement save functionality
         console.log('Saving script:', script);
-    };
-
-    const handleSmartGenerate = async () => {
-        if (!selectedScene || !selectedProject) {
-            setError('No scene or project selected');
-            return;
-        }
-
-        setError('');
-
-        try {
-            // Gather rich context
-            const [projectCtx, storyCtx, sceneCtx, characters] = await Promise.all([
-                gatherProjectContext(selectedProject.id),
-                gatherStoryContext(selectedProject.id),
-                gatherSceneContext(selectedScene.id),
-                gatherSceneCharacters(selectedScene.id)
-            ]);
-
-            // Find previous scene for continuity
-            const currentSceneIndex = scenes.findIndex(s => s.id === selectedScene.id);
-            const previousScene = currentSceneIndex > 0 ? scenes[currentSceneIndex - 1] : undefined;
-            const nextScene = currentSceneIndex < scenes.length - 1 ? scenes[currentSceneIndex + 1] : undefined;
-
-            // Generate scene script
-            const response = await generateFromTemplate(smartSceneGenerationPrompt, {
-                sceneTitle: selectedScene.name || 'Untitled Scene',
-                sceneLocation: selectedScene.location,
-                projectContext: projectCtx,
-                storyContext: storyCtx,
-                sceneContext: {
-                    ...sceneCtx,
-                    previousScene: previousScene ? {
-                        title: previousScene.name,
-                        description: previousScene.description
-                    } : undefined,
-                    nextScene: nextScene ? {
-                        title: nextScene.name,
-                        description: nextScene.description
-                    } : undefined
-                },
-                characters: characters
-            });
-
-            if (response?.content) {
-                // Clean up the response
-                let generatedScript = response.content
-                    .replace(/\*\*/g, '')
-                    .replace(/^#+\s/gm, '')
-                    .trim();
-
-                setScript(generatedScript);
-            }
-        } catch (err) {
-            setError('Failed to generate scene script');
-            console.error('Error generating scene:', err);
-        }
-    };
-
-    const handleGenerateDialogue = async () => {
-        if (!script) {
-            setError('Please write or generate a script first.');
-            return;
-        }
-
-        setIsGeneratingDialogue(true);
-        setError('');
-
-        try {
-            const characters = await gatherSceneCharacters(selectedScene?.id || '');
-
-            const response = await generateFromTemplate(generateDialoguePrompt, {
-                sceneTitle: selectedScene?.name || 'Untitled',
-                sceneDescription: selectedScene?.description || '',
-                script: script,
-                characters: characters
-            });
-
-            if (response?.content) {
-                try {
-                    // Attempt to parse JSON from the response
-                    const jsonMatch = response.content.match(/\{[\s\S]*\}/);
-                    if (jsonMatch) {
-                        const parsed = JSON.parse(jsonMatch[0]);
-                        if (parsed.lines && Array.isArray(parsed.lines)) {
-                            setDialogueLines(parsed.lines);
-                        }
-                    } else {
-                        setError('Failed to parse dialogue format.');
-                    }
-                } catch (e) {
-                    setError('Failed to parse dialogue JSON.');
-                }
-            }
-        } catch (err) {
-            setError('Failed to generate dialogue.');
-            console.error(err);
-        } finally {
-            setIsGeneratingDialogue(false);
-        }
-    };
-
-    const handleAddDescription = async () => {
-        if (!script) {
-            setError('Please write or generate a script first.');
-            return;
-        }
-
-        setIsGeneratingDescription(true);
-        setError('');
-
-        try {
-            const response = await generateFromTemplate(generateOverviewPrompt, {
-                sceneTitle: selectedScene?.name || 'Untitled',
-                script: script
-            });
-
-            if (response?.content) {
-                setOverview(response.content);
-            }
-        } catch (err) {
-            setError('Failed to generate description.');
-            console.error(err);
-        } finally {
-            setIsGeneratingDescription(false);
-        }
-    };
-
-    const handleFormat = () => {
-        // Simple formatting for now - could be enhanced
-        setScript(prev => prev.replace(/\n{3,}/g, '\n\n').trim());
-    };
-
-    const handleExport = () => {
-        const data = {
-            scene: selectedScene?.name,
-            description: selectedScene?.description,
-            script: script,
-            overview: overview,
-            dialogue: dialogueLines
-        };
-
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `scene-${selectedScene?.id || 'export'}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
     };
 
     if (!selectedScene) {
@@ -265,5 +116,3 @@ const ScriptEditor = () => {
 };
 
 export default ScriptEditor;
-
-

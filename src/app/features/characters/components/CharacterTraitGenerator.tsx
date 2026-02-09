@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Loader2, Plus, Brain, ChevronDown, ChevronUp } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { useLLM } from '@/app/hooks/useLLM';
 import { characterTraitPrompt } from '@/prompts';
-import { cn } from '@/app/lib/utils';
 import type { PsychologyProfile } from '@/lib/psychology/PsychologyEngine';
 
 interface CharacterTraitGeneratorProps {
@@ -108,14 +108,12 @@ const CharacterTraitGenerator: React.FC<CharacterTraitGeneratorProps> = ({
         disabled={isLoading}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className={`
-          w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
-          transition-colors duration-200
-          ${isLoading
+        className={cn(
+          'w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200',
+          isLoading
             ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
             : 'bg-blue-600 hover:bg-blue-700 text-white'
-          }
-        `}
+        )}
       >
         {isLoading ? (
           <>

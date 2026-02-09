@@ -3,22 +3,16 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Edit, Trash2, Users, Save, X } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { Faction } from '@/app/types/Faction';
 import { Character } from '@/app/types/Character';
 import { factionApi } from '@/app/api/factions';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
-import FactionMediaGallery from './FactionMediaGallery';
 import MediaUploadForm from './MediaUploadForm';
-import FactionBrandingPanel from './FactionBrandingPanel';
-import FactionLoreGallery from './FactionLoreGallery';
-import SemanticSearchPanel from './SemanticSearchPanel';
 import RoleRankEditor from './RoleRankEditor';
 import FactionTabNav, { FactionTabType } from './FactionTabNav';
-import FactionMembersList from './FactionMembersList';
-import AllianceNetworkGraph from './AllianceNetworkGraph';
-import InfluenceTracker from './InfluenceTracker';
-import DiplomacyPanel from './DiplomacyPanel';
+import FactionDetailsTabContent from './FactionDetailsTabContent';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   FactionPolitics,
@@ -384,11 +378,11 @@ const FactionDetails: React.FC<FactionDetailsProps> = ({
                         key={presetColor}
                         type="button"
                         onClick={() => setColor(presetColor)}
-                        className={`w-8 h-8 rounded-lg transition-all ${
+                        className={cn('w-8 h-8 rounded-lg transition-all',
                           color === presetColor
                             ? 'ring-2 ring-white scale-110'
                             : 'hover:scale-105'
-                        }`}
+                        )}
                         style={{ backgroundColor: presetColor }}
                       />
                     ))}
@@ -421,186 +415,33 @@ const FactionDetails: React.FC<FactionDetailsProps> = ({
       />
 
       {/* Tab Content */}
-      <AnimatePresence mode="wait">
-        {activeTab === 'info' && (
-          <motion.div
-            key="info"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
-              <ColoredBorder color="blue" />
-              <h3 className="text-lg font-semibold text-white mb-4">
-                Faction Information
-              </h3>
-              <div className="space-y-4 text-gray-300">
-                <div>
-                  <span className="font-medium text-gray-400">Name:</span> {faction.name}
-                </div>
-                {faction.description && (
-                  <div>
-                    <span className="font-medium text-gray-400">Description:</span>
-                    <p className="mt-1">{faction.description}</p>
-                  </div>
-                )}
-                <div>
-                  <span className="font-medium text-gray-400">Members:</span> {factionMembers.length}
-                </div>
-                <div>
-                  <span className="font-medium text-gray-400">Media:</span> {factionMedia.length} items
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {activeTab === 'members' && (
-          <FactionMembersList
-            members={factionMembers}
-            isLeader={isLeader}
-            onEditCharacter={setEditingCharacter}
-          />
-        )}
-
-        {activeTab === 'media' && (
-          <motion.div
-            key="media"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
-              <ColoredBorder color="purple" />
-              <FactionMediaGallery
-                media={factionMedia}
-                factionId={faction.id}
-                isLeader={isLeader}
-                onUploadClick={() => setShowUploadForm(true)}
-                onDeleteMedia={handleMediaDelete}
-              />
-            </div>
-          </motion.div>
-        )}
-
-        {activeTab === 'branding' && isLeader && (
-          <motion.div
-            key="branding"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
-              <ColoredBorder color="orange" />
-              <FactionBrandingPanel
-                faction={faction}
-                onUpdate={onUpdate}
-              />
-            </div>
-          </motion.div>
-        )}
-
-        {activeTab === 'history' && (
-          <motion.div
-            key="history"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
-              <ColoredBorder color="purple" />
-              <FactionLoreGallery
-                faction={faction}
-                characters={factionMembers}
-                isLeader={isLeader}
-              />
-            </div>
-          </motion.div>
-        )}
-
-        {activeTab === 'politics' && (
-          <motion.div
-            key="politics"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="relative bg-gray-900 rounded-lg border border-gray-800 p-6">
-              <ColoredBorder color="blue" />
-              <AllianceNetworkGraph
-                factions={allFactions.length > 0 ? allFactions : [faction]}
-                politics={politicsMap}
-                relationships={politicalRelationships}
-                influences={influencesMap}
-                selectedFactionId={faction.id}
-                onFactionSelect={(id) => console.log('Selected faction:', id)}
-              />
-            </div>
-          </motion.div>
-        )}
-
-        {activeTab === 'influence' && (
-          <motion.div
-            key="influence"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.2 }}
-          >
-            <InfluenceTracker
-              faction={faction}
-              influence={factionInfluence}
-              allInfluences={allInfluences}
-              onInfluenceChange={handleInfluenceChange}
-              onAddTerritory={handleAddTerritory}
-              onRemoveTerritory={handleRemoveTerritory}
-            />
-          </motion.div>
-        )}
-
-        {activeTab === 'diplomacy' && (
-          <motion.div
-            key="diplomacy"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.2 }}
-          >
-            <DiplomacyPanel
-              faction={faction}
-              factionPolitics={factionPolitics}
-              relationships={politicalRelationships}
-              allFactions={allFactions}
-              onUpdatePolitics={handleUpdatePolitics}
-              onAddGoal={handleAddGoal}
-              onRemoveGoal={handleRemoveGoal}
-              onAddSecret={handleAddSecret}
-              onRevealSecret={handleRevealSecret}
-              onExecuteAction={handleExecuteDiplomaticAction}
-            />
-          </motion.div>
-        )}
-
-        {activeTab === 'search' && (
-          <motion.div
-            key="search"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.2 }}
-          >
-            <SemanticSearchPanel
-              factionId={faction.id}
-              factionName={faction.name}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <FactionDetailsTabContent
+        activeTab={activeTab}
+        faction={faction}
+        factionMembers={factionMembers}
+        factionMedia={factionMedia}
+        isLeader={isLeader}
+        onUploadClick={() => setShowUploadForm(true)}
+        onDeleteMedia={handleMediaDelete}
+        onUpdate={onUpdate}
+        onEditCharacter={setEditingCharacter}
+        allFactions={allFactions}
+        politicsMap={politicsMap}
+        politicalRelationships={politicalRelationships}
+        influencesMap={influencesMap}
+        factionInfluence={factionInfluence}
+        allInfluences={allInfluences}
+        factionPolitics={factionPolitics}
+        onInfluenceChange={handleInfluenceChange}
+        onAddTerritory={handleAddTerritory}
+        onRemoveTerritory={handleRemoveTerritory}
+        onUpdatePolitics={handleUpdatePolitics}
+        onAddGoal={handleAddGoal}
+        onRemoveGoal={handleRemoveGoal}
+        onAddSecret={handleAddSecret}
+        onRevealSecret={handleRevealSecret}
+        onExecuteAction={handleExecuteDiplomaticAction}
+      />
 
       {/* Media Upload Modal */}
       <AnimatePresence>

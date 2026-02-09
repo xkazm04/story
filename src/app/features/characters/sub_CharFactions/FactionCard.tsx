@@ -8,6 +8,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Users, Eye } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { Faction } from '@/app/types/Faction';
 import { characterApi } from '@/app/api/characters';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
@@ -38,12 +39,11 @@ const FactionCard: React.FC<FactionCardProps> = ({ faction, onSelect, isNew = fa
       whileHover={{ y: -4 }}
       whileTap={{ scale: 0.98 }}
       onClick={() => onSelect(faction)}
-      className={`relative group cursor-pointer rounded-lg border overflow-hidden transition-all duration-200
-        bg-slate-900/80 backdrop-blur-sm hover:bg-slate-800/80
-        ${isNew
+      className={cn('relative group cursor-pointer rounded-lg border overflow-hidden transition-all duration-200 bg-slate-900/80 backdrop-blur-sm hover:bg-slate-800/80',
+        isNew
           ? 'border-cyan-500/50 shadow-[0_0_20px_rgba(6,182,212,0.2)]'
           : 'border-slate-700/50 hover:border-slate-600'
-        }`}
+      )}
       style={{
         borderColor: primaryColor && !isNew ? `${primaryColor}40` : undefined,
       }}

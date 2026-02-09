@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { motion } from 'framer-motion';
 import { Trash2 } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { sceneApi } from '@/app/hooks/integration/useScenes';
 import { Scene } from '@/app/types/Scene';
@@ -111,11 +112,13 @@ const ScenesList: React.FC = () => {
                     {...provided.dragHandleProps}
                   >
                     <motion.div
-                      className={`flex justify-between items-center px-4 py-2 mx-2 rounded-lg cursor-pointer transition-all ${
+                      className={cn(
+                        'flex justify-between items-center px-4 py-2 mx-2 rounded-lg cursor-pointer transition-all',
                         selectedSceneId === scene.id
                           ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg'
-                          : 'bg-gray-800 text-gray-200 hover:bg-gray-700'
-                      } ${snapshot.isDragging ? 'shadow-2xl scale-105 opacity-80' : ''}`}
+                          : 'bg-gray-800 text-gray-200 hover:bg-gray-700',
+                        snapshot.isDragging && 'shadow-2xl scale-105 opacity-80'
+                      )}
                       onContextMenu={(e) => {
                         e.preventDefault();
                         handleRename(scene);

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Trash2, Calendar, Heart, HeartCrack, Minus, Zap } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { Character, CharRelationship } from '@/app/types/Character';
 import { relationshipApi } from '@/app/api/relationships';
 
@@ -65,9 +66,11 @@ const RelationshipCard: React.FC<RelationshipCardProps> = ({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className={`relative group p-4 rounded-lg border transition-all ${getRelationshipColor(
-        relationship.relationship_type
-      )} ${isDeleting ? 'opacity-50' : ''}`}
+      className={cn(
+        'relative group p-4 rounded-lg border transition-all',
+        getRelationshipColor(relationship.relationship_type),
+        isDeleting && 'opacity-50'
+      )}
     >
       {/* Character Name with Icon */}
       <div className="flex items-center justify-between mb-3">

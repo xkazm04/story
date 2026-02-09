@@ -1,7 +1,3 @@
-/**
- * Constants barrel export
- */
-
 export * from './categories';
 export * from './options';
 
@@ -21,17 +17,17 @@ export const COLOR_PALETTE = [
   { id: 12, type: 'conic' as const, value: 'conic-gradient(from 180deg, red, yellow, lime, cyan, blue, magenta, red)', name: 'Spectrum' },
 ];
 
-// Presets
+// Presets (icon values are registry keys)
 export const PRESETS = [
-  { id: 1, name: 'Warrior', gradient: 'from-amber-900 to-amber-700', icon: '⚔️' },
-  { id: 2, name: 'Mage', gradient: 'from-violet-900 to-violet-700', icon: '🔮' },
-  { id: 3, name: 'Ranger', gradient: 'from-emerald-900 to-emerald-700', icon: '🏹' },
-  { id: 4, name: 'Rogue', gradient: 'from-rose-900 to-rose-700', icon: '🗡️' },
-  { id: 5, name: 'Cleric', gradient: 'from-cyan-900 to-cyan-700', icon: '✨' },
-  { id: 6, name: 'Bard', gradient: 'from-orange-900 to-orange-700', icon: '🎭' },
-  { id: 7, name: 'Paladin', gradient: 'from-yellow-900 to-yellow-700', icon: '🛡️' },
-  { id: 8, name: 'Warlock', gradient: 'from-purple-900 to-purple-800', icon: '👁️' },
-  { id: 9, name: 'Monk', gradient: 'from-teal-900 to-teal-700', icon: '☯️' },
+  { id: 1, name: 'Warrior', gradient: 'from-amber-900 to-amber-700', icon: 'preset-warrior' },
+  { id: 2, name: 'Mage', gradient: 'from-violet-900 to-violet-700', icon: 'preset-mage' },
+  { id: 3, name: 'Ranger', gradient: 'from-emerald-900 to-emerald-700', icon: 'preset-ranger' },
+  { id: 4, name: 'Rogue', gradient: 'from-rose-900 to-rose-700', icon: 'preset-rogue' },
+  { id: 5, name: 'Cleric', gradient: 'from-cyan-900 to-cyan-700', icon: 'preset-cleric' },
+  { id: 6, name: 'Bard', gradient: 'from-orange-900 to-orange-700', icon: 'preset-bard' },
+  { id: 7, name: 'Paladin', gradient: 'from-yellow-900 to-yellow-700', icon: 'preset-paladin' },
+  { id: 8, name: 'Warlock', gradient: 'from-purple-900 to-purple-800', icon: 'preset-warlock' },
+  { id: 9, name: 'Monk', gradient: 'from-teal-900 to-teal-700', icon: 'preset-monk' },
 ];
 
 // Generation steps

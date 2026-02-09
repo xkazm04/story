@@ -9,6 +9,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Trash2 } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { Character } from '@/app/types/Character';
 import { useCharacterStore } from '@/app/store/slices/characterSlice';
 import { characterApi } from '@/app/api/characters';
@@ -70,13 +71,15 @@ const CharacterCard: React.FC<CharacterCardProps> = ({ character }) => {
         }
       }}
       data-testid={`character-card-${character.id}`}
-      className={`relative group cursor-pointer rounded-lg overflow-hidden transition-all duration-200
-        border backdrop-blur-sm
-        focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:ring-offset-2 focus:ring-offset-slate-950
-        ${isSelected
+      className={cn(
+        'relative group cursor-pointer rounded-lg overflow-hidden transition-all duration-200',
+        'border backdrop-blur-sm',
+        'focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:ring-offset-2 focus:ring-offset-slate-950',
+        isSelected
           ? 'border-cyan-500/50 bg-cyan-500/10 shadow-[0_0_20px_rgba(6,182,212,0.25)]'
-          : 'border-slate-700/50 bg-slate-900/80 hover:border-slate-600 hover:bg-slate-800/80'
-        } ${isDeleting ? 'pointer-events-none' : ''}`}
+          : 'border-slate-700/50 bg-slate-900/80 hover:border-slate-600 hover:bg-slate-800/80',
+        isDeleting && 'pointer-events-none'
+      )}
     >
       {/* Deleting overlay */}
       {isDeleting && (

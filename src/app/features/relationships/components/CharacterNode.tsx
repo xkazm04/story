@@ -3,6 +3,7 @@
 import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { User } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
 import { CharacterNodeData } from '../types';
 
 const CharacterNode = memo(({ data, selected }: NodeProps<CharacterNodeData>) => {
@@ -10,15 +11,12 @@ const CharacterNode = memo(({ data, selected }: NodeProps<CharacterNodeData>) =>
 
   return (
     <div
-      className={`
-        relative bg-gradient-to-br from-blue-500/20 to-purple-500/20
-        backdrop-blur-sm border-2 rounded-xl p-4 min-w-[180px] max-w-[200px]
-        transition-all duration-300 shadow-lg
-        ${selected
+      className={cn(
+        'relative bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-sm border-2 rounded-xl p-4 min-w-[180px] max-w-[200px] transition-all duration-300 shadow-lg',
+        selected
           ? 'border-blue-400 shadow-blue-400/50 shadow-2xl scale-105'
           : 'border-blue-500/50 hover:border-blue-400 hover:shadow-xl hover:scale-102'
-        }
-      `}
+      )}
       style={{
         animation: selected ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none'
       }}
