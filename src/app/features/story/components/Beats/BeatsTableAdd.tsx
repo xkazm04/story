@@ -11,7 +11,8 @@ import { RecommendationResponse } from "@/app/types/Recommendation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCharacters } from "@/app/hooks/useCharacters";
 import { SmartNameInput } from "@/app/components/UI/SmartNameInput";
-import { NameSuggestion } from "@/app/api/name-suggestions/route";
+import { NameSuggestion } from "@/app/types/NameSuggestion";
+import InlineTerminal from "@/app/components/cli/InlineTerminal";
 
 type Props = {
     refetch: () => void;
@@ -26,7 +27,7 @@ const BeatsTableAdd = ({ refetch, onRecommendationsReceived }: Props) => {
     const [beatType, setBeatType] = useState<"act" | "story">('story');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const { generateRecommendations, isGenerating } = useActRecommendations();
+    const { generateRecommendations, isGenerating, handleInsertResult, terminalProps } = useActRecommendations(selectedProject?.id || '');
 
     // Fetch all acts and scenes for context
     const { data: allActs } = actApi.useProjectActs(selectedProject?.id || '', !!selectedProject);
@@ -63,6 +64,13 @@ const BeatsTableAdd = ({ refetch, onRecommendationsReceived }: Props) => {
         setBeatDescription(suggestion.description);
     };
 
+    const handleRecommendationInsert = (text: string) => {
+        const result = handleInsertResult(text);
+        if (result && onRecommendationsReceived) {
+            onRecommendationsReceived(result);
+        }
+    };
+
     const saveNewBeat = async () => {
         if (!beatName || !selectedProject) return;
 
@@ -88,11 +96,10 @@ const BeatsTableAdd = ({ refetch, onRecommendationsReceived }: Props) => {
                 };
 
                 // Generate recommendations for Act beats
-                if (allActs && selectedAct && onRecommendationsReceived) {
+                if (allActs && selectedAct) {
                     const targetAct = allActs.find(a => a.id === selectedAct.id);
 
                     if (targetAct) {
-                        // Gather context for recommendations
                         const existingActBeats: Record<string, any[]> = {};
                         allActs.forEach(act => {
                             existingActBeats[act.id] = allBeats?.filter(b => b.act_id === act.id && b.type === 'act') || [];
@@ -100,7 +107,7 @@ const BeatsTableAdd = ({ refetch, onRecommendationsReceived }: Props) => {
 
                         const storyBeats = allBeats?.filter(b => b.type === 'story') || [];
 
-                        const recommendations = await generateRecommendations({
+                        generateRecommendations({
                             newBeat: {
                                 name: beatName,
                                 description: beatDescription,
@@ -131,10 +138,6 @@ const BeatsTableAdd = ({ refetch, onRecommendationsReceived }: Props) => {
                                 act_id: s.act_id
                             }))
                         });
-
-                        if (recommendations) {
-                            onRecommendationsReceived(recommendations);
-                        }
                     }
                 }
             } else {
@@ -235,6 +238,12 @@ const BeatsTableAdd = ({ refetch, onRecommendationsReceived }: Props) => {
                             disabled={loading}
                         />
                         {error && <p className="text-red-400 text-xs">{error}</p>}
+                        <InlineTerminal
+                            {...terminalProps}
+                            height={120}
+                            collapsible
+                            onInsert={handleRecommendationInsert}
+                        />
                     </motion.div>
                 )}
             </AnimatePresence>

@@ -14,6 +14,7 @@ import { actApi } from "@/app/hooks/integration/useActs";
 import { sceneApi } from "@/app/hooks/integration/useScenes";
 import { characterApi } from "@/app/hooks/integration/useCharacters";
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/app/components/UI';
 import {
     FileText,
     Film,
@@ -832,12 +833,11 @@ const StoryScript = () => {
 
     if (!selectedProject) {
         return (
-            <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                    <FileText className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                    <p className="text-slate-400">Select a project to view story script</p>
-                </div>
-            </div>
+            <EmptyState
+                icon={<FileText />}
+                title="Select a project to view story script"
+                variant="centered"
+            />
         );
     }
 
@@ -1012,13 +1012,11 @@ const StoryScript = () => {
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="py-16 text-center">
-                                            <Film className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-                                            <p className="text-sm text-slate-400">No scenes available</p>
-                                            <p className="text-xs text-slate-500 mt-1">
-                                                Create acts and scenes to start writing your script
-                                            </p>
-                                        </div>
+                                        <EmptyState
+                                            icon={<Film />}
+                                            title="No scenes available"
+                                            subtitle="Create acts and scenes to start writing your script"
+                                        />
                                     )}
                                 </div>
                             </div>

@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useDatasetsByProject, useCreateDataset, useDeleteDataset } from '@/app/hooks/useDatasets';
 import { Plus, Loader2, FolderOpen, Trash2 } from 'lucide-react';
 import ImageDatasetGallery from './ImageDatasetGallery';
+import DatasetSketchWizard from './DatasetSketchWizard';
+import { Dataset } from '@/app/types/Dataset';
 
 interface ImageDatasetsProps {
   projectId: string;
@@ -13,6 +15,7 @@ interface ImageDatasetsProps {
 const ImageDatasets = ({ projectId }: ImageDatasetsProps) => {
   const [newDatasetName, setNewDatasetName] = useState('');
   const [selectedDatasetId, setSelectedDatasetId] = useState<string | null>(null);
+  const [sketchDataset, setSketchDataset] = useState<Dataset | null>(null);
   const { data: datasets, isLoading } = useDatasetsByProject(projectId);
   const { mutate: createDataset, isPending: isCreating } = useCreateDataset();
   const { mutate: deleteDataset } = useDeleteDataset();
@@ -27,8 +30,9 @@ const ImageDatasets = ({ projectId }: ImageDatasetsProps) => {
         type: 'image',
       },
       {
-        onSuccess: () => {
+        onSuccess: (dataset) => {
           setNewDatasetName('');
+          setSketchDataset(dataset);
         },
       }
     );
@@ -165,8 +169,21 @@ const ImageDatasets = ({ projectId }: ImageDatasetsProps) => {
             exit={{ opacity: 0, y: -20 }}
             className="border-t border-gray-800 pt-6"
           >
-            <ImageDatasetGallery dataset={selectedDataset} />
+            <ImageDatasetGallery
+              dataset={selectedDataset}
+              onOpenSketchWizard={() => setSketchDataset(selectedDataset)}
+            />
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sketch Wizard Modal */}
+      <AnimatePresence>
+        {sketchDataset && (
+          <DatasetSketchWizard
+            dataset={sketchDataset}
+            onClose={() => setSketchDataset(null)}
+          />
         )}
       </AnimatePresence>
     </div>

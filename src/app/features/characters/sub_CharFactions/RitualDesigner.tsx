@@ -29,7 +29,9 @@ import {
   RITUAL_FREQUENCY_CONFIG,
   generateRitualId,
 } from '@/lib/culture/CultureGenerator';
-import { useLLM } from '@/app/hooks/useLLM';
+import { useCLIFeature } from '@/app/hooks/useCLIFeature';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
+import InlineTerminal from '@/app/components/cli/InlineTerminal';
 
 // ============================================================================
 // Types
@@ -673,7 +675,13 @@ const RitualDesigner: React.FC<RitualDesignerProps> = ({
   onRitualsChange,
   readOnly = false,
 }) => {
-  const { generateFromTemplate, isLoading } = useLLM();
+  const { selectedProject } = useProjectStore();
+  const cli = useCLIFeature({
+    featureId: 'faction-rituals',
+    projectId: selectedProject?.id || '',
+    projectPath: typeof window !== 'undefined' ? window.location.origin : '',
+    defaultSkills: ['faction-lore'],
+  });
   const [editingRitual, setEditingRitual] = useState<Ritual | null>(null);
   const [isNewRitual, setIsNewRitual] = useState(false);
   const [frequencyFilter, setFrequencyFilter] = useState<RitualFrequency | 'all'>('all');
@@ -727,45 +735,59 @@ const RitualDesigner: React.FC<RitualDesignerProps> = ({
     onRitualsChange(rituals.filter((r) => r.id !== ritualId));
   };
 
-  const handleGenerateRitual = async (frequency: RitualFrequency) => {
+  const handleGenerateRitual = (frequency: RitualFrequency) => {
     setGeneratingFrequency(frequency);
-    try {
-      const existingRituals = rituals.map((r) => r.name);
-      const result = await generateFromTemplate(RITUAL_GENERATION_PROMPT, {
-        factionName,
-        frequency,
-        existingRituals,
-        values: valueNames,
-      });
+    const existingRituals = rituals.map((r) => r.name);
 
-      if (result?.content) {
-        try {
-          const jsonMatch = result.content.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const parsed = JSON.parse(jsonMatch[0]);
-            const newRitual: Ritual = {
-              id: generateRitualId(),
-              name: parsed.name || 'Generated Ritual',
-              description: parsed.description || '',
-              frequency,
-              purpose: parsed.purpose || '',
-              participants: parsed.participants || '',
-              location: parsed.location,
-              duration: parsed.duration,
-              required_items: parsed.required_items || [],
-              steps: parsed.steps || [],
-              significance: parsed.significance || '',
-              origin_story: parsed.origin_story,
-              related_values: [],
-            };
-            onRitualsChange([...rituals, newRitual]);
-          }
-        } catch (parseError) {
-          console.error('Failed to parse generated ritual:', parseError);
-        }
+    let prompt = `Create a ${frequency} ritual for the faction "${factionName}".\n\n`;
+    if (valueNames.length > 0) {
+      prompt += `Faction values: ${valueNames.join(', ')}\n`;
+    }
+    if (existingRituals.length > 0) {
+      prompt += `Existing rituals: ${existingRituals.join(', ')}\nCreate something different from these.\n\n`;
+    }
+    prompt += `Return ONLY a JSON object with this structure:
+{
+  "name": "Ritual name (evocative, 2-4 words)",
+  "description": "Brief overview of the ritual",
+  "purpose": "What this ritual accomplishes spiritually/socially",
+  "participants": "Who takes part (all members, leaders only, initiates, etc.)",
+  "location": "Where it typically occurs",
+  "duration": "How long it takes",
+  "required_items": ["List of items needed"],
+  "steps": ["Step 1", "Step 2", "..."],
+  "significance": "Deeper meaning and importance",
+  "origin_story": "Legend or history behind this ritual"
+}`;
+
+    cli.executePrompt(prompt, `Generate ${frequency} Ritual`);
+  };
+
+  const handleInsertRitual = (text: string) => {
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        const frequency = generatingFrequency || 'annual';
+        const newRitual: Ritual = {
+          id: generateRitualId(),
+          name: parsed.name || 'Generated Ritual',
+          description: parsed.description || '',
+          frequency,
+          purpose: parsed.purpose || '',
+          participants: parsed.participants || '',
+          location: parsed.location,
+          duration: parsed.duration,
+          required_items: parsed.required_items || [],
+          steps: parsed.steps || [],
+          significance: parsed.significance || '',
+          origin_story: parsed.origin_story,
+          related_values: [],
+        };
+        onRitualsChange([...rituals, newRitual]);
       }
-    } catch (error) {
-      console.error('Failed to generate ritual:', error);
+    } catch (parseError) {
+      console.error('Failed to parse generated ritual:', parseError);
     } finally {
       setGeneratingFrequency(null);
     }
@@ -876,7 +898,7 @@ const RitualDesigner: React.FC<RitualDesignerProps> = ({
                 <button
                   key={freq}
                   onClick={() => handleGenerateRitual(freq)}
-                  disabled={isLoading || generatingFrequency !== null}
+                  disabled={cli.isRunning || generatingFrequency !== null}
                   className={cn(
                     'flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50',
                     FREQUENCY_COLORS[freq]
@@ -894,6 +916,14 @@ const RitualDesigner: React.FC<RitualDesignerProps> = ({
           </div>
         </div>
       )}
+
+      {/* CLI Terminal for AI generation */}
+      <InlineTerminal
+        {...cli.terminalProps}
+        height={120}
+        collapsible
+        onInsert={handleInsertRitual}
+      />
 
       {/* Ritual Editor Modal */}
       <AnimatePresence>

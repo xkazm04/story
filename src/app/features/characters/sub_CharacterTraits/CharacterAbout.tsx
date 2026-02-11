@@ -17,6 +17,7 @@ import { useCharacters } from '@/app/hooks/useCharacters';
 import { useUnifiedTraitGeneration } from './useUnifiedTraitGeneration';
 import TraitPromptSection from './TraitPromptSection';
 import { cn } from '@/app/lib/utils';
+import InlineTerminal from '@/app/components/cli/InlineTerminal';
 
 interface CharacterAboutProps {
   characterId: string;
@@ -30,7 +31,7 @@ const CharacterAbout: React.FC<CharacterAboutProps> = ({ characterId }) => {
   const { selectedProject } = useProjectStore();
   const { data: allCharacters = [] } = useCharacters(selectedProject?.id || '');
 
-  const { generateAllTraits, isGenerating, error, saveTraits } = useUnifiedTraitGeneration(
+  const { generateAllTraits, isGenerating, error, saveTraits, handleInsertResult, terminalProps } = useUnifiedTraitGeneration(
     characterId,
     selectedProject?.id || '',
     allCharacters
@@ -44,10 +45,13 @@ const CharacterAbout: React.FC<CharacterAboutProps> = ({ characterId }) => {
     return map;
   }, [traits]);
 
-  const handleGenerateAllTraits = async () => {
+  const handleGenerateAllTraits = () => {
     setGenerateSuccess(false);
-    const result = await generateAllTraits();
+    generateAllTraits();
+  };
 
+  const handleInsertTraits = async (text: string) => {
+    const result = handleInsertResult(text);
     if (result) {
       await saveTraits(characterId, result);
       await refetch();
@@ -105,6 +109,14 @@ const CharacterAbout: React.FC<CharacterAboutProps> = ({ characterId }) => {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* CLI Terminal for unified trait generation */}
+      <InlineTerminal
+        {...terminalProps}
+        height={150}
+        collapsible
+        onInsert={handleInsertTraits}
+      />
 
       {/* Section Selector */}
       <div className="flex flex-wrap gap-1.5 p-3 bg-slate-900/50 rounded-lg border border-slate-800/50">

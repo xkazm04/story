@@ -1,9 +1,10 @@
 'use client';
 
-import { lazy, Suspense, useCallback } from "react";
+import { lazy, Suspense, useCallback, useState, useMemo } from "react";
+import { motion } from "framer-motion";
 import { useProjectStore } from "@/app/store/slices/projectSlice";
 import { useAppShellStore, StorySubtab } from "@/app/store/appShellStore";
-import TabMenu from "@/app/components/UI/TabMenu";
+import { Tabs, type TabItem } from "@/app/components/UI";
 import ActOverview from "./components/ActOverview";
 import BeatsOverview from "./components/Beats/BeatsOverview";
 import CenterStory from "./components/Setup/CenterStory";
@@ -15,6 +16,10 @@ import { SceneChoice } from "@/app/types/SceneChoice";
 
 // Phase 2 features
 import { CommandPaletteProvider, CommandPalette, useCommands } from "./sub_CommandPalette";
+
+// CLI integration
+import { useCLIFeature } from "@/app/hooks/useCLIFeature";
+import CompactTerminal from "@/app/components/cli/CompactTerminal";
 
 // Lazy load heavy components
 const SceneEditor = lazy(() => import("./sub_SceneEditor/SceneEditor"));
@@ -284,56 +289,75 @@ function CommandPaletteRegistration() {
     return null;
 }
 
+// Tab definitions sorted alphabetically by label
+const STORY_TAB_ITEMS: TabItem[] = [
+    { value: "ai-terminal", label: "AI Terminal" },
+    { value: "art-style", label: "Art Style" },
+    { value: "beats", label: "Beats" },
+    { value: "scene-editor", label: "Content" },
+    { value: "act-evaluation", label: "Evaluator" },
+    { value: "scene-graph", label: "Graph" },
+    { value: "prompt-composer", label: "Prompts" },
+    { value: "story-script", label: "Script" },
+    { value: "story-setup", label: "Setup" },
+];
+
+function StoryTerminalWrapper() {
+    const { selectedProject } = useProjectStore();
+    const projectId = selectedProject?.id || 'proj-1';
+
+    const cli = useCLIFeature({
+        featureId: 'story',
+        projectId,
+        projectPath: typeof window !== 'undefined' ? window.location.origin : '',
+        defaultSkills: [
+            'story-next-steps', 'story-write-content', 'story-architect',
+            'story-brainstorm', 'beat-suggestions', 'beat-description',
+        ],
+    });
+
+    return (
+        <div className="h-[600px]">
+            <CompactTerminal
+                {...cli.terminalProps}
+                title="Story AI Terminal"
+                className="h-full"
+            />
+        </div>
+    );
+}
+
+function StoryTabContent({ activeTab }: { activeTab: string }) {
+    return (
+        <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="h-full"
+        >
+            {activeTab === "ai-terminal" && <StoryTerminalWrapper />}
+            {activeTab === "art-style" && <ArtStyleWrapper />}
+            {activeTab === "beats" && <BeatsOverview />}
+            {activeTab === "scene-editor" && <SceneEditorWrapper />}
+            {activeTab === "act-evaluation" && <ActOverview />}
+            {activeTab === "scene-graph" && <div className="h-[600px]"><SceneGraphWrapper /></div>}
+            {activeTab === "prompt-composer" && <PromptComposerWrapper />}
+            {activeTab === "story-script" && <StoryScript />}
+            {activeTab === "story-setup" && <CenterStory />}
+        </motion.div>
+    );
+}
+
 const StoryFeature = () => {
     const { selectedProject } = useProjectStore();
     const { setStorySubtab } = useAppShellStore();
+    const [activeTab, setActiveTab] = useState("art-style");
 
     const handleTabChange = useCallback((tabId: string) => {
+        setActiveTab(tabId);
         setStorySubtab(tabId as StorySubtab);
     }, [setStorySubtab]);
-
-    const tabs = [
-        {
-            id: "art-style",
-            label: "Art Style",
-            content: <ArtStyleWrapper />
-        },
-        {
-            id: "beats",
-            label: "Beats",
-            content: <BeatsOverview />
-        },
-        {
-            id: "scene-editor",
-            label: "Content",
-            content: <SceneEditorWrapper />
-        },
-        {
-            id: "act-evaluation",
-            label: "Evaluator",
-            content: <ActOverview />
-        },
-        {
-            id: "scene-graph",
-            label: "Graph",
-            content: <div className="h-[600px]"><SceneGraphWrapper /></div>
-        },
-        {
-            id: "prompt-composer",
-            label: "Prompts",
-            content: <PromptComposerWrapper />
-        },
-        {
-            id: "story-script",
-            label: "Script",
-            content: <StoryScript />
-        },
-        {
-            id: "story-setup",
-            label: "Setup",
-            content: <CenterStory />
-        },
-    ];
 
     // Allow access even without selected project for testing
     if (!selectedProject) {
@@ -352,7 +376,14 @@ const StoryFeature = () => {
                         <div className="w-full mb-2 px-2 py-1 bg-amber-900/30 border border-amber-500/30 rounded text-xs text-amber-400 text-center">
                             Demo Mode: Using hardcoded mock data (no project selected) • Press Ctrl+K for commands
                         </div>
-                        <TabMenu tabs={tabs} onTabChange={handleTabChange} />
+                        <div className="w-full h-full flex flex-col">
+                            <div className="shrink-0">
+                                <Tabs items={STORY_TAB_ITEMS} value={activeTab} onChange={handleTabChange} variant="pills" />
+                            </div>
+                            <div className="mt-4 flex-1 min-h-0">
+                                <StoryTabContent activeTab={activeTab} />
+                            </div>
+                        </div>
                     </div>
                 </SceneEditorProvider>
             </CommandPaletteProvider>
@@ -370,7 +401,14 @@ const StoryFeature = () => {
                 <CommandPaletteRegistration />
                 <CommandPalette />
                 <div className="flex flex-col items-center h-full max-w-[2000px] w-full relative px-4 pt-3 pb-4 text-sm text-slate-200">
-                    <TabMenu tabs={tabs} onTabChange={handleTabChange} />
+                    <div className="w-full h-full flex flex-col">
+                        <div className="shrink-0">
+                            <Tabs items={STORY_TAB_ITEMS} value={activeTab} onChange={handleTabChange} variant="pills" />
+                        </div>
+                        <div className="mt-4 flex-1 min-h-0">
+                            <StoryTabContent activeTab={activeTab} />
+                        </div>
+                    </div>
                 </div>
             </SceneEditorProvider>
         </CommandPaletteProvider>

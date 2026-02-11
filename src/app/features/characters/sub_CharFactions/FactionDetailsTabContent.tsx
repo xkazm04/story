@@ -201,7 +201,7 @@ const FactionDetailsTabContent: React.FC<FactionDetailsTabContentProps> = ({
         <motion.div key="diplomacy" {...tabMotionProps}>
           <DiplomacyPanel
             faction={faction}
-            factionPolitics={factionPolitics}
+            factionPolitics={factionPolitics ?? null}
             relationships={politicalRelationships}
             allFactions={allFactions}
             onUpdatePolitics={onUpdatePolitics}

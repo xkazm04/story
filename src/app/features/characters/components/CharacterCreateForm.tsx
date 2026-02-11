@@ -9,7 +9,7 @@ import { CHARACTER_TYPES } from '@/app/store/slices/characterSlice';
 import { useOptimisticMutation } from '@/app/hooks/useOptimisticMutation';
 import { Character } from '@/app/types/Character';
 import { SmartNameInput } from '@/app/components/UI/SmartNameInput';
-import { NameSuggestion } from '@/app/api/name-suggestions/route';
+import { NameSuggestion } from '@/app/types/NameSuggestion';
 
 interface CharacterCreateFormProps {
   onClose: () => void;

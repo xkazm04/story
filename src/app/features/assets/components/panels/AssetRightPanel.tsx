@@ -29,7 +29,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { useAssetManagerStore } from '../../store/assetManagerStore';
-import { Button } from '@/app/components/UI/Button';
+import { Button, EmptyState } from '@/app/components/UI';
 import { useDeleteSafety, useReferenceCount } from '@/lib/assets';
 import UsagePanel from '../manager/UsagePanel';
 import type { Asset } from '@/app/types/Asset';
@@ -428,15 +428,12 @@ export default function AssetRightPanel() {
   // Empty state when no asset is selected
   if (!detailPanelOpen || !activeAsset) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-center p-6">
-        <div className="w-16 h-16 rounded-2xl bg-slate-900/50 border border-slate-800/70 flex items-center justify-center mb-4">
-          <ImageIcon className="w-8 h-8 text-slate-700" />
-        </div>
-        <h3 className="text-sm font-medium text-slate-400 mb-1">No Asset Selected</h3>
-        <p className="text-xs text-slate-600 max-w-[200px]">
-          Click on an asset in the grid to view its details here
-        </p>
-      </div>
+      <EmptyState
+        icon={<ImageIcon />}
+        title="No Asset Selected"
+        subtitle="Click on an asset in the grid to view its details here"
+        variant="centered"
+      />
     );
   }
 

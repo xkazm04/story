@@ -47,9 +47,9 @@ export interface UnifiedProviderConfig {
   enableMockFallback?: boolean;
 }
 
-// Default fallback chains
+// Default fallback chains (text-generation removed — handled by CLI skills)
 const DEFAULT_FALLBACKS: Record<AICapability, AIProviderType[]> = {
-  'text-generation': ['claude', 'gemini'],
+  'text-generation': [], // Deprecated: use CLI skills instead
   'vision': ['gemini'],
   'image-generation': ['leonardo'],
   'text-to-image': ['leonardo'],

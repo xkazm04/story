@@ -9,11 +9,14 @@
     "lint": "eslint",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "build:mcp": "tsc -p src/mcp-server/tsconfig.json",
+    "mcp-server": "node dist/mcp-server/index.js"
   },
   "dependencies": {
     "@google/genai": "^1.35.0",
     "@hello-pangea/dnd": "^18.0.1",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "@module-federation/nextjs-mf": "^8.8.49",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-switch": "^1.2.6",
@@ -33,7 +36,6 @@
     "dagre": "^0.8.5",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.24",
-    "groq-sdk": "^0.34.0",
     "lucide-react": "^0.548.0",
     "matter-js": "^0.20.0",
     "mongodb": "^7.0.0",

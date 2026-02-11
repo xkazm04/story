@@ -33,7 +33,9 @@ import {
   CALENDAR_EVENT_TYPES,
   generateEventId,
 } from '@/lib/culture/CultureGenerator';
-import { useLLM } from '@/app/hooks/useLLM';
+import { useCLIFeature } from '@/app/hooks/useCLIFeature';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
+import InlineTerminal from '@/app/components/cli/InlineTerminal';
 
 // ============================================================================
 // Types
@@ -669,7 +671,13 @@ const CulturalCalendar: React.FC<CulturalCalendarProps> = ({
   onCalendarChange,
   readOnly = false,
 }) => {
-  const { generateFromTemplate, isLoading } = useLLM();
+  const { selectedProject } = useProjectStore();
+  const cli = useCLIFeature({
+    featureId: 'faction-calendar',
+    projectId: selectedProject?.id || '',
+    projectPath: typeof window !== 'undefined' ? window.location.origin : '',
+    defaultSkills: ['faction-lore'],
+  });
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [isNewEvent, setIsNewEvent] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
@@ -733,47 +741,59 @@ const CulturalCalendar: React.FC<CulturalCalendarProps> = ({
     onCalendarChange({ ...calendar, ...updates });
   };
 
-  const handleGenerateEvent = async (eventType: CalendarEventType) => {
+  const handleGenerateEvent = (eventType: CalendarEventType) => {
     setGeneratingType(eventType);
-    try {
-      const existingEvents = calendar.events.map((e) => e.name);
-      const result = await generateFromTemplate(EVENT_GENERATION_PROMPT, {
-        factionName,
-        eventType,
-        existingEvents,
-      });
+    const existingEvents = calendar.events.map((e) => e.name);
 
-      if (result?.content) {
-        try {
-          const jsonMatch = result.content.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const parsed = JSON.parse(jsonMatch[0]);
-            const newEvent: CalendarEvent = {
-              id: generateEventId(),
-              name: parsed.name || 'Generated Event',
-              description: parsed.description || '',
-              date: parsed.date || '',
-              event_type: eventType,
-              duration_days: parsed.duration_days || 1,
-              activities: parsed.activities || [],
-              traditional_foods: parsed.traditional_foods,
-              traditional_dress: parsed.traditional_dress,
-              gifts_exchanged: parsed.gifts_exchanged,
-              public_or_private: parsed.public_or_private || 'members_only',
-              related_rituals: [],
-              historical_significance: parsed.historical_significance,
-            };
-            onCalendarChange({
-              ...calendar,
-              events: [...calendar.events, newEvent],
-            });
-          }
-        } catch (parseError) {
-          console.error('Failed to parse generated event:', parseError);
-        }
+    let prompt = `Create a ${eventType.replace('_', ' ')} event for the faction "${factionName}".\n\n`;
+    if (existingEvents.length > 0) {
+      prompt += `Existing events: ${existingEvents.join(', ')}\nCreate something different from these.\n\n`;
+    }
+    prompt += `Return ONLY a JSON object with this structure:
+{
+  "name": "Event name (evocative, 2-4 words)",
+  "description": "Brief overview of the event",
+  "date": "When it occurs (can be 'First full moon of spring', 'Summer solstice', or specific date)",
+  "duration_days": 1,
+  "activities": ["List of 3-5 traditional activities"],
+  "traditional_foods": ["2-3 special foods"],
+  "traditional_dress": "Description of ceremonial attire",
+  "gifts_exchanged": true or false,
+  "public_or_private": "public" or "members_only",
+  "historical_significance": "Why this event matters to the faction"
+}`;
+
+    cli.executePrompt(prompt, `Generate ${eventType} Event`);
+  };
+
+  const handleInsertEvent = (text: string) => {
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        const eventType = generatingType || 'festival';
+        const newEvent: CalendarEvent = {
+          id: generateEventId(),
+          name: parsed.name || 'Generated Event',
+          description: parsed.description || '',
+          date: parsed.date || '',
+          event_type: eventType,
+          duration_days: parsed.duration_days || 1,
+          activities: parsed.activities || [],
+          traditional_foods: parsed.traditional_foods,
+          traditional_dress: parsed.traditional_dress,
+          gifts_exchanged: parsed.gifts_exchanged,
+          public_or_private: parsed.public_or_private || 'members_only',
+          related_rituals: [],
+          historical_significance: parsed.historical_significance,
+        };
+        onCalendarChange({
+          ...calendar,
+          events: [...calendar.events, newEvent],
+        });
       }
-    } catch (error) {
-      console.error('Failed to generate event:', error);
+    } catch (parseError) {
+      console.error('Failed to parse generated event:', parseError);
     } finally {
       setGeneratingType(null);
     }
@@ -907,7 +927,7 @@ const CulturalCalendar: React.FC<CulturalCalendarProps> = ({
                   <button
                     key={type}
                     onClick={() => handleGenerateEvent(type)}
-                    disabled={isLoading || generatingType !== null}
+                    disabled={cli.isRunning || generatingType !== null}
                     className={cn(
                       'flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50',
                       EVENT_TYPE_COLORS[type]
@@ -926,6 +946,14 @@ const CulturalCalendar: React.FC<CulturalCalendarProps> = ({
           </div>
         </div>
       )}
+
+      {/* CLI Terminal for AI generation */}
+      <InlineTerminal
+        {...cli.terminalProps}
+        height={120}
+        collapsible
+        onInsert={handleInsertEvent}
+      />
 
       {/* Regular Observances */}
       <div className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-4">

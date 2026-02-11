@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Voice } from '@/app/types/Voice';
 import { useUpdateVoice } from '@/app/hooks/useVoices';
-import { useLLM } from '@/app/hooks/useLLM';
-import { voiceDescriptionPrompt } from '@/prompts';
+import { useCLIFeature } from '@/app/hooks/useCLIFeature';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { Sparkles, Save, Loader2, Edit3, X } from 'lucide-react';
+import InlineTerminal from '@/app/components/cli/InlineTerminal';
 
 interface VoiceDescriptionProps {
   voice: Voice;
@@ -16,27 +17,26 @@ const VoiceDescription = ({ voice }: VoiceDescriptionProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [description, setDescription] = useState(voice.description || '');
   const { mutate: updateVoice, isPending: isSaving } = useUpdateVoice();
-  const { generate, isLoading: isGenerating } = useLLM();
+  const { selectedProject } = useProjectStore();
 
-  const handleEnhance = async () => {
-    const context = {
-      voiceName: voice.name,
-      characterName: voice.character_id || undefined,
-      currentDescription: description || undefined,
-      provider: voice.provider,
-      language: voice.language,
-      gender: voice.gender,
-    };
+  const cli = useCLIFeature({
+    featureId: 'voice-desc',
+    projectId: selectedProject?.id || '',
+    projectPath: typeof window !== 'undefined' ? window.location.origin : '',
+    defaultSkills: ['voice-description'],
+  });
 
-    const response = await generate(
-      voiceDescriptionPrompt.user(context),
-      voiceDescriptionPrompt.system
-    );
+  const handleEnhance = () => {
+    const prompt = `Generate a voice description for "${voice.name}".
+Provider: ${voice.provider || 'unknown'}, Language: ${voice.language || 'en'}, Gender: ${voice.gender || 'unknown'}.
+${description ? `Current description to enhance: ${description}` : 'No existing description.'}
+Write a 100-200 word voice description covering tone, pace, vocabulary, patterns, and distinctive markers.`;
+    cli.executePrompt(prompt, 'Voice Description');
+  };
 
-    if (response) {
-      setDescription(response.content);
-      setIsEditing(true);
-    }
+  const handleInsertResult = (text: string) => {
+    setDescription(text);
+    setIsEditing(true);
   };
 
   const handleSave = () => {
@@ -71,10 +71,10 @@ const VoiceDescription = ({ voice }: VoiceDescriptionProps) => {
             <>
               <button
                 onClick={handleEnhance}
-                disabled={isGenerating}
+                disabled={cli.isRunning}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-900 text-purple-200 hover:bg-purple-800 transition-colors text-sm disabled:opacity-50"
               >
-                {isGenerating ? (
+                {cli.isRunning ? (
                   <>
                     <Loader2 className="w-3 h-3 animate-spin" />
                     Generating...
@@ -151,6 +151,14 @@ const VoiceDescription = ({ voice }: VoiceDescriptionProps) => {
           )}
         </motion.div>
       )}
+
+      {/* CLI Terminal for AI generation */}
+      <InlineTerminal
+        {...cli.terminalProps}
+        height={150}
+        collapsible
+        onInsert={handleInsertResult}
+      />
     </div>
   );
 };

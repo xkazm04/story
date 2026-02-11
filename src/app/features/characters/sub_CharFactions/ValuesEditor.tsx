@@ -27,7 +27,9 @@ import {
   VALUE_CATEGORIES,
   generateValueId,
 } from '@/lib/culture/CultureGenerator';
-import { useLLM } from '@/app/hooks/useLLM';
+import { useCLIFeature } from '@/app/hooks/useCLIFeature';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
+import InlineTerminal from '@/app/components/cli/InlineTerminal';
 
 // ============================================================================
 // Types
@@ -510,7 +512,13 @@ const ValuesEditor: React.FC<ValuesEditorProps> = ({
   onPrincipleChange,
   readOnly = false,
 }) => {
-  const { generateFromTemplate, isLoading } = useLLM();
+  const { selectedProject } = useProjectStore();
+  const cli = useCLIFeature({
+    featureId: 'faction-values',
+    projectId: selectedProject?.id || '',
+    projectPath: typeof window !== 'undefined' ? window.location.origin : '',
+    defaultSkills: ['faction-creation'],
+  });
   const [editingValue, setEditingValue] = useState<FactionValue | null>(null);
   const [isNewValue, setIsNewValue] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<ValueCategory, boolean>>({
@@ -594,40 +602,46 @@ const ValuesEditor: React.FC<ValuesEditorProps> = ({
     }
   };
 
-  const handleGenerateValue = async (category: ValueCategory) => {
+  const handleGenerateValue = (category: ValueCategory) => {
     setGeneratingCategory(category);
-    try {
-      const existingValues = values.map((v) => v.name);
-      const result = await generateFromTemplate(VALUE_GENERATION_PROMPT, {
-        factionName,
-        category,
-        existingValues,
-      });
+    const existingValues = values.map((v) => v.name);
 
-      if (result?.content) {
-        try {
-          // Extract JSON from response
-          const jsonMatch = result.content.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const parsed = JSON.parse(jsonMatch[0]);
-            const newValue: FactionValue = {
-              id: generateValueId(),
-              name: parsed.name || 'Generated Value',
-              description: parsed.description || '',
-              category,
-              priority: category === 'core' ? 8 : category === 'secondary' ? 5 : 3,
-              manifestations: parsed.manifestations || [],
-              conflicts_with: parsed.conflicts_with || [],
-              origin: parsed.origin || '',
-            };
-            onValuesChange([...values, newValue]);
-          }
-        } catch (parseError) {
-          console.error('Failed to parse generated value:', parseError);
-        }
+    let prompt = `Generate a new ${category} value for the faction "${factionName}".\n\n`;
+    if (existingValues.length > 0) {
+      prompt += `Existing values: ${existingValues.join(', ')}\nCreate something that complements but doesn't repeat these.\n\n`;
+    }
+    prompt += `Return ONLY a JSON object with this structure:
+{
+  "name": "Short value name (2-4 words)",
+  "description": "One sentence explaining this value",
+  "manifestations": ["How this shows in daily life (3-5 examples)"],
+  "origin": "Brief historical reason this became a value",
+  "conflicts_with": ["Values from other factions this might clash with (2-3)"]
+}`;
+
+    cli.executePrompt(prompt, `Generate ${category} Value`);
+  };
+
+  const handleInsertValue = (text: string) => {
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        const category = generatingCategory || 'secondary';
+        const newValue: FactionValue = {
+          id: generateValueId(),
+          name: parsed.name || 'Generated Value',
+          description: parsed.description || '',
+          category,
+          priority: category === 'core' ? 8 : category === 'secondary' ? 5 : 3,
+          manifestations: parsed.manifestations || [],
+          conflicts_with: parsed.conflicts_with || [],
+          origin: parsed.origin || '',
+        };
+        onValuesChange([...values, newValue]);
       }
-    } catch (error) {
-      console.error('Failed to generate value:', error);
+    } catch (parseError) {
+      console.error('Failed to parse generated value:', parseError);
     } finally {
       setGeneratingCategory(null);
     }
@@ -739,7 +753,7 @@ const ValuesEditor: React.FC<ValuesEditorProps> = ({
                       </button>
                       <button
                         onClick={() => handleGenerateValue(category)}
-                        disabled={isLoading || generatingCategory !== null}
+                        disabled={cli.isRunning || generatingCategory !== null}
                         className="flex items-center gap-1 px-3 py-1.5 text-sm bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 rounded-lg transition-colors disabled:opacity-50"
                       >
                         {generatingCategory === category ? (
@@ -757,6 +771,14 @@ const ValuesEditor: React.FC<ValuesEditorProps> = ({
           </div>
         )
       )}
+
+      {/* CLI Terminal for AI generation */}
+      <InlineTerminal
+        {...cli.terminalProps}
+        height={120}
+        collapsible
+        onInsert={handleInsertValue}
+      />
 
       {/* Value Editor Modal */}
       <AnimatePresence>

@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, User, Sparkles, Copy, Check, Download } from 'lucide-react';
-import { useLLM } from '@/app/hooks/useLLM';
-import { personalityExtractionPrompt } from '@/prompts';
+import { useCLIFeature } from '@/app/hooks/useCLIFeature';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
+import InlineTerminal from '@/app/components/cli/InlineTerminal';
 
 interface CharacterPersonalityExtractorProps {
   transcriptions: any[];
@@ -22,52 +23,63 @@ interface PersonalityAnalysis {
 }
 
 const CharacterPersonalityExtractor = ({ transcriptions }: CharacterPersonalityExtractorProps) => {
-  const [isExtracting, setIsExtracting] = useState(false);
   const [characterName, setCharacterName] = useState('');
   const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
-  const { generateFromTemplate } = useLLM();
+  const { selectedProject } = useProjectStore();
 
-  const handleExtract = async () => {
-    if (!characterName.trim()) {
-      return;
-    }
+  const cli = useCLIFeature({
+    featureId: 'personality-extract',
+    projectId: selectedProject?.id || '',
+    projectPath: typeof window !== 'undefined' ? window.location.origin : '',
+    defaultSkills: ['personality-extraction'],
+  });
 
-    setIsExtracting(true);
+  const handleExtract = () => {
+    if (!characterName.trim()) return;
 
+    const combinedText = transcriptions
+      .map((t: { enhanced_text?: string; text: string }) => t.enhanced_text || t.text)
+      .join('\n\n');
+
+    const prompt = `Analyze the following audio transcriptions to extract the personality profile for "${characterName}".
+
+Transcription text:
+${combinedText.slice(0, 3000)}
+
+Return a JSON object with this structure:
+{
+  "personality_summary": "Overall personality description",
+  "traits": ["trait1", "trait2", ...],
+  "speaking_style": "Description of how they speak",
+  "emotional_range": "Description of emotional expression",
+  "key_values": ["value1", "value2", ...],
+  "communication_patterns": "How they communicate",
+  "notable_quotes": ["quote1", "quote2", ...],
+  "confidence_score": 0.85
+}`;
+
+    cli.executePrompt(prompt, 'Personality Extraction');
+  };
+
+  const handleInsertResult = (text: string) => {
     try {
-      // Combine all transcription texts
-      const combinedText = transcriptions
-        .map((t) => t.enhanced_text || t.text)
-        .join('\n\n');
-
-      const result = await generateFromTemplate(personalityExtractionPrompt, {
-        transcriptionText: combinedText,
-        characterName,
-      });
-
-      if (result) {
-        try {
-          const parsed = JSON.parse(result.content);
-          setAnalysis(parsed);
-        } catch (e) {
-          // If JSON parsing fails, create a basic analysis
-          setAnalysis({
-            personality_summary: result.content,
-            traits: [],
-            speaking_style: '',
-            emotional_range: '',
-            key_values: [],
-            communication_patterns: '',
-            notable_quotes: [],
-            confidence_score: 0.7,
-          });
-        }
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        setAnalysis(parsed);
       }
-    } catch (error) {
-      console.error('Personality extraction error:', error);
-    } finally {
-      setIsExtracting(false);
+    } catch {
+      setAnalysis({
+        personality_summary: text,
+        traits: [],
+        speaking_style: '',
+        emotional_range: '',
+        key_values: [],
+        communication_patterns: '',
+        notable_quotes: [],
+        confidence_score: 0.7,
+      });
     }
   };
 
@@ -143,10 +155,10 @@ ${(analysis.confidence_score * 100).toFixed(0)}%
 
           <button
             onClick={handleExtract}
-            disabled={isExtracting || !characterName.trim()}
+            disabled={cli.isRunning || !characterName.trim()}
             className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-purple-600 text-white font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isExtracting ? (
+            {cli.isRunning ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
                 Analyzing Personality...
@@ -158,6 +170,13 @@ ${(analysis.confidence_score * 100).toFixed(0)}%
               </>
             )}
           </button>
+
+          <InlineTerminal
+            {...cli.terminalProps}
+            height={150}
+            collapsible
+            onInsert={handleInsertResult}
+          />
 
           <div className="p-4 bg-purple-900/20 border border-purple-900/30 rounded-lg">
             <p className="text-sm text-purple-200">

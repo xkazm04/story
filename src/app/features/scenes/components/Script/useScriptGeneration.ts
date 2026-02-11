@@ -1,14 +1,5 @@
 import { useState } from 'react';
-import { useLLM } from '@/app/hooks/useLLM';
-import {
-  smartSceneGenerationPrompt,
-  generateDialoguePrompt,
-  generateOverviewPrompt,
-  gatherProjectContext,
-  gatherStoryContext,
-  gatherSceneContext,
-  gatherSceneCharacters,
-} from '@/prompts';
+import { useCLIFeature } from '@/app/hooks/useCLIFeature';
 import { Scene } from '@/app/types/Scene';
 import type { DialogueLine } from './DialogueViewer';
 
@@ -27,128 +18,65 @@ export function useScriptGeneration({
   const [overview, setOverview] = useState('');
   const [dialogueLines, setDialogueLines] = useState<DialogueLine[]>([]);
   const [error, setError] = useState('');
-  const [isGeneratingDialogue, setIsGeneratingDialogue] = useState(false);
-  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
 
-  const { generateFromTemplate, isLoading: isGenerating } = useLLM();
+  const cli = useCLIFeature({
+    featureId: 'scene-script',
+    projectId: selectedProjectId || '',
+    projectPath: typeof window !== 'undefined' ? window.location.origin : '',
+    defaultSkills: ['scene-generation', 'scene-dialogue', 'scene-description'],
+  });
 
-  const handleSmartGenerate = async () => {
+  const handleSmartGenerate = () => {
     if (!selectedScene || !selectedProjectId) {
       setError('No scene or project selected');
       return;
     }
-
     setError('');
-
-    try {
-      const [projectCtx, storyCtx, sceneCtx, characters] = await Promise.all([
-        gatherProjectContext(selectedProjectId),
-        gatherStoryContext(selectedProjectId),
-        gatherSceneContext(selectedScene.id),
-        gatherSceneCharacters(selectedScene.id),
-      ]);
-
-      const currentSceneIndex = scenes.findIndex((s) => s.id === selectedScene.id);
-      const previousScene = currentSceneIndex > 0 ? scenes[currentSceneIndex - 1] : undefined;
-      const nextScene =
-        currentSceneIndex < scenes.length - 1 ? scenes[currentSceneIndex + 1] : undefined;
-
-      const response = await generateFromTemplate(smartSceneGenerationPrompt, {
-        sceneTitle: selectedScene.name || 'Untitled Scene',
-        sceneLocation: selectedScene.location,
-        projectContext: projectCtx,
-        storyContext: storyCtx,
-        sceneContext: {
-          ...sceneCtx,
-          previousScene: previousScene
-            ? { title: previousScene.name, description: previousScene.description }
-            : undefined,
-          nextScene: nextScene
-            ? { title: nextScene.name, description: nextScene.description }
-            : undefined,
-        },
-        characters,
-      });
-
-      if (response?.content) {
-        const generatedScript = response.content
-          .replace(/\*\*/g, '')
-          .replace(/^#+\s/gm, '')
-          .trim();
-        setScript(generatedScript);
-      }
-    } catch (err) {
-      setError('Failed to generate scene script');
-      console.error('Error generating scene:', err);
-    }
+    cli.execute('scene-generation', { sceneId: selectedScene.id });
   };
 
-  const handleGenerateDialogue = async () => {
+  const handleGenerateDialogue = () => {
     if (!script) {
       setError('Please write or generate a script first.');
       return;
     }
-
-    setIsGeneratingDialogue(true);
     setError('');
+    cli.execute('scene-dialogue', { sceneId: selectedScene?.id || '' });
+  };
 
+  const handleAddDescription = () => {
+    if (!script) {
+      setError('Please write or generate a script first.');
+      return;
+    }
+    setError('');
+    cli.execute('scene-description', { sceneId: selectedScene?.id || '' });
+  };
+
+  const handleInsertScript = (text: string) => {
+    const cleaned = text
+      .replace(/\*\*/g, '')
+      .replace(/^#+\s/gm, '')
+      .trim();
+    setScript(cleaned);
+  };
+
+  const handleInsertDialogue = (text: string) => {
     try {
-      const characters = await gatherSceneCharacters(selectedScene?.id || '');
-
-      const response = await generateFromTemplate(generateDialoguePrompt, {
-        sceneTitle: selectedScene?.name || 'Untitled',
-        sceneDescription: selectedScene?.description || '',
-        script,
-        characters,
-      });
-
-      if (response?.content) {
-        try {
-          const jsonMatch = response.content.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const parsed = JSON.parse(jsonMatch[0]);
-            if (parsed.lines && Array.isArray(parsed.lines)) {
-              setDialogueLines(parsed.lines);
-            }
-          } else {
-            setError('Failed to parse dialogue format.');
-          }
-        } catch {
-          setError('Failed to parse dialogue JSON.');
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.lines && Array.isArray(parsed.lines)) {
+          setDialogueLines(parsed.lines);
         }
       }
-    } catch (err) {
-      setError('Failed to generate dialogue.');
-      console.error(err);
-    } finally {
-      setIsGeneratingDialogue(false);
+    } catch {
+      setError('Failed to parse dialogue JSON.');
     }
   };
 
-  const handleAddDescription = async () => {
-    if (!script) {
-      setError('Please write or generate a script first.');
-      return;
-    }
-
-    setIsGeneratingDescription(true);
-    setError('');
-
-    try {
-      const response = await generateFromTemplate(generateOverviewPrompt, {
-        sceneTitle: selectedScene?.name || 'Untitled',
-        script,
-      });
-
-      if (response?.content) {
-        setOverview(response.content);
-      }
-    } catch (err) {
-      setError('Failed to generate description.');
-      console.error(err);
-    } finally {
-      setIsGeneratingDescription(false);
-    }
+  const handleInsertOverview = (text: string) => {
+    setOverview(text);
   };
 
   const handleFormat = () => {
@@ -181,13 +109,17 @@ export function useScriptGeneration({
     overview,
     dialogueLines,
     error,
-    isGenerating,
-    isGeneratingDialogue,
-    isGeneratingDescription,
+    isGenerating: cli.isRunning,
+    isGeneratingDialogue: cli.isRunning,
+    isGeneratingDescription: cli.isRunning,
     handleSmartGenerate,
     handleGenerateDialogue,
     handleAddDescription,
+    handleInsertScript,
+    handleInsertDialogue,
+    handleInsertOverview,
     handleFormat,
     handleExport,
+    terminalProps: cli.terminalProps,
   };
 }

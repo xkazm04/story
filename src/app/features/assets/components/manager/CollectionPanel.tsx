@@ -31,6 +31,7 @@ import {
   GroupingStrategy,
 } from '@/lib/assets';
 import { Button, IconButton } from '@/app/components/UI/Button';
+import { EmptyState } from '@/app/components/UI';
 import type { Asset } from '@/app/types/Asset';
 
 interface CollectionPanelProps {
@@ -262,27 +263,13 @@ export function CollectionPanel({
         {activeView === 'collections' && (
           <>
             {filteredCollections.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-                <FolderOpen className="w-12 h-12 mb-3 opacity-40" />
-                <p className="text-sm mb-1">
-                  {collections.length === 0 ? 'No collections yet' : 'No matches found'}
-                </p>
-                <p className="text-xs text-slate-500 mb-4">
-                  {collections.length === 0
-                    ? 'Create a collection to organize your assets'
-                    : 'Try a different search term'}
-                </p>
-                {collections.length === 0 && (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    icon={<Plus className="w-4 h-4" />}
-                    onClick={() => setShowCreateModal(true)}
-                  >
-                    Create Collection
-                  </Button>
-                )}
-              </div>
+              <EmptyState
+                icon={<FolderOpen />}
+                title={collections.length === 0 ? 'No collections yet' : 'No matches found'}
+                subtitle={collections.length === 0 ? 'Create a collection to organize your assets' : 'Try a different search term'}
+                action={collections.length === 0 ? { label: "Create Collection", onClick: () => setShowCreateModal(true), icon: <Plus /> } : undefined}
+                variant="compact"
+              />
             ) : (
               <div className="space-y-2">
                 {filteredCollections.map(collection => (
@@ -420,13 +407,12 @@ export function CollectionPanel({
         {activeView === 'smart' && (
           <>
             {filteredSmartGroups.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-                <Sparkles className="w-12 h-12 mb-3 opacity-40" />
-                <p className="text-sm mb-1">No smart groups</p>
-                <p className="text-xs text-slate-500">
-                  Smart groups are auto-generated from your assets
-                </p>
-              </div>
+              <EmptyState
+                icon={<Sparkles />}
+                title="No smart groups"
+                subtitle="Smart groups are auto-generated from your assets"
+                variant="compact"
+              />
             ) : (
               <div className="space-y-2">
                 {filteredSmartGroups.map(group => (

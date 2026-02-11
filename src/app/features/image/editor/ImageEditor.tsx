@@ -48,7 +48,7 @@ import {
   type EditorMode,
   type ActiveTool,
 } from './components';
-import { TabButton } from '@/app/components/UI/TabButton';
+import { Tabs, type TabItem } from '@/app/components/UI';
 import { cn } from '@/app/lib/utils';
 
 // ============================================================================
@@ -57,20 +57,14 @@ import { cn } from '@/app/lib/utils';
 
 type TabType = 'adjustments' | 'presets' | 'history';
 
-interface Tab {
-  id: TabType;
-  label: string;
-  icon: React.ElementType;
-}
-
 // ============================================================================
 // Constants
 // ============================================================================
 
-const TABS: Tab[] = [
-  { id: 'adjustments', label: 'Adjustments', icon: Sliders },
-  { id: 'presets', label: 'Presets', icon: Bookmark },
-  { id: 'history', label: 'History', icon: History },
+const TAB_ITEMS: TabItem[] = [
+  { value: 'adjustments', label: 'Adjustments', icon: <Sliders className="w-4 h-4" /> },
+  { value: 'presets', label: 'Presets', icon: <Bookmark className="w-4 h-4" /> },
+  { value: 'history', label: 'History', icon: <History className="w-4 h-4" /> },
 ];
 
 // ============================================================================
@@ -737,17 +731,13 @@ const ImageEditor: React.FC = () => {
         {/* Sidebar */}
         <div className="w-80 border-l border-slate-700 flex flex-col bg-slate-900">
           {/* Tabs */}
-          <div className="flex border-b border-slate-700">
-            {TABS.map((tab) => (
-              <TabButton
-                key={tab.id}
-                id={tab.id}
-                icon={tab.icon}
-                label={tab.label}
-                isActive={activeTab === tab.id}
-                onClick={() => setActiveTab(tab.id)}
-              />
-            ))}
+          <div className="border-b border-slate-700">
+            <Tabs
+              items={TAB_ITEMS}
+              value={activeTab}
+              onChange={(v) => setActiveTab(v as TabType)}
+              variant="underline"
+            />
           </div>
 
           {/* Tab content */}

@@ -6,7 +6,7 @@ import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { sceneApi } from '@/app/hooks/integration/useScenes';
 import { characterApi } from '@/app/api/characters';
 import { SmartNameInput } from '@/app/components/UI/SmartNameInput';
-import { NameSuggestion } from '@/app/api/name-suggestions/route';
+import { NameSuggestion } from '@/app/types/NameSuggestion';
 import { Button } from '@/app/components/UI/Button';
 
 const SceneAdd: React.FC = () => {

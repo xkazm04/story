@@ -6,7 +6,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Users, Shield, Network, FileText, Lightbulb } from 'lucide-react';
+import { Users, Shield, Network, FileText, Lightbulb, Terminal } from 'lucide-react';
+import { EmptyState } from '@/app/components/UI';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { useCharacterStore } from '@/app/store/slices/characterSlice';
 import { characterApi } from '@/app/hooks/integration/useCharacters';
@@ -18,12 +19,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/app/lib/utils';
 import { useCharacterRecommendations } from '@/app/hooks/useRecommendations';
 import { RecommendationPanel } from '@/app/components/recommendations/RecommendationPanel';
+import { useCLIFeature } from '@/app/hooks/useCLIFeature';
+import InlineTerminal from '@/app/components/cli/InlineTerminal';
 
 const CharactersFeature: React.FC = () => {
   const { selectedProject } = useProjectStore();
   const selectedCharacter = useCharacterStore((state) => state.selectedCharacter);
   const [activeTab, setActiveTab] = useState(0);
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [showCLI, setShowCLI] = useState(false);
+
+  // CLI integration for character skills
+  const cli = useCLIFeature({
+    featureId: 'characters',
+    projectId: selectedProject?.id || '',
+    projectPath: typeof window !== 'undefined' ? window.location.origin : '',
+    defaultSkills: ['character-backstory', 'character-traits', 'character-names', 'character-dialogue'],
+  });
   const { data: characters = [], isLoading: charactersLoading } = characterApi.useProjectCharacters(
     selectedProject?.id || '',
     !!selectedProject
@@ -87,10 +99,13 @@ const CharactersFeature: React.FC = () => {
           />
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center h-64 gap-2">
-          <Network className="w-8 h-8 text-slate-600" />
-          <span className="font-mono text-xs text-slate-500">// select_project_to_view</span>
-        </div>
+        <EmptyState
+          icon={<Network />}
+          title="Select a Project"
+          monoLabel="// select_project_to_view"
+          variant="compact"
+          iconSize="sm"
+        />
       ),
     },
     {
@@ -106,13 +121,14 @@ const CharactersFeature: React.FC = () => {
           loadingComponent={<SkeletonLoader variant="details" color="blue" />}
         />
       ) : (
-        <div className="flex flex-col items-center justify-center h-64 gap-2">
-          <FileText className="w-8 h-8 text-slate-600" />
-          <span className="font-mono text-xs text-slate-500">// select_character_to_view</span>
-          <p className="text-xs text-slate-600 text-center max-w-xs">
-            select a character to view details, generate images, or create avatars
-          </p>
-        </div>
+        <EmptyState
+          icon={<FileText />}
+          title="Select a Character"
+          monoLabel="// select_character_to_view"
+          subtitle="select a character to view details, generate images, or create avatars"
+          variant="compact"
+          iconSize="sm"
+        />
       ),
     },
   ];
@@ -147,6 +163,25 @@ const CharactersFeature: React.FC = () => {
           })}
         </div>
 
+        {/* CLI Toggle */}
+        <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => setShowCLI(!showCLI)}
+          className={cn(
+            'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md font-mono text-xs transition-all',
+            showCLI
+              ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
+              : 'text-slate-400 border border-transparent hover:text-slate-200 hover:bg-slate-800/50'
+          )}
+          title="Toggle CLI Terminal"
+        >
+          <Terminal className="w-3.5 h-3.5" />
+          <span className="uppercase tracking-wide">cli</span>
+          {cli.isRunning && (
+            <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
+          )}
+        </button>
+
         {/* Recommendations Toggle */}
         <button
           onClick={() => setShowRecommendations(!showRecommendations)}
@@ -166,6 +201,7 @@ const CharactersFeature: React.FC = () => {
             </span>
           )}
         </button>
+        </div>
       </div>
 
       {/* Content Area with Recommendations Panel */}
@@ -209,6 +245,26 @@ const CharactersFeature: React.FC = () => {
                 onDismiss={dismissRec}
                 onExpand={expandRec}
                 onClose={() => setShowRecommendations(false)}
+                className="h-full rounded-none border-0"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* CLI Terminal Panel */}
+        <AnimatePresence>
+          {showCLI && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 320, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="h-full border-l border-slate-800 overflow-hidden shrink-0"
+            >
+              <InlineTerminal
+                {...cli.terminalProps}
+                height="100%"
+                outputFormat="json"
                 className="h-full rounded-none border-0"
               />
             </motion.div>

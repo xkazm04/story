@@ -3,24 +3,32 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDatasetImages, useAddImageToDataset, useRemoveImageFromDataset } from '@/app/hooks/useDatasets';
-import { useLLM } from '@/app/hooks/useLLM';
-import { datasetTaggingPrompt } from '@/prompts';
-import { Upload, Loader2, Trash2, Tag, Sparkles, X } from 'lucide-react';
+import { Upload, Loader2, Trash2, Tag, Sparkles, X, Wand2 } from 'lucide-react';
 import Image from 'next/image';
 import { Dataset } from '@/app/types/Dataset';
+import { useCLIFeature } from '@/app/hooks/useCLIFeature';
+import InlineTerminal from '@/app/components/cli/InlineTerminal';
 
 interface ImageDatasetGalleryProps {
   dataset: Dataset;
+  onOpenSketchWizard?: () => void;
 }
 
-const ImageDatasetGallery = ({ dataset }: ImageDatasetGalleryProps) => {
+const ImageDatasetGallery = ({ dataset, onOpenSketchWizard }: ImageDatasetGalleryProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isGeneratingTags, setIsGeneratingTags] = useState(false);
   const { data: images, isLoading } = useDatasetImages(dataset.id);
   const { mutate: addImage } = useAddImageToDataset();
   const { mutate: removeImage } = useRemoveImageFromDataset();
-  const { generateFromTemplate } = useLLM();
+
+  // CLI integration for dataset tagging
+  const cli = useCLIFeature({
+    featureId: 'datasets',
+    projectId: dataset.id,
+    projectPath: typeof window !== 'undefined' ? window.location.origin : '',
+    defaultSkills: ['dataset-tagging'],
+  });
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -58,28 +66,34 @@ const ImageDatasetGallery = ({ dataset }: ImageDatasetGalleryProps) => {
   const handleGenerateTags = async (imageId: string, imageUrl: string) => {
     setIsGeneratingTags(true);
 
-    const result = await generateFromTemplate(datasetTaggingPrompt, {
-      itemType: 'image',
-      itemName: imageId,
-      description: 'An image from the dataset',
-      projectContext: dataset.name,
+    // Use CLI dataset-tagging skill instead of direct LLM call
+    cli.execute('dataset-tagging', {
+      imageId,
+      imageUrl,
+      datasetName: dataset.name,
     });
 
-    if (result) {
+    // CLI will handle execution asynchronously; isGeneratingTags resets when queue empties
+    setTimeout(() => setIsGeneratingTags(false), 1000);
+  };
+
+  const handleRemoveImage = async (imageId: string) => {
+    if (!confirm('Remove this image from the dataset?')) return;
+
+    // If image has an internal_id (Leonardo generation ID), clean up from Leonardo
+    const image = images?.find((img) => img.id === imageId);
+    if (image?.internal_id) {
       try {
-        const tags = JSON.parse(result.content);
-        // TODO: Update image tags in database
-        console.log('Generated tags:', tags);
-      } catch (e) {
-        console.error('Failed to parse tags:', e);
+        await fetch('/api/ai/generate-images', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ generationIds: [image.internal_id] }),
+        });
+      } catch {
+        // Leonardo cleanup is best-effort
       }
     }
 
-    setIsGeneratingTags(false);
-  };
-
-  const handleRemoveImage = (imageId: string) => {
-    if (!confirm('Remove this image from the dataset?')) return;
     removeImage({ imageId, datasetId: dataset.id });
   };
 
@@ -102,8 +116,17 @@ const ImageDatasetGallery = ({ dataset }: ImageDatasetGalleryProps) => {
           </p>
         </div>
 
-        {/* Upload Button */}
-        <div>
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
+          {onOpenSketchWizard && (
+            <button
+              onClick={onOpenSketchWizard}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white font-medium hover:bg-purple-700 transition-colors"
+            >
+              <Wand2 className="w-4 h-4" />
+              Generate Images
+            </button>
+          )}
           <input
             type="file"
             accept="image/*"
@@ -206,6 +229,14 @@ const ImageDatasetGallery = ({ dataset }: ImageDatasetGalleryProps) => {
           <p className="text-sm text-gray-500 mt-1">Click "Upload Images" to add some</p>
         </div>
       )}
+
+      {/* CLI Terminal for dataset operations */}
+      <InlineTerminal
+        {...cli.terminalProps}
+        height={150}
+        collapsible
+        outputFormat="json"
+      />
 
       {/* Image Detail Modal */}
       <AnimatePresence>

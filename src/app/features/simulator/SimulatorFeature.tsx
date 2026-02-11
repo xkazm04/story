@@ -17,7 +17,7 @@ import { useAutoplayOrchestrator } from './hooks/useAutoplayOrchestrator';
 import { useMultiPhaseAutoplay } from './hooks/useMultiPhaseAutoplay';
 import { useAutoplayEventLog } from './hooks/useAutoplayEventLog';
 import { OnionLayout } from './components/variants/OnionLayout';
-import { ModalLoadingFallback } from './components/ModalLoadingFallback';
+import { LoadingOverlay } from '@/app/components/UI';
 import { Toast, useToast } from '@/app/components/UI/SimToast';
 import { DimensionsProvider, useDimensionsContext } from './subfeature_dimensions';
 import { BrainProvider, useBrainContext } from './subfeature_brain';
@@ -26,6 +26,8 @@ import { SimulatorProvider, useSimulatorContext } from './SimulatorContext';
 import { ProjectProvider } from './contexts';
 import { SimulatorHeader } from './subfeature_project';
 import { ViewModeProvider } from './stores';
+import { useCLIFeature } from '@/app/hooks/useCLIFeature';
+import InlineTerminal from '@/app/components/cli/InlineTerminal';
 
 const PromptDetailModal = lazy(() => import('./subfeature_prompts').then(m => ({ default: m.PromptDetailModal })));
 const SavedImageModal = lazy(() => import('./subfeature_panels').then(m => ({ default: m.SavedImageModal })));
@@ -180,6 +182,14 @@ function SimulatorContent() {
   });
   useAutosave();
 
+  // CLI integration for simulator skills
+  const cli = useCLIFeature({
+    featureId: 'simulator',
+    projectId: currentProjectId || 'sim-default',
+    projectPath: typeof window !== 'undefined' ? window.location.origin : '',
+    defaultSkills: ['simulator-vision-breakdown', 'simulator-prompt-generation', 'simulator-dimension-refinement'],
+  });
+
   // Memoized autoplay props to prevent OnionLayout re-renders (legacy single-mode)
   const autoplayProps = useMemo(() => ({
     isRunning: autoplayOrchestrator.isRunning,
@@ -326,7 +336,7 @@ function SimulatorContent() {
         />
 
         {selectedPrompt && (
-          <Suspense fallback={<ModalLoadingFallback />}>
+          <Suspense fallback={<LoadingOverlay overlay />}>
             <PromptDetailModal
               prompt={selectedPrompt}
               isOpen={!!selectedPrompt}
@@ -345,7 +355,7 @@ function SimulatorContent() {
         )}
 
         {selectedPanelImage && (
-          <Suspense fallback={<ModalLoadingFallback />}>
+          <Suspense fallback={<LoadingOverlay overlay />}>
             <SavedImageModal
               image={selectedPanelImage}
               isOpen={!!selectedPanelImage}
@@ -361,8 +371,19 @@ function SimulatorContent() {
 
         <Toast {...toastProps} data-testid="simulator-toast" />
 
+        {/* CLI Terminal — bottom overlay for simulator skills */}
+        <div className="absolute bottom-0 left-0 right-0 z-10">
+          <InlineTerminal
+            {...cli.terminalProps}
+            height={180}
+            collapsible
+            outputFormat="json"
+            className="rounded-t-lg rounded-b-none border-b-0"
+          />
+        </div>
+
         {showComparisonModal && (
-          <Suspense fallback={<ModalLoadingFallback />}>
+          <Suspense fallback={<LoadingOverlay overlay />}>
             <ComparisonModal
               isOpen={showComparisonModal}
               onClose={() => setShowComparisonModal(false)}

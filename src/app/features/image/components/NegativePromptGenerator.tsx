@@ -3,8 +3,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Wand2, Loader2 } from 'lucide-react';
-import { useLLM } from '@/app/hooks/useLLM';
-import { negativePromptSuggestionPrompt } from '@/prompts';
+import { useCLIFeature } from '@/app/hooks/useCLIFeature';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
+import InlineTerminal from '@/app/components/cli/InlineTerminal';
 
 interface NegativePromptGeneratorProps {
   mainPrompt: string;
@@ -15,61 +16,69 @@ const NegativePromptGenerator: React.FC<NegativePromptGeneratorProps> = ({
   mainPrompt,
   onGenerated,
 }) => {
-  const { generateFromTemplate, isLoading } = useLLM();
+  const { selectedProject } = useProjectStore();
 
-  const handleGenerate = async () => {
+  const cli = useCLIFeature({
+    featureId: 'neg-prompt',
+    projectId: selectedProject?.id || '',
+    projectPath: typeof window !== 'undefined' ? window.location.origin : '',
+  });
+
+  const handleGenerate = () => {
     if (!mainPrompt.trim()) {
       alert('Please fill in some prompt sections first');
       return;
     }
 
-    try {
-      const result = await generateFromTemplate(negativePromptSuggestionPrompt, {
-        mainPrompt,
-        imageType: 'general',
-      });
+    const prompt = `Generate a negative prompt for AI image generation. The main prompt is:
+"${mainPrompt}"
 
-      if (result && result.content) {
-        onGenerated(result.content);
-      }
-    } catch (error) {
-      console.error('Negative prompt generation error:', error);
-      alert('Failed to generate negative prompt. Make sure LLM service is running.');
-    }
+Return ONLY the negative prompt text — a comma-separated list of things to avoid in the generated image (e.g., "blurry, low quality, deformed, watermark, text, signature"). Focus on quality issues, unwanted elements, and style artifacts to avoid. Keep it under 200 words.`;
+
+    cli.executePrompt(prompt, 'Negative Prompt');
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <motion.button
-        onClick={handleGenerate}
-        disabled={isLoading || !mainPrompt.trim()}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        className={`
-          flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
-          transition-colors duration-200
-          ${isLoading || !mainPrompt.trim()
-            ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-            : 'bg-purple-600 hover:bg-purple-700 text-white'
-          }
-        `}
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Generating...
-          </>
-        ) : (
-          <>
-            <Wand2 className="w-4 h-4" />
-            Generate with AI
-          </>
-        )}
-      </motion.button>
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <motion.button
+          onClick={handleGenerate}
+          disabled={cli.isRunning || !mainPrompt.trim()}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className={`
+            flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
+            transition-colors duration-200
+            ${cli.isRunning || !mainPrompt.trim()
+              ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+              : 'bg-purple-600 hover:bg-purple-700 text-white'
+            }
+          `}
+        >
+          {cli.isRunning ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <Wand2 className="w-4 h-4" />
+              Generate with AI
+            </>
+          )}
+        </motion.button>
 
-      <span className="text-xs text-gray-500">
-        AI will suggest things to avoid
-      </span>
+        <span className="text-xs text-gray-500">
+          AI will suggest things to avoid
+        </span>
+      </div>
+
+      <InlineTerminal
+        {...cli.terminalProps}
+        height={120}
+        collapsible
+        onInsert={onGenerated}
+      />
     </div>
   );
 };

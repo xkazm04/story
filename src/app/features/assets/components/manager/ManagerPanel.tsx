@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Package, Grid3X3, LayoutList, Loader2, BarChart3, AlertTriangle, FolderOpen } from 'lucide-react';
+import { EmptyState } from '@/app/components/UI';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { clsx } from 'clsx';
 import { useAssetManagerStore } from '../../store/assetManagerStore';
@@ -254,13 +255,12 @@ export default function ManagerPanel({ className = '' }: ManagerPanelProps) {
 
             {/* Empty state */}
             {!isLoading && !isError && allAssets.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-                <Package className="w-12 h-12 mb-3 opacity-40" />
-                <p className="text-sm mb-1">No assets found</p>
-                <p className="text-xs text-slate-500">
-                  Try adjusting your filters or upload new assets
-                </p>
-              </div>
+              <EmptyState
+                icon={<Package />}
+                title="No assets found"
+                subtitle="Try adjusting your filters or upload new assets"
+                variant="compact"
+              />
             )}
 
             {/* Assets display */}

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, forwardRef, InputHTMLAttributes } from 'react';
 import { clsx } from 'clsx';
 import { Loader2, Sparkles, Check } from 'lucide-react';
-import { EntityType, NameSuggestion } from '@/app/api/name-suggestions/route';
+import { EntityType, NameSuggestion } from '@/app/types/NameSuggestion';
 
 export interface SmartNameInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   entityType: EntityType;

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ReactFlowProvider } from 'reactflow';
 import { Loader2, AlertCircle, Zap } from 'lucide-react';
 import { cn } from '@/app/lib/utils';
+import { EmptyState } from '@/app/components/UI';
 
 import RelationshipMapCanvas from './components/RelationshipMapCanvas';
 import RelationshipTypeFilter from './components/RelationshipTypeFilter';
@@ -201,17 +202,14 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({ projectId }) => {
   if (nodes.length === 0 && edges.length === 0) {
     return (
       <div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900">
-        <div className="flex flex-col items-center gap-4 max-w-md text-center">
-          <div className="bg-gray-700/30 p-4 rounded-full">
-            <AlertCircle className="w-12 h-12 text-gray-400" />
-          </div>
-          <div className="text-white text-lg font-medium">
-            No Relationships Found
-          </div>
-          <div className="text-gray-400 text-sm">
-            Create some characters and factions, then add relationships between them to see them visualized here.
-          </div>
-        </div>
+        <EmptyState
+          icon={<AlertCircle />}
+          title="No Relationships Found"
+          subtitle="Create some characters and factions, then add relationships between them to see them visualized here."
+          iconSize="lg"
+          animated
+          glowColor="rgb(148, 163, 184)"
+        />
       </div>
     );
   }

@@ -34,7 +34,9 @@ import {
   GitBranch,
 } from 'lucide-react';
 import { cn } from '@/app/lib/utils';
-import { useLLM } from '@/app/hooks/useLLM';
+import { useCLIFeature } from '@/app/hooks/useCLIFeature';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
+import InlineTerminal from '@/app/components/cli/InlineTerminal';
 import MotivationTreeBuilder from './MotivationTreeBuilder';
 import ConflictMapper from './ConflictMapper';
 import {
@@ -418,14 +420,20 @@ const PsychologyProfile: React.FC<PsychologyProfileProps> = ({
   background,
   onProfileChange,
 }) => {
-  const { generateFromTemplate, isLoading: isLLMLoading } = useLLM();
+  const { selectedProject } = useProjectStore();
+  const cli = useCLIFeature({
+    featureId: 'char-psychology',
+    projectId: selectedProject?.id || '',
+    projectPath: typeof window !== 'undefined' ? window.location.origin : '',
+    defaultSkills: ['character-traits'],
+  });
 
   // State
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [profile, setProfile] = useState<PsychologyProfileType | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [prediction, setPrediction] = useState<string | null>(null);
-  const [isPredicting, setIsPredicting] = useState(false);
+  const [lastOperation, setLastOperation] = useState<'profile' | 'predict' | null>(null);
 
   // Create engine instance
   const engine = useMemo(() => new PsychologyEngine(), []);
@@ -437,34 +445,48 @@ const PsychologyProfile: React.FC<PsychologyProfileProps> = ({
   }, [onProfileChange]);
 
   // Generate psychology profile with AI
-  const handleGenerateProfile = useCallback(async () => {
+  const handleGenerateProfile = useCallback(() => {
     setIsGenerating(true);
+    setLastOperation('profile');
 
-    try {
-      // Create psychology generation prompt template
-      const psychologyPromptTemplate = {
-        system: 'You are a character psychology analyst specializing in motivation analysis, internal conflict modeling, and psychological profiling for fictional characters.',
-        user: (context: Record<string, unknown>) => {
-          return PSYCHOLOGY_GENERATION_PROMPT
-            .replace('{{characterName}}', context.characterName as string)
-            .replace('{{characterType}}', context.characterType as string)
-            .replace('{{background}}', context.background as string)
-            .replace('{{existingTraits}}', context.existingTraits as string);
-        },
-      };
+    const prompt = PSYCHOLOGY_GENERATION_PROMPT
+      .replace('{{characterName}}', characterName)
+      .replace('{{characterType}}', characterType || 'character')
+      .replace('{{background}}', background || 'Unknown')
+      .replace('{{existingTraits}}', existingTraits?.join(', ') || 'None');
 
-      const response = await generateFromTemplate(
-        psychologyPromptTemplate,
-        {
-          characterName,
-          characterType: characterType || 'character',
-          background: background || 'Unknown',
-          existingTraits: existingTraits?.join(', ') || 'None',
-        }
-      );
+    cli.executePrompt(prompt, 'Psychology Profile');
+  }, [characterName, characterType, background, existingTraits, cli]);
 
-      if (response?.content) {
-        // Parse response (simplified - would need actual JSON parsing)
+  // Handle behavior prediction
+  const handlePredict = useCallback((situation: string) => {
+    if (!profile) return;
+
+    setPrediction(null);
+    setLastOperation('predict');
+
+    const motivations = profile.motivationTree.rootMotivations.map((m) => m.label).join(', ');
+    const fears = profile.fears.map((f) => f.label).join(', ') || 'Unknown';
+    const conflicts = profile.internalConflicts.map((c) => c.name).join(', ') || 'None';
+    const archetype = profile.archetypes.jungian.primary;
+
+    const prompt = `You are a character behavior analyst. Based on psychological profiles, predict how characters would respond in given situations.
+
+Based on this character's psychology:
+- Primary motivations: ${motivations}
+- Key fears: ${fears}
+- Internal conflicts: ${conflicts}
+- Archetype: ${archetype}
+
+How would they respond to this situation: ${situation}`;
+
+    cli.executePrompt(prompt, 'Behavior Prediction');
+  }, [profile, cli]);
+
+  // Handle CLI insert results — routes based on last operation
+  const handleInsertResult = useCallback((text: string) => {
+    if (lastOperation === 'profile') {
+      try {
         const newProfile = engine.createProfile(characterId, characterName, {
           motivationTree: {
             characterId,
@@ -472,7 +494,7 @@ const PsychologyProfile: React.FC<PsychologyProfileProps> = ({
               {
                 id: 'mot_initial',
                 label: 'Primary Drive',
-                description: 'Generated motivation placeholder',
+                description: text.slice(0, 200),
                 level: 'primary',
                 strength: 75,
                 isAwareOf: true,
@@ -493,59 +515,17 @@ const PsychologyProfile: React.FC<PsychologyProfileProps> = ({
           values: ['Placeholder value'],
           blindSpots: [],
         });
-
         updateProfile(newProfile);
+      } catch (error) {
+        console.error('Failed to parse psychology profile:', error);
+      } finally {
+        setIsGenerating(false);
       }
-    } catch (error) {
-      console.error('Failed to generate psychology profile:', error);
-    } finally {
-      setIsGenerating(false);
+    } else if (lastOperation === 'predict') {
+      setPrediction(text.trim());
     }
-  }, [characterId, characterName, characterType, background, existingTraits, engine, generateFromTemplate, updateProfile]);
-
-  // Handle behavior prediction
-  const handlePredict = useCallback(async (situation: string) => {
-    if (!profile) return;
-
-    setIsPredicting(true);
-    setPrediction(null);
-
-    try {
-      // Create behavior prediction prompt template
-      const behaviorPromptTemplate = {
-        system: 'You are a character behavior analyst. Based on psychological profiles, predict how characters would respond in given situations.',
-        user: (context: Record<string, unknown>) => {
-          return `Based on this character's psychology:
-- Primary motivations: ${context.motivations}
-- Key fears: ${context.fears}
-- Internal conflicts: ${context.conflicts}
-- Archetype: ${context.archetype}
-
-How would they respond to this situation: ${context.situation}`;
-        },
-      };
-
-      const response = await generateFromTemplate(
-        behaviorPromptTemplate,
-        {
-          motivations: profile.motivationTree.rootMotivations.map((m) => m.label).join(', '),
-          fears: profile.fears.map((f) => f.label).join(', ') || 'Unknown',
-          conflicts: profile.internalConflicts.map((c) => c.name).join(', ') || 'None',
-          archetype: profile.archetypes.jungian.primary,
-          situation,
-        }
-      );
-
-      if (response?.content) {
-        setPrediction(response.content);
-      }
-    } catch (error) {
-      console.error('Prediction failed:', error);
-      setPrediction('Unable to generate prediction.');
-    } finally {
-      setIsPredicting(false);
-    }
-  }, [profile, generateFromTemplate]);
+    setLastOperation(null);
+  }, [lastOperation, characterId, characterName, engine, updateProfile]);
 
   // Handle tree changes
   const handleMotivationTreeChange = useCallback((tree: MotivationTree) => {
@@ -589,10 +569,10 @@ How would they respond to this situation: ${context.situation}`;
           <div className="flex items-center gap-2">
             <button
               onClick={handleGenerateProfile}
-              disabled={isGenerating}
+              disabled={isGenerating || cli.isRunning}
               className={cn(
                 'flex items-center gap-1 px-3 py-1.5 rounded-lg font-mono text-xs transition-colors',
-                isGenerating
+                isGenerating || cli.isRunning
                   ? 'bg-slate-700/40 text-slate-600 cursor-not-allowed'
                   : 'bg-purple-500/20 hover:bg-purple-500/30 text-purple-400'
               )}
@@ -631,6 +611,9 @@ How would they respond to this situation: ${context.situation}`;
           ))}
         </div>
       </div>
+
+      {/* CLI Terminal */}
+      <InlineTerminal {...cli.terminalProps} height={150} collapsible onInsert={handleInsertResult} />
 
       {/* Tab content */}
       <AnimatePresence mode="wait">
@@ -724,7 +707,7 @@ How would they respond to this situation: ${context.situation}`;
                   </p>
                   <button
                     onClick={handleGenerateProfile}
-                    disabled={isGenerating}
+                    disabled={isGenerating || cli.isRunning}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg mx-auto
                                bg-purple-500/20 hover:bg-purple-500/30 text-purple-400
                                font-mono text-xs transition-colors"
@@ -791,7 +774,7 @@ How would they respond to this situation: ${context.situation}`;
               profile={profile}
               onPredict={handlePredict}
               prediction={prediction}
-              isLoading={isPredicting}
+              isLoading={cli.isRunning && lastOperation === 'predict'}
             />
           )}
 

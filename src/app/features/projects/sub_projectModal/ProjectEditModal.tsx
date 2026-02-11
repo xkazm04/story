@@ -8,14 +8,14 @@ import { Button } from '@/app/components/UI/Button';
 import { Edit, Sparkles, Loader2, Save, BookOpen } from 'lucide-react';
 import { Project } from '@/app/types/Project';
 import { projectApi } from '@/app/hooks/integration/useProjects';
-import { useLLM } from '@/app/hooks/useLLM';
-import { projectInspirationPrompt } from '@/prompts';
+import { useCLIFeature } from '@/app/hooks/useCLIFeature';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { actApi } from '@/app/hooks/integration/useActs';
 import { sceneApi } from '@/app/hooks/integration/useScenes';
 import { useQueryClient } from '@tanstack/react-query';
 import { TypewriterLoading } from '@/app/components/UI/TypewriterLoading';
 import { motion } from 'framer-motion';
+import InlineTerminal from '@/app/components/cli/InlineTerminal';
 
 interface ProjectEditModalProps {
   isOpen: boolean;
@@ -33,7 +33,13 @@ const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen, onClose, pr
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const { generate, isLoading: isGenerating } = useLLM();
+  const cli = useCLIFeature({
+    featureId: 'project-inspire',
+    projectId: project.id,
+    projectPath: typeof window !== 'undefined' ? window.location.origin : '',
+    defaultSkills: ['project-inspiration'],
+  });
+  const isGenerating = cli.isRunning;
 
   const { mutateAsync: updateProject } = projectApi.useUpdateProject();
 
@@ -49,32 +55,50 @@ const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen, onClose, pr
     setSuccessMessage(null);
   }, [project]);
 
-  const handleGenerateInspiration = async () => {
+  const handleGenerateInspiration = () => {
     setError(null);
     setSuccessMessage(null);
 
-    const context = {
-      currentDescription: description,
-      projectName: name,
-      genre: project.type,
-      existingElements: {
-        characterCount: 0, // TODO: Add when character count is available
-        actCount: acts.length,
-        sceneCount: scenes.length,
-      },
-    };
+    let prompt = `Project Name: ${name || 'Untitled Project'}\n\n`;
 
-    const response = await generate(
-      projectInspirationPrompt.user(context),
-      projectInspirationPrompt.system
-    );
-
-    if (response && response.content) {
-      setDescription(response.content.trim());
-      setSuccessMessage('AI inspiration generated! Review and edit as needed.');
+    if (description && description.trim()) {
+      prompt += `The writer has these initial thoughts about their story:\n"${description}"\n\n`;
+      prompt += `Task: Expand on these initial ideas to create an inspiring and detailed project description. `;
+      prompt += `Identify the core themes, potential conflicts, and story hooks. `;
+      prompt += `Help the writer see the full potential of their concept.\n\n`;
     } else {
-      setError('Failed to generate inspiration. Please try again.');
+      prompt += `The writer is starting a new story project but hasn't written a description yet.\n\n`;
+      prompt += `Task: Generate an inspiring story concept that could serve as a foundation for this project. `;
+      prompt += `Be creative and provide a rich, engaging description that sparks imagination.\n\n`;
     }
+
+    if (project.type) {
+      prompt += `Genre/Type: ${project.type}\n`;
+    }
+
+    if (acts.length > 0 || scenes.length > 0) {
+      prompt += `\nExisting Project Elements:\n`;
+      if (acts.length > 0) prompt += `- ${acts.length} act(s) outlined\n`;
+      if (scenes.length > 0) prompt += `- ${scenes.length} scene(s) planned\n`;
+    }
+
+    prompt += `\nGuidelines:
+- Write 2-4 paragraphs (150-300 words total)
+- Identify the central conflict or driving force
+- Highlight what makes this story unique and compelling
+- Suggest potential themes or deeper meanings
+- Make it inspiring and motivational for the writer
+- Write in an engaging, professional tone
+- Return ONLY the description text, no preamble or explanations
+
+Generate the enhanced project description:`;
+
+    cli.executePrompt(prompt, 'Project Inspiration');
+  };
+
+  const handleInsertResult = (text: string) => {
+    setDescription(text.trim());
+    setSuccessMessage('AI inspiration generated! Review and edit as needed.');
   };
 
   const handleSave = async () => {
@@ -218,6 +242,13 @@ const ProjectEditModal: React.FC<ProjectEditModalProps> = ({ isOpen, onClose, pr
             size="lg"
             rows={8}
             showCharCount
+          />
+
+          <InlineTerminal
+            {...cli.terminalProps}
+            height={120}
+            collapsible
+            onInsert={handleInsertResult}
           />
 
           <p className="text-xs text-gray-500 italic">

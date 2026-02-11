@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Loader2, BookOpen, Image, Trophy, Calendar, AlertCircle, Filter, X } from 'lucide-react';
 import { cn } from '@/app/lib/utils';
+import { EmptyState } from '@/app/components/UI';
 import { SemanticSearchResult } from '@/app/types/Faction';
 import { factionApi } from '@/app/api/factions';
 import ColoredBorder from '@/app/components/UI/ColoredBorder';
@@ -295,14 +296,12 @@ const SemanticSearchPanel: React.FC<SemanticSearchPanelProps> = ({ factionId, fa
               </div>
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <Search className="text-gray-600" size={48} />
-              <p className="text-gray-400 text-center">
-                No results found for "{query}"
-                <br />
-                <span className="text-sm text-gray-500">Try different keywords or adjust filters</span>
-              </p>
-            </div>
+            <EmptyState
+              icon={<Search />}
+              title={`No results found for "${query}"`}
+              subtitle="Try different keywords or adjust filters"
+              iconSize="lg"
+            />
           )}
         </div>
       )}

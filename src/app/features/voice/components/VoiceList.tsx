@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useVoicesByProject } from '@/app/hooks/useVoices';
 import VoiceRow from './VoiceRow';
 import { MicOff, Loader2 } from 'lucide-react';
+import { EmptyState } from '@/app/components/UI';
 
 interface VoiceListProps {
   projectId: string;
@@ -41,11 +42,12 @@ const VoiceList = ({ projectId }: VoiceListProps) => {
 
   if (!voices?.length) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-gray-400">
-        <MicOff className="h-16 w-16 mb-4 opacity-50" />
-        <p className="text-lg font-medium mb-2">No voices yet</p>
-        <p className="text-sm text-gray-500 mb-6">Create your first voice using the Voice Extraction tab</p>
-      </div>
+      <EmptyState
+        icon={<MicOff />}
+        title="No voices yet"
+        subtitle="Create your first voice using the Voice Extraction tab"
+        iconSize="lg"
+      />
     );
   }
 

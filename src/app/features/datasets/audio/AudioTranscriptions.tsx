@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, FileAudio, ChevronDown, ChevronRight, Sparkles, Copy, Check } from 'lucide-react';
-import { useLLM } from '@/app/hooks/useLLM';
-import { audioTranscriptionPrompt } from '@/prompts';
+import { useCLIFeature } from '@/app/hooks/useCLIFeature';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
+import InlineTerminal from '@/app/components/cli/InlineTerminal';
 
 interface AudioTranscriptionsProps {
   audioFiles: File[];
@@ -25,7 +26,13 @@ const AudioTranscriptions = ({ audioFiles, onTranscriptionsComplete }: AudioTran
   const [expandedFiles, setExpandedFiles] = useState<string[]>([]);
   const [enhancingIndex, setEnhancingIndex] = useState<number | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
-  const { generateFromTemplate } = useLLM();
+  const { selectedProject } = useProjectStore();
+
+  const cli = useCLIFeature({
+    featureId: 'audio-transcription',
+    projectId: selectedProject?.id || '',
+    projectPath: typeof window !== 'undefined' ? window.location.origin : '',
+  });
 
   const handleTranscribe = async () => {
     setIsTranscribing(true);
@@ -51,22 +58,36 @@ const AudioTranscriptions = ({ audioFiles, onTranscriptionsComplete }: AudioTran
     }
   };
 
-  const handleEnhanceWithAI = async (index: number) => {
+  const handleEnhanceWithAI = (index: number) => {
     setEnhancingIndex(index);
 
     const transcription = transcriptions[index];
-    const result = await generateFromTemplate(audioTranscriptionPrompt, {
-      rawTranscription: transcription.text,
-      speakerCount: 1,
-    });
+    const prompt = `You are a transcription editor who improves raw audio transcriptions.
+Clean up filler words, fix obvious errors, add proper punctuation, and format the text for readability.
+Maintain the original meaning and speaking style. Do not add or remove substantive content.
 
-    if (result) {
+Improve this audio transcription:
+
+${transcription.text}
+
+Number of Speakers: 1
+
+Provide:
+1. Cleaned transcription with proper punctuation
+2. Remove filler words (um, uh, like, you know) sparingly - keep if stylistically important
+3. Fix obvious errors while preserving the speaker's voice
+4. Format as readable paragraphs`;
+
+    cli.executePrompt(prompt, 'Enhance Transcription');
+  };
+
+  const handleInsertEnhanced = (text: string) => {
+    if (enhancingIndex !== null) {
       const updated = [...transcriptions];
-      updated[index].enhanced_text = result.content;
+      updated[enhancingIndex].enhanced_text = text.trim();
       setTranscriptions(updated);
+      setEnhancingIndex(null);
     }
-
-    setEnhancingIndex(null);
   };
 
   const toggleExpansion = (filename: string) => {
@@ -178,7 +199,7 @@ const AudioTranscriptions = ({ audioFiles, onTranscriptionsComplete }: AudioTran
                       {!transcription.enhanced_text && (
                         <button
                           onClick={() => handleEnhanceWithAI(index)}
-                          disabled={enhancingIndex === index}
+                          disabled={cli.isRunning}
                           className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-purple-900 text-purple-200 hover:bg-purple-800 transition-colors text-xs disabled:opacity-50"
                         >
                           {enhancingIndex === index ? (
@@ -233,6 +254,14 @@ const AudioTranscriptions = ({ audioFiles, onTranscriptionsComplete }: AudioTran
           </div>
         </div>
       )}
+
+      {/* CLI Terminal for AI enhancement */}
+      <InlineTerminal
+        {...cli.terminalProps}
+        height={120}
+        collapsible
+        onInsert={handleInsertEnhanced}
+      />
 
       {/* Info Note */}
       <div className="p-4 bg-blue-900/20 border border-blue-900/30 rounded-lg">

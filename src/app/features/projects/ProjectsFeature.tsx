@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Folder, Plus } from 'lucide-react';
+import { EmptyState } from '@/app/components/UI';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { projectApi } from '@/app/hooks/integration/useProjects';
 import { MOCK_USER_ID } from '@/app/config/mockUser';
@@ -101,26 +102,15 @@ const ProjectsFeature: React.FC<ProjectsFeatureProps> = ({ userId = MOCK_USER_ID
             </motion.div>
           </div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-16"
-          >
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-800/50 mb-6">
-              <Folder size={40} className="text-gray-600" />
-            </div>
-            <h3 className="text-2xl font-semibold text-white mb-4">No Projects Yet</h3>
-            <p className="text-gray-400 mb-8 max-w-md mx-auto">
-              Start your storytelling journey by creating your first project
-            </p>
-            <button
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors inline-flex items-center gap-2"
-              data-testid="create-first-project-btn"
-            >
-              <Plus size={20} />
-              Create Your First Project
-            </button>
-          </motion.div>
+          <EmptyState
+            icon={<Folder />}
+            title="No Projects Yet"
+            subtitle="Start your storytelling journey by creating your first project"
+            action={{ label: "Create Your First Project", onClick: () => {}, icon: <Plus /> }}
+            iconSize="lg"
+            animated
+            glowColor="rgb(59, 130, 246)"
+          />
         )}
       </div>
 

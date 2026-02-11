@@ -12,6 +12,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../UI/resizable';
 import { ImperativePanelHandle } from 'react-resizable-panels';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
+import { useAppShellStore } from '@/app/store/appShellStore';
 import Landing from '@/app/features/landing/Landing';
 import { useCharacterProjectSync } from '@/app/hooks/useCharacterProjectSync';
 import AppShellHeader from './header/AppShellHeader';
@@ -32,6 +33,11 @@ const CenterPanel = dynamic(() => import('./CenterPanel'), {
 });
 
 const RightPanel = dynamic(() => import('./RightPanel'), {
+  ssr: false,
+  loading: () => <LoadingPanel />,
+});
+
+const V2Layout = dynamic(() => import('@/app/features/v2/layout/V2Layout'), {
   ssr: false,
   loading: () => <LoadingPanel />,
 });
@@ -70,6 +76,7 @@ const AppShellContent: React.FC = () => {
   const centerPanelRef = useRef<ImperativePanelHandle>(null);
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
   const { selectedProject, showLanding } = useProjectStore();
+  const layoutMode = useAppShellStore((s) => s.layoutMode);
   const [isResizing, setIsResizing] = useState(false);
   const [showPresetOverlay, setShowPresetOverlay] = useState(false);
   const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -131,80 +138,88 @@ const AppShellContent: React.FC = () => {
       {/* Header with Navigation */}
       <AppShellHeader />
 
-      {/* Panel Preset Overlay */}
-      <PanelPresetOverlay
-        isVisible={showPresetOverlay}
-        onPresetSelect={handlePresetSelect}
-      />
+      {layoutMode === 'v2' ? (
+        /* V2 Dynamic Workspace */
+        <V2Layout />
+      ) : (
+        /* V1 Classic Three-Panel Layout */
+        <>
+          {/* Panel Preset Overlay */}
+          <PanelPresetOverlay
+            isVisible={showPresetOverlay}
+            onPresetSelect={handlePresetSelect}
+          />
 
-      {/* Main Panel Layout - Three-column resizable structure */}
-      <ResizablePanelGroup
-        direction="horizontal"
-        storage={safePanelStorageAPI}
-        autoSaveId="app-shell-panels"
-        className="flex-1"
-      >
-        {/* Left Panel - Sidebar navigation */}
-        <ResizablePanel
-          ref={leftPanelRef}
-          defaultSize={DEFAULT_PANEL_SIZES.left}
-          minSize={15}
-          maxSize={40}
-          collapsible={true}
-          collapsedSize={2}
-          className="ms-transition-slow ms-panel ms-scrollbar"
-          data-testid="left-panel"
-        >
-          <Suspense fallback={<LoadingPanel />}>
-            <LeftPanel />
-          </Suspense>
-        </ResizablePanel>
+          {/* Main Panel Layout - Three-column resizable structure */}
+          <ResizablePanelGroup
+            direction="horizontal"
+            storage={safePanelStorageAPI}
+            autoSaveId="app-shell-panels"
+            className="flex-1"
+          >
+            {/* Left Panel - Sidebar navigation */}
+            <ResizablePanel
+              ref={leftPanelRef}
+              defaultSize={DEFAULT_PANEL_SIZES.left}
+              minSize={15}
+              maxSize={40}
+              collapsible={true}
+              collapsedSize={2}
+              className="ms-transition-slow ms-panel ms-scrollbar"
+              data-testid="left-panel"
+            >
+              <Suspense fallback={<LoadingPanel />}>
+                <LeftPanel />
+              </Suspense>
+            </ResizablePanel>
 
-        {/* Left-Center Handle - Styled via globals.css */}
-        <ResizableHandle
-          withHandle
-          className="ms-transition"
-          data-testid="left-center-handle"
-          onDragging={handleDragging}
-        />
+            {/* Left-Center Handle - Styled via globals.css */}
+            <ResizableHandle
+              withHandle
+              className="ms-transition"
+              data-testid="left-center-handle"
+              onDragging={handleDragging}
+            />
 
-        {/* Center Panel - Main content area */}
-        <ResizablePanel
-          ref={centerPanelRef}
-          defaultSize={DEFAULT_PANEL_SIZES.center}
-          minSize={30}
-          className="relative ms-transition-slow ms-surface ms-scrollbar"
-          data-testid="center-panel"
-        >
-          <Suspense fallback={<LoadingPanel />}>
-            <CenterPanel />
-          </Suspense>
-        </ResizablePanel>
+            {/* Center Panel - Main content area */}
+            <ResizablePanel
+              ref={centerPanelRef}
+              defaultSize={DEFAULT_PANEL_SIZES.center}
+              minSize={30}
+              className="relative ms-transition-slow ms-surface ms-scrollbar"
+              data-testid="center-panel"
+            >
+              <Suspense fallback={<LoadingPanel />}>
+                <CenterPanel />
+              </Suspense>
+            </ResizablePanel>
 
-        {/* Center-Right Handle - Styled via globals.css */}
-        <ResizableHandle
-          withHandle
-          className="ms-transition"
-          data-testid="center-right-handle"
-          onDragging={handleDragging}
-        />
+            {/* Center-Right Handle - Styled via globals.css */}
+            <ResizableHandle
+              withHandle
+              className="ms-transition"
+              data-testid="center-right-handle"
+              onDragging={handleDragging}
+            />
 
-        {/* Right Panel - Properties/details sidebar */}
-        <ResizablePanel
-          ref={rightPanelRef}
-          defaultSize={DEFAULT_PANEL_SIZES.right}
-          minSize={15}
-          maxSize={40}
-          collapsible={true}
-          collapsedSize={2}
-          className="ms-transition-slow ms-panel ms-scrollbar"
-          data-testid="right-panel"
-        >
-          <Suspense fallback={<LoadingPanel />}>
-            <RightPanel />
-          </Suspense>
-        </ResizablePanel>
-      </ResizablePanelGroup>
+            {/* Right Panel - Properties/details sidebar */}
+            <ResizablePanel
+              ref={rightPanelRef}
+              defaultSize={DEFAULT_PANEL_SIZES.right}
+              minSize={15}
+              maxSize={40}
+              collapsible={true}
+              collapsedSize={2}
+              className="ms-transition-slow ms-panel ms-scrollbar"
+              data-testid="right-panel"
+            >
+              <Suspense fallback={<LoadingPanel />}>
+                <RightPanel />
+              </Suspense>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </>
+      )}
     </div>
   );
 };

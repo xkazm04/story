@@ -8,6 +8,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/app/components/UI';
 import {
   Layers,
   Plus,
@@ -262,12 +263,7 @@ function ThemeDialog({
             <label className="text-xs text-slate-400 font-medium">Keywords</label>
             <div className="flex flex-wrap gap-1 mb-2">
               {keywords.map((keyword) => (
-                <span
-                  key={keyword}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs
-                    bg-slate-700/50 text-slate-300"
-                >
-                  <Hash className="w-2.5 h-2.5" />
+                <Badge key={keyword} variant="default" size="sm" icon={<Hash className="w-2.5 h-2.5" />} className="gap-1">
                   {keyword}
                   <button
                     onClick={() => removeKeyword(keyword)}
@@ -275,7 +271,7 @@ function ThemeDialog({
                   >
                     <X className="w-2.5 h-2.5" />
                   </button>
-                </span>
+                </Badge>
               ))}
             </div>
             <div className="flex gap-2">

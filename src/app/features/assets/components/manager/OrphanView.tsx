@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { EmptyState } from '@/app/components/UI';
 import {
   AlertTriangle,
   Trash2,
@@ -270,17 +271,12 @@ export function OrphanView({
       {/* Orphan list */}
       <div className="flex-1 overflow-auto p-4">
         {filteredOrphans.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-            <Package className="w-12 h-12 mb-3 opacity-40" />
-            <p className="text-sm mb-1">
-              {orphanCount === 0 ? 'No orphan assets' : 'No matches found'}
-            </p>
-            <p className="text-xs text-slate-500">
-              {orphanCount === 0
-                ? 'All assets are in use'
-                : 'Try adjusting your search or filters'}
-            </p>
-          </div>
+          <EmptyState
+            icon={<Package />}
+            title={orphanCount === 0 ? 'No orphan assets' : 'No matches found'}
+            subtitle={orphanCount === 0 ? 'All assets are in use' : 'Try adjusting your search or filters'}
+            variant="compact"
+          />
         ) : (
           <div className="space-y-2">
             {filteredOrphans.map(orphan => (

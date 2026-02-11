@@ -34,6 +34,7 @@ export interface DatasetImage {
   thumbnail_url?: string | null;
   tags?: string[];
   description?: string | null;
+  prompt?: string | null;
   width?: number;
   height?: number;
   created_at: string;

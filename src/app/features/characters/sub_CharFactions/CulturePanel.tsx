@@ -42,7 +42,9 @@ import {
   generateCultureId,
   generateNormId,
 } from '@/lib/culture/CultureGenerator';
-import { useLLM } from '@/app/hooks/useLLM';
+import { useCLIFeature } from '@/app/hooks/useCLIFeature';
+import { useProjectStore } from '@/app/store/slices/projectSlice';
+import InlineTerminal from '@/app/components/cli/InlineTerminal';
 import ValuesEditor from './ValuesEditor';
 import RitualDesigner from './RitualDesigner';
 import CulturalCalendar from './CulturalCalendar';
@@ -403,7 +405,13 @@ const CulturePanel: React.FC<CulturePanelProps> = ({
   otherCultures = [],
   readOnly = false,
 }) => {
-  const { generateFromTemplate, isLoading } = useLLM();
+  const { selectedProject } = useProjectStore();
+  const cli = useCLIFeature({
+    featureId: 'faction-culture',
+    projectId: selectedProject?.id || '',
+    projectPath: typeof window !== 'undefined' ? window.location.origin : '',
+    defaultSkills: ['faction-creation', 'faction-lore', 'faction-description'],
+  });
   const [activeTab, setActiveTab] = useState<CultureTab>('overview');
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -480,134 +488,171 @@ const CulturePanel: React.FC<CulturePanelProps> = ({
     [currentCulture, onCultureChange]
   );
 
-  const handleGenerateFullCulture = async () => {
+  const handleGenerateFullCulture = () => {
     setIsGenerating(true);
+
+    let prompt = `Generate a complete cultural profile for the faction "${factionName}".\n`;
+    if (factionDescription) {
+      prompt += `Description: ${factionDescription}\n\n`;
+    }
+
+    prompt += `Create a comprehensive culture including:
+
+1. VALUES (at least 3 core, 2 secondary, 1 aspirational):
+Each with: name, description, manifestations, origin
+
+2. RITUALS (at least 3, mix of frequencies):
+Each with: name, description, frequency, purpose, participants, steps, significance
+
+3. TRADITIONS (at least 2):
+Each with: name, description, category, how passed down, significance
+
+4. SOCIAL NORMS (at least 4, range of severities):
+Each with: name, description, severity, who it applies to, punishment
+
+5. TABOOS (at least 2):
+Each with: name, description, origin, punishment, severity
+
+6. GREETINGS (formal and casual):
+Each with: context, greeting text, response, physical gesture
+
+7. HONORIFICS (at least 2):
+Each with: title, used for, placement
+
+8. CALENDAR EVENTS (at least 2):
+Each with: name, description, date, type, activities
+
+Return as a valid JSON object with this structure:
+{
+  "values": { "core_philosophy": "...", "guiding_principle": "...", "values": [...] },
+  "rituals": [...],
+  "traditions": [...],
+  "social_norms": [...],
+  "taboos": [...],
+  "greetings": [...],
+  "honorifics": [...],
+  "calendar": { "calendar_system": "...", "year_start": "...", "seasons": [...], "events": [...], "observances": [...] },
+  "cultural_summary": "2-3 sentence summary"
+}`;
+
+    cli.executePrompt(prompt, 'Generate Full Culture');
+  };
+
+  const handleInsertCulture = (text: string) => {
     try {
-      const result = await generateFromTemplate(FULL_CULTURE_GENERATION_PROMPT, {
-        factionName,
-        factionDescription,
-      });
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
 
-      if (result?.content) {
-        try {
-          const jsonMatch = result.content.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const parsed = JSON.parse(jsonMatch[0]);
+        const newCulture: FactionCulture = {
+          ...currentCulture,
+          values: {
+            faction_id: factionId,
+            core_philosophy: parsed.values?.core_philosophy || '',
+            guiding_principle: parsed.values?.guiding_principle || '',
+            values: (parsed.values?.values || []).map((v: any, i: number) => ({
+              id: `value_${Date.now()}_${i}`,
+              name: v.name || '',
+              description: v.description || '',
+              category: v.category || 'secondary',
+              priority: v.priority || 5,
+              manifestations: v.manifestations || [],
+              conflicts_with: v.conflicts_with || [],
+              origin: v.origin || '',
+            })),
+          },
+          rituals: (parsed.rituals || []).map((r: any, i: number) => ({
+            id: `ritual_${Date.now()}_${i}`,
+            name: r.name || '',
+            description: r.description || '',
+            frequency: r.frequency || 'annual',
+            purpose: r.purpose || '',
+            participants: r.participants || '',
+            location: r.location,
+            duration: r.duration,
+            required_items: r.required_items || [],
+            steps: r.steps || [],
+            significance: r.significance || '',
+            origin_story: r.origin_story,
+            related_values: r.related_values || [],
+          })),
+          traditions: (parsed.traditions || []).map((t: any, i: number) => ({
+            id: `tradition_${Date.now()}_${i}`,
+            name: t.name || '',
+            description: t.description || '',
+            category: t.category || 'social',
+            practiced_since: t.practiced_since,
+            passed_down_by: t.passed_down_by || '',
+            significance: t.significance || '',
+            variations: t.variations || [],
+          })),
+          social_norms: (parsed.social_norms || []).map((n: any, i: number) => ({
+            id: `norm_${Date.now()}_${i}`,
+            name: n.name || '',
+            description: n.description || '',
+            severity: n.severity || 'expectation',
+            applies_to: n.applies_to || 'all members',
+            punishment: n.punishment,
+            exceptions: n.exceptions || [],
+            related_values: n.related_values || [],
+          })),
+          taboos: (parsed.taboos || []).map((t: any, i: number) => ({
+            id: `taboo_${Date.now()}_${i}`,
+            name: t.name || '',
+            description: t.description || '',
+            origin: t.origin || '',
+            punishment: t.punishment || '',
+            severity: t.severity || 'serious',
+            known_violators: t.known_violators || [],
+          })),
+          greetings: (parsed.greetings || []).map((g: any, i: number) => ({
+            id: `greeting_${Date.now()}_${i}`,
+            context: g.context || 'formal',
+            greeting: g.greeting || '',
+            response: g.response,
+            physical_gesture: g.physical_gesture,
+            rank_modifiers: g.rank_modifiers || {},
+            time_of_day_variants: g.time_of_day_variants || {},
+          })),
+          honorifics: (parsed.honorifics || []).map((h: any, i: number) => ({
+            id: `honorific_${Date.now()}_${i}`,
+            title: h.title || '',
+            used_for: h.used_for || '',
+            placement: h.placement || 'prefix',
+            formal_level: h.formal_level || 3,
+            gender_variants: h.gender_variants || {},
+            historical_origin: h.historical_origin,
+          })),
+          calendar: {
+            faction_id: factionId,
+            calendar_system: parsed.calendar?.calendar_system || 'solar',
+            year_start: parsed.calendar?.year_start || 'Spring Equinox',
+            seasons: parsed.calendar?.seasons || ['Spring', 'Summer', 'Autumn', 'Winter'],
+            events: (parsed.calendar?.events || []).map((e: any, i: number) => ({
+              id: `event_${Date.now()}_${i}`,
+              name: e.name || '',
+              description: e.description || '',
+              date: e.date || '',
+              event_type: e.event_type || 'festival',
+              duration_days: e.duration_days || 1,
+              activities: e.activities || [],
+              traditional_foods: e.traditional_foods || [],
+              traditional_dress: e.traditional_dress,
+              gifts_exchanged: e.gifts_exchanged || false,
+              public_or_private: e.public_or_private || 'members_only',
+              related_rituals: e.related_rituals || [],
+              historical_significance: e.historical_significance,
+            })),
+            observances: parsed.calendar?.observances || [],
+          },
+          cultural_summary: parsed.cultural_summary || '',
+          updated_at: new Date().toISOString(),
+        };
 
-            // Map parsed data to culture structure
-            const newCulture: FactionCulture = {
-              ...currentCulture,
-              values: {
-                faction_id: factionId,
-                core_philosophy: parsed.values?.core_philosophy || '',
-                guiding_principle: parsed.values?.guiding_principle || '',
-                values: (parsed.values?.values || []).map((v: any, i: number) => ({
-                  id: `value_${Date.now()}_${i}`,
-                  name: v.name || '',
-                  description: v.description || '',
-                  category: v.category || 'secondary',
-                  priority: v.priority || 5,
-                  manifestations: v.manifestations || [],
-                  conflicts_with: v.conflicts_with || [],
-                  origin: v.origin || '',
-                })),
-              },
-              rituals: (parsed.rituals || []).map((r: any, i: number) => ({
-                id: `ritual_${Date.now()}_${i}`,
-                name: r.name || '',
-                description: r.description || '',
-                frequency: r.frequency || 'annual',
-                purpose: r.purpose || '',
-                participants: r.participants || '',
-                location: r.location,
-                duration: r.duration,
-                required_items: r.required_items || [],
-                steps: r.steps || [],
-                significance: r.significance || '',
-                origin_story: r.origin_story,
-                related_values: r.related_values || [],
-              })),
-              traditions: (parsed.traditions || []).map((t: any, i: number) => ({
-                id: `tradition_${Date.now()}_${i}`,
-                name: t.name || '',
-                description: t.description || '',
-                category: t.category || 'social',
-                practiced_since: t.practiced_since,
-                passed_down_by: t.passed_down_by || '',
-                significance: t.significance || '',
-                variations: t.variations || [],
-              })),
-              social_norms: (parsed.social_norms || []).map((n: any, i: number) => ({
-                id: `norm_${Date.now()}_${i}`,
-                name: n.name || '',
-                description: n.description || '',
-                severity: n.severity || 'expectation',
-                applies_to: n.applies_to || 'all members',
-                punishment: n.punishment,
-                exceptions: n.exceptions || [],
-                related_values: n.related_values || [],
-              })),
-              taboos: (parsed.taboos || []).map((t: any, i: number) => ({
-                id: `taboo_${Date.now()}_${i}`,
-                name: t.name || '',
-                description: t.description || '',
-                origin: t.origin || '',
-                punishment: t.punishment || '',
-                severity: t.severity || 'serious',
-                known_violators: t.known_violators || [],
-              })),
-              greetings: (parsed.greetings || []).map((g: any, i: number) => ({
-                id: `greeting_${Date.now()}_${i}`,
-                context: g.context || 'formal',
-                greeting: g.greeting || '',
-                response: g.response,
-                physical_gesture: g.physical_gesture,
-                rank_modifiers: g.rank_modifiers || {},
-                time_of_day_variants: g.time_of_day_variants || {},
-              })),
-              honorifics: (parsed.honorifics || []).map((h: any, i: number) => ({
-                id: `honorific_${Date.now()}_${i}`,
-                title: h.title || '',
-                used_for: h.used_for || '',
-                placement: h.placement || 'prefix',
-                formal_level: h.formal_level || 3,
-                gender_variants: h.gender_variants || {},
-                historical_origin: h.historical_origin,
-              })),
-              calendar: {
-                faction_id: factionId,
-                calendar_system: parsed.calendar?.calendar_system || 'solar',
-                year_start: parsed.calendar?.year_start || 'Spring Equinox',
-                seasons: parsed.calendar?.seasons || ['Spring', 'Summer', 'Autumn', 'Winter'],
-                events: (parsed.calendar?.events || []).map((e: any, i: number) => ({
-                  id: `event_${Date.now()}_${i}`,
-                  name: e.name || '',
-                  description: e.description || '',
-                  date: e.date || '',
-                  event_type: e.event_type || 'festival',
-                  duration_days: e.duration_days || 1,
-                  activities: e.activities || [],
-                  traditional_foods: e.traditional_foods || [],
-                  traditional_dress: e.traditional_dress,
-                  gifts_exchanged: e.gifts_exchanged || false,
-                  public_or_private: e.public_or_private || 'members_only',
-                  related_rituals: e.related_rituals || [],
-                  historical_significance: e.historical_significance,
-                })),
-                observances: parsed.calendar?.observances || [],
-              },
-              cultural_summary: parsed.cultural_summary || '',
-              updated_at: new Date().toISOString(),
-            };
-
-            onCultureChange(newCulture);
-          }
-        } catch (parseError) {
-          console.error('Failed to parse generated culture:', parseError);
-        }
+        onCultureChange(newCulture);
       }
-    } catch (error) {
-      console.error('Failed to generate culture:', error);
+    } catch (parseError) {
+      console.error('Failed to parse generated culture:', parseError);
     } finally {
       setIsGenerating(false);
     }
@@ -652,7 +697,7 @@ const CulturePanel: React.FC<CulturePanelProps> = ({
             {!readOnly && (
               <button
                 onClick={handleGenerateFullCulture}
-                disabled={isGenerating || isLoading}
+                disabled={isGenerating || cli.isRunning}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 disabled:bg-slate-700 text-white rounded-lg transition-colors"
               >
                 {isGenerating ? (
@@ -691,6 +736,14 @@ const CulturePanel: React.FC<CulturePanelProps> = ({
           ))}
         </div>
       </div>
+
+      {/* CLI Terminal for AI generation */}
+      <InlineTerminal
+        {...cli.terminalProps}
+        height={150}
+        collapsible
+        onInsert={handleInsertCulture}
+      />
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">

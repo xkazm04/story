@@ -5,17 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Save, Check, Sparkles } from 'lucide-react';
 import { PromptSection } from '@/app/constants/promptSections';
 import { traitApi } from '@/app/api/traits';
-import { Character } from '@/app/types/Character';
 import { RichTextEditor } from '@/app/components/UI';
 import { SmartGenerateButton } from '@/app/components/UI/SmartGenerateButton';
-import { useLLM } from '@/app/hooks/useLLM';
-import {
-  smartCharacterCreationPrompt,
-  gatherProjectContext,
-  gatherStoryContext,
-  gatherVisualStyleContext,
-  gatherCharacterContext
-} from '@/prompts';
+import { useCLIFeature } from '@/app/hooks/useCLIFeature';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { useCharacters } from '@/app/hooks/useCharacters';
 import { useAISuggestionStream } from '@/app/hooks/useAISuggestionStream';
@@ -23,6 +15,7 @@ import { AISuggestion } from '@/app/services/aiSuggestionService';
 import AISuggestionSidebar from '../components/AISuggestionSidebar';
 import { IconButton } from '@/app/components/UI/Button';
 import { cn } from '@/app/lib/utils';
+import InlineTerminal from '@/app/components/cli/InlineTerminal';
 
 interface TraitPromptSectionProps {
   section: PromptSection;
@@ -46,7 +39,14 @@ const TraitPromptSection: React.FC<TraitPromptSectionProps> = ({
 
   const { selectedProject } = useProjectStore();
   const { data: allCharacters = [] } = useCharacters(selectedProject?.id || '');
-  const { generateFromTemplate, isLoading: isGenerating } = useLLM();
+
+  const cli = useCLIFeature({
+    featureId: 'char-traits',
+    projectId: selectedProject?.id || '',
+    projectPath: typeof window !== 'undefined' ? window.location.origin : '',
+    defaultSkills: ['character-traits', 'character-backstory'],
+  });
+  const isGenerating = cli.isRunning;
 
   // AI Suggestion Stream Hook
   const {
@@ -110,96 +110,23 @@ const TraitPromptSection: React.FC<TraitPromptSectionProps> = ({
     }
   };
 
-  const handleSmartGenerate = async () => {
+  const handleSmartGenerate = () => {
     if (!selectedProject) {
       setError('No active project');
       return;
     }
-
     setError('');
 
-    try {
-      // Gather rich context
-      const [projectCtx, storyCtx, visualCtx, characterCtx] = await Promise.all([
-        gatherProjectContext(selectedProject.id),
-        gatherStoryContext(selectedProject.id),
-        gatherVisualStyleContext(selectedProject.id),
-        gatherCharacterContext(characterId),
-      ]);
+    const skillId = section.id === 'background' ? 'character-backstory' : 'character-traits';
+    cli.execute(skillId, { characterId });
+  };
 
-      // Get current character's name
-      const currentCharacter = allCharacters.find((c: Character) => c.id === characterId);
-      if (!currentCharacter) {
-        setError('Character not found');
-        return;
-      }
-
-      // Get other characters for context
-      const otherCharacters = allCharacters.filter((c: Character) => c.id !== characterId);
-
-      // Create focused prompt for this specific section
-      const sectionPrompts: Record<string, string> = {
-        background: `Create a detailed background for ${currentCharacter.name}. Focus on their history, origins, upbringing, and formative experiences that shaped who they are today.`,
-        personality: `Describe ${currentCharacter.name}'s personality traits, behaviors, mannerisms, speech patterns, and how they typically interact with others.`,
-        motivations: `What drives ${currentCharacter.name}? Describe their goals, desires, ambitions, fears, and what motivates them to act.`,
-        strengths: `List and describe ${currentCharacter.name}'s strengths, abilities, skills, talents, and positive attributes in detail.`,
-        weaknesses: `Describe ${currentCharacter.name}'s weaknesses, flaws, limitations, vulnerabilities, and struggles in detail.`,
-        relationships: `Describe ${currentCharacter.name}'s important relationships and social connections. How do they relate to other characters in the story?`,
-      };
-
-      // Generate using smart character creation prompt
-      const response = await generateFromTemplate(smartCharacterCreationPrompt, {
-        characterName: currentCharacter.name,
-        characterRole: currentCharacter.type,
-        projectContext: projectCtx,
-        storyContext: storyCtx,
-        existingCharacters: otherCharacters,
-        visualStyle: visualCtx,
-        focusArea: section.id,
-        specificRequest: sectionPrompts[section.id] || section.description,
-      });
-
-      if (response?.content) {
-        // Extract the relevant section from the response
-        // The LLM will return structured content, we need to parse it
-        const content = response.content;
-
-        // Try to find the specific section in the response
-        const sectionKeywords: Record<string, string[]> = {
-          background: ['background', 'history', 'origins', 'upbringing'],
-          personality: ['personality', 'traits', 'behavior', 'mannerisms'],
-          motivations: ['motivations', 'goals', 'desires', 'drives'],
-          strengths: ['strengths', 'abilities', 'skills', 'talents'],
-          weaknesses: ['weaknesses', 'flaws', 'limitations', 'vulnerabilities'],
-          relationships: ['relationships', 'connections', 'social'],
-        };
-
-        // Simple extraction - in production you might want more sophisticated parsing
-        let extractedContent = content;
-
-        // If response has clear section markers, extract just that section
-        const keywords = sectionKeywords[section.id] || [];
-        for (const keyword of keywords) {
-          const regex = new RegExp(`\\*\\*${keyword}[^\\*]*\\*\\*[:\\s]*([^\\n]+(?:\\n(?!\\*\\*)[^\\n]+)*)`, 'i');
-          const match = content.match(regex);
-          if (match && match[1]) {
-            extractedContent = match[1].trim();
-            break;
-          }
-        }
-
-        // Clean up markdown formatting
-        extractedContent = extractedContent
-          .replace(/\*\*/g, '')
-          .replace(/^#+\s/gm, '')
-          .trim();
-
-        setValue(extractedContent);
-      }
-    } catch (err) {
-      setError('Failed to generate content');
-      console.error('Error generating trait:', err);
-    }
+  const handleInsertResult = (text: string) => {
+    const cleaned = text
+      .replace(/\*\*/g, '')
+      .replace(/^#+\s/gm, '')
+      .trim();
+    setValue(cleaned);
   };
 
   const handleApplySuggestion = (suggestion: AISuggestion) => {
@@ -321,6 +248,14 @@ const TraitPromptSection: React.FC<TraitPromptSectionProps> = ({
         </AnimatePresence>
       </div>
     </motion.div>
+
+    {/* CLI Terminal for AI generation */}
+    <InlineTerminal
+      {...cli.terminalProps}
+      height={150}
+      collapsible
+      onInsert={handleInsertResult}
+    />
 
     {/* AI Suggestion Sidebar */}
     <AnimatePresence>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { apiFetch } from '../utils/api';
-import { EntityType, NameSuggestion } from '../api/name-suggestions/route';
+import { EntityType, NameSuggestion } from '../types/NameSuggestion';
 
 export interface NameSuggestionsContext {
   partialName?: string;
