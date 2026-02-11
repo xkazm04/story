@@ -9,6 +9,7 @@ import {
   BookUser,
   Fingerprint,
   MessageSquareQuote,
+  Paintbrush,
   Tag,
   UserSearch,
 } from 'lucide-react';
@@ -204,10 +205,76 @@ ${TOOL_PREAMBLE}**Tool Usage Order:**
 `,
 };
 
+export const characterAppearance: CLISkill = {
+  id: 'character-appearance',
+  name: 'Character Appearance',
+  shortName: 'Appearance',
+  description: 'Design character visual appearance across face, body, and environment categories',
+  icon: Paintbrush,
+  color: 'amber',
+  domain: 'character',
+  outputFormat: 'json',
+  panelConfig: {
+    panels: [
+      { type: 'character-creator', role: 'primary' },
+      { type: 'character-cards', role: 'sidebar' },
+    ],
+    preferredLayout: 'primary-sidebar',
+    clearExisting: true,
+  },
+  prompt: `## Character Appearance Designer
+
+You design detailed visual character appearances across 14 categories.
+
+**Categories and their prompt templates:**
+Face: hair ("with {value} hair"), eyes ("{value} eyes"), nose ("a {value} nose"), mouth ("{value} lips"), expression ("{value} expression")
+Features: makeup ("wearing {value} makeup"), markings ("with {value}"), accessories ("wearing {value}"), facialHair ("with {value}")
+Body: skinTone ("{value} skin tone"), age ("{value}"), bodyType ("{value} build")
+Environment: lighting ("{value} lighting"), background ("{value} background")
+
+${TOOL_PREAMBLE}**Tool Usage Order:**
+1. \`get_character\` — Read character details and backstory
+2. \`list_traits\` — Read traits (physical traits inform appearance)
+3. \`list_characters\` — Read project characters for context
+
+**After designing:** Call \`update_workspace\` to push values to the Character Creator panel:
+\`\`\`json
+{
+  "action": "show",
+  "panels": [{
+    "type": "character-creator",
+    "role": "primary",
+    "props": {
+      "cliAppearanceUpdate": {
+        "hair": { "customPrompt": "wild windswept silver-streaked" },
+        "eyes": { "optionId": 3 },
+        "skinTone": { "customPrompt": "weathered bronze" }
+      }
+    }
+  }]
+}
+\`\`\`
+
+**Preset option IDs (use customPrompt for creative/unique values):**
+hair: 1=Long Wavy, 2=Short Spiky, 3=Braided Crown, 4=Undercut, 5=Flowing Locks, 6=Mohawk, 7=Pixie Cut, 8=Ponytail, 9=Afro, 10=Bald, 11=Dreadlocks, 12=Side Shave
+eyes: 1=Almond, 2=Round, 3=Hooded, 4=Upturned, 5=Downturned, 6=Monolid, 7=Deep Set, 8=Wide Set
+skinTone: 1=Porcelain, 2=Fair, 3=Sand, 4=Honey, 5=Caramel, 6=Bronze, 7=Mahogany, 8=Espresso, 9=Elven Silver, 10=Orc Green, 11=Demon Red, 12=Frost Blue
+age: 1=Child, 2=Teen, 3=Young Adult, 4=Middle Aged, 5=Senior, 6=Ancient
+bodyType: 1=Slim, 2=Athletic, 3=Muscular, 4=Heavyset, 5=Petite, 6=Tall
+
+**Guidelines:**
+- Prefer customPrompt for distinctive descriptions: "storm-gray eyes with flecks of gold" not "gray eyes"
+- Match appearance to character archetype and story genre
+- Use optionId when a preset matches well enough
+- Cover at least 6-8 categories per character for a complete look
+`,
+};
+
 export const CHARACTER_SKILLS: CLISkill[] = [
   characterBackstory,
   characterTraits,
   characterDialogue,
   characterNames,
   personalityExtraction,
+  characterAppearance,
 ];

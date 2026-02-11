@@ -1,29 +1,82 @@
 'use client';
 
 import React from 'react';
-import { LayoutGrid, Plus, RotateCw } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { cn } from '@/app/lib/utils';
 import { useWorkspaceStore } from '../store/workspaceStore';
-import { getNextLayout, LAYOUT_TEMPLATES } from './layoutEngine';
+import { LAYOUT_TEMPLATES, LAYOUT_ORDER, getLayoutFitnesses } from './layoutEngine';
 import { PANEL_REGISTRY } from './panelRegistry';
-import type { WorkspacePanelType } from '../types';
+import type { WorkspacePanelType, WorkspaceLayout } from '../types';
+
+/** Tiny SVG icons representing each grid layout visually. */
+function LayoutIcon({ variant, size = 16 }: { variant: WorkspaceLayout; size?: number }) {
+  const s = size;
+  const g = 1; // gap
+  const r = 1; // corner radius
+
+  const common = { rx: r, className: 'fill-current' } as const;
+
+  switch (variant) {
+    case 'single':
+      return (
+        <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
+          <rect x={0} y={0} width={s} height={s} {...common} />
+        </svg>
+      );
+    case 'split-2':
+      return (
+        <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
+          <rect x={0} y={0} width={s * 0.58 - g / 2} height={s} {...common} />
+          <rect x={s * 0.58 + g / 2} y={0} width={s * 0.42 - g / 2} height={s} {...common} />
+        </svg>
+      );
+    case 'split-3':
+      return (
+        <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
+          <rect x={0} y={0} width={s * 0.58 - g / 2} height={s} {...common} />
+          <rect x={s * 0.58 + g / 2} y={0} width={s * 0.42 - g / 2} height={s * 0.5 - g / 2} {...common} />
+          <rect x={s * 0.58 + g / 2} y={s * 0.5 + g / 2} width={s * 0.42 - g / 2} height={s * 0.5 - g / 2} {...common} />
+        </svg>
+      );
+    case 'grid-4':
+      return (
+        <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
+          <rect x={0} y={0} width={s * 0.5 - g / 2} height={s * 0.5 - g / 2} {...common} />
+          <rect x={s * 0.5 + g / 2} y={0} width={s * 0.5 - g / 2} height={s * 0.5 - g / 2} {...common} />
+          <rect x={0} y={s * 0.5 + g / 2} width={s * 0.5 - g / 2} height={s * 0.5 - g / 2} {...common} />
+          <rect x={s * 0.5 + g / 2} y={s * 0.5 + g / 2} width={s * 0.5 - g / 2} height={s * 0.5 - g / 2} {...common} />
+        </svg>
+      );
+    case 'primary-sidebar':
+      return (
+        <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
+          <rect x={0} y={0} width={s * 0.7 - g / 2} height={s} {...common} />
+          <rect x={s * 0.7 + g / 2} y={0} width={s * 0.3 - g / 2} height={s} {...common} />
+        </svg>
+      );
+    case 'triptych':
+      return (
+        <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
+          <rect x={0} y={0} width={s * 0.25 - g / 2} height={s} {...common} />
+          <rect x={s * 0.25 + g / 2} y={0} width={s * 0.5 - g} height={s} {...common} />
+          <rect x={s * 0.75 + g / 2} y={0} width={s * 0.25 - g / 2} height={s} {...common} />
+        </svg>
+      );
+  }
+}
 
 export default function WorkspaceToolbar() {
   const layout = useWorkspaceStore((s) => s.layout);
   const panels = useWorkspaceStore((s) => s.panels);
   const setLayout = useWorkspaceStore((s) => s.setLayout);
   const showPanels = useWorkspaceStore((s) => s.showPanels);
+  const clearPanels = useWorkspaceStore((s) => s.clearPanels);
 
-  const template = LAYOUT_TEMPLATES[layout];
   const existingTypes = new Set(panels.map((p) => p.type));
 
   const availablePanels = Object.values(PANEL_REGISTRY).filter(
     (entry) => entry.type !== 'empty-welcome' && !existingTypes.has(entry.type)
   );
-
-  const handleCycleLayout = () => {
-    setLayout(getNextLayout(layout));
-  };
 
   const handleAddPanel = (type: WorkspacePanelType) => {
     showPanels([{ type, role: PANEL_REGISTRY[type].defaultRole }]);
@@ -33,18 +86,54 @@ export default function WorkspaceToolbar() {
 
   return (
     <div className="flex items-center gap-2 px-3 py-1 border-b border-slate-800/40 bg-slate-950/60">
-      {/* Layout indicator + cycle */}
+      {/* Layout picker — icon per variant with fitness indicators */}
+      {(() => {
+        const fitnesses = getLayoutFitnesses(panels);
+        return (
+          <div className="flex items-center gap-0.5 bg-slate-900/50 rounded-md border border-slate-800/40 p-0.5">
+            {LAYOUT_ORDER.map((variant) => {
+              const tmpl = LAYOUT_TEMPLATES[variant];
+              const isActive = layout === variant;
+              const fitness = fitnesses[variant];
+              const isGoodFit = fitness >= 50;
+              const isPoorFit = fitness < 0;
+              return (
+                <button
+                  key={variant}
+                  onClick={() => setLayout(variant)}
+                  title={`${tmpl.label}${isPoorFit ? ' (panels may not fit)' : ''}`}
+                  className={cn(
+                    'p-1 rounded transition-colors',
+                    isActive
+                      ? 'bg-slate-700/60 text-slate-200'
+                      : isGoodFit
+                        ? 'text-slate-400 hover:text-slate-300 hover:bg-slate-800/40'
+                        : isPoorFit
+                          ? 'text-slate-800 opacity-40'
+                          : 'text-slate-600 hover:text-slate-500'
+                  )}
+                >
+                  <LayoutIcon variant={variant} size={14} />
+                </button>
+              );
+            })}
+          </div>
+        );
+      })()}
+
+      <div className="flex-1" />
+
+      {/* Clear workspace — center */}
       <button
-        onClick={handleCycleLayout}
+        onClick={clearPanels}
         className={cn(
-          'flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium',
-          'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-colors'
+          'flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-medium',
+          'text-slate-500 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-colors'
         )}
-        title="Cycle layout"
+        title="Clear workspace"
       >
-        <LayoutGrid className="w-3 h-3" />
-        <span>{template.label}</span>
-        <RotateCw className="w-2.5 h-2.5 text-slate-600" />
+        <X className="w-3 h-3" />
+        <span>Clear</span>
       </button>
 
       <div className="flex-1" />

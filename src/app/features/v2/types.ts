@@ -10,6 +10,8 @@ import type { SkillDomain } from '@/app/components/cli/skills/types';
 
 export type PanelRole = 'primary' | 'secondary' | 'tertiary' | 'sidebar';
 
+export type PanelSizeClass = 'compact' | 'standard' | 'wide';
+
 export type WorkspaceLayout =
   | 'single'
   | 'split-2'
@@ -25,6 +27,19 @@ export type WorkspacePanelType =
   | 'scene-metadata'
   | 'dialogue-view'
   | 'image-canvas'
+  | 'character-detail'
+  | 'beats-manager'
+  | 'story-evaluator'
+  | 'story-graph'
+  | 'script-editor'
+  | 'theme-manager'
+  | 'art-style'
+  | 'voice-manager'
+  | 'voice-casting'
+  | 'image-generator'
+  | 'scene-list'
+  | 'writing-desk'
+  | 'character-creator'
   | 'empty-welcome';
 
 // ============ Terminal Tab ============

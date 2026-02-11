@@ -10,7 +10,7 @@ import { Scene } from '@/app/types/Scene';
 import { useQueryClient } from '@tanstack/react-query';
 import { characterApi } from '@/app/api/characters';
 import { SmartNameInput } from '@/app/components/UI/SmartNameInput';
-import { NameSuggestion } from '@/app/api/name-suggestions/route';
+import { NameSuggestion } from '@/app/types/NameSuggestion';
 
 const SceneSelector: React.FC = () => {
   const { selectedProject, selectedAct, selectedScene, setSelectedScene } = useProjectStore();

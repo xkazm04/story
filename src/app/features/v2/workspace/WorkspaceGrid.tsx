@@ -4,7 +4,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWorkspaceStore } from '../store/workspaceStore';
 import { useTerminalExecute } from '../hooks/useTerminalExecute';
-import { getLayoutTemplate, sortPanelsByRole } from './layoutEngine';
+import { getLayoutTemplate, assignPanelsToSlots } from './layoutEngine';
 import WorkspacePanelWrapper from './WorkspacePanelWrapper';
 import WorkspaceToolbar from './WorkspaceToolbar';
 import EmptyWelcomePanel from './panels/EmptyWelcomePanel';
@@ -30,7 +30,7 @@ export default function WorkspaceGrid() {
   }
 
   const template = getLayoutTemplate(layout);
-  const sortedPanels = sortPanelsByRole(panels);
+  const assignedPanels = assignPanelsToSlots(panels, layout);
 
   return (
     <div className="flex flex-col h-full">
@@ -44,8 +44,8 @@ export default function WorkspaceGrid() {
         }}
       >
         <AnimatePresence mode="popLayout">
-          {sortedPanels.map((panel, idx) => {
-            const slotStyle = template.slotStyles[idx] ?? {};
+          {assignedPanels.map((panel, idx) => {
+            const slotStyle = template.slots[idx]?.style ?? {};
             return (
               <motion.div
                 key={panel.id}

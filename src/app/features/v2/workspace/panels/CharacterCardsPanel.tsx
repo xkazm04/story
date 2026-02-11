@@ -5,6 +5,7 @@ import { Users, Search, User } from 'lucide-react';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { characterApi } from '@/app/hooks/integration/useCharacters';
 import { cn } from '@/app/lib/utils';
+import { useWorkspaceStore } from '../../store/workspaceStore';
 import PanelFrame from './PanelFrame';
 
 interface CharacterCardsPanelProps {
@@ -28,6 +29,16 @@ export default function CharacterCardsPanel({
   );
 
   const [search, setSearch] = useState('');
+  const creatorPanel = useWorkspaceStore((s) => s.getPanelByType('character-creator'));
+  const updatePanelProps = useWorkspaceStore((s) => s.updatePanelProps);
+
+  const handleCharacterClick = (charId: string) => {
+    // If character-creator panel is open, push characterId to it
+    if (creatorPanel) {
+      updatePanelProps(creatorPanel.id, { characterId: charId });
+    }
+    onTriggerSkill?.('character-backstory', { characterId: charId });
+  };
 
   const filtered = search
     ? characters.filter((c) =>
@@ -67,7 +78,7 @@ export default function CharacterCardsPanel({
               {filtered.map((char) => (
                 <button
                   key={char.id}
-                  onClick={() => onTriggerSkill?.('character-backstory', { characterId: char.id })}
+                  onClick={() => handleCharacterClick(char.id)}
                   className={cn(
                     'flex items-center gap-2.5 px-3 py-2 rounded-lg text-left',
                     'bg-slate-900/40 border border-slate-800/40',

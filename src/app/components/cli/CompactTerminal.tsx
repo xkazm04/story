@@ -93,6 +93,7 @@ export default function CompactTerminal({
   currentStoredTaskId: externalStoredTaskId,
   onExecutionChange,
   onToolUse,
+  onPromptSubmit,
 }: CompactTerminalProps) {
   // State
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -317,16 +318,21 @@ export default function CompactTerminal({
   const handleSubmit = useCallback(() => {
     if (!inputValue.trim() || isStreaming) return;
 
+    const prompt = inputValue.trim();
+
+    // Notify parent before execution (V2 workspace intent detection)
+    onPromptSubmit?.(prompt);
+
     addLog({
       id: `user-${Date.now()}`,
       type: 'user',
-      content: inputValue.trim(),
+      content: prompt,
       timestamp: Date.now(),
     });
 
-    executeTask(inputValue.trim());
+    executeTask(prompt);
     setInputValue('');
-  }, [inputValue, isStreaming, executeTask, addLog]);
+  }, [inputValue, isStreaming, executeTask, addLog, onPromptSubmit]);
 
   const handleAbort = useCallback(() => {
     if (eventSourceRef.current) {

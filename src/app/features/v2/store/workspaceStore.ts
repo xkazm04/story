@@ -6,6 +6,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { resolveLayout } from '../workspace/layoutEngine';
 import type {
   WorkspacePanelInstance,
   WorkspaceLayout,
@@ -55,13 +56,6 @@ function directivesToPanels(
   }));
 }
 
-function autoResolveLayout(panelCount: number): WorkspaceLayout {
-  if (panelCount <= 1) return 'single';
-  if (panelCount === 2) return 'split-2';
-  if (panelCount === 3) return 'split-3';
-  return 'grid-4';
-}
-
 export const useWorkspaceStore = create<WorkspaceStoreState>()(
   persist(
     (set, get) => ({
@@ -72,16 +66,27 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
 
       showPanels: (directives) => {
         set((state) => {
-          // Don't add panels that already exist
           const existingTypes = new Set(state.panels.map((p) => p.type));
-          const newDirectives = directives.filter((d) => !existingTypes.has(d.type));
-          if (newDirectives.length === 0) return state;
 
-          const newPanels = directivesToPanels(newDirectives, state.panels);
-          const allPanels = [...state.panels, ...newPanels];
+          // Merge props for panels that already exist
+          const updatedPanels = state.panels.map((p) => {
+            const match = directives.find((d) => d.type === p.type);
+            if (match?.props) {
+              return { ...p, props: { ...p.props, ...match.props } };
+            }
+            return p;
+          });
+
+          // Add panels that don't exist yet
+          const newDirectives = directives.filter((d) => !existingTypes.has(d.type));
+          const propsChanged = updatedPanels.some((p, i) => p !== state.panels[i]);
+          if (newDirectives.length === 0 && !propsChanged) return state;
+
+          const newPanels = directivesToPanels(newDirectives, updatedPanels);
+          const allPanels = [...updatedPanels, ...newPanels];
           return {
             panels: allPanels,
-            layout: autoResolveLayout(allPanels.length),
+            layout: newPanels.length > 0 ? resolveLayout(allPanels) : state.layout,
           };
         });
       },
@@ -92,7 +97,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
           const remaining = state.panels.filter((p) => !typeSet.has(p.type));
           return {
             panels: remaining,
-            layout: autoResolveLayout(remaining.length),
+            layout: resolveLayout(remaining),
           };
         });
       },
@@ -101,7 +106,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
         const newPanels = directivesToPanels(directives);
         set({
           panels: newPanels,
-          layout: layout ?? autoResolveLayout(newPanels.length),
+          layout: layout ?? resolveLayout(newPanels),
         });
       },
 
@@ -137,7 +142,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
         if (snapshot) {
           set({
             panels: [...snapshot],
-            layout: autoResolveLayout(snapshot.length),
+            layout: resolveLayout(snapshot),
           });
         }
       },

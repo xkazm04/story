@@ -5,8 +5,8 @@
  * Skills are specialized instruction sets that guide Claude Code CLI
  * for specific storytelling tasks.
  *
- * 28 skills across 7 domains:
- * - Character (5): backstory, traits, dialogue, names, personality
+ * 29 skills across 7 domains:
+ * - Character (6): backstory, traits, dialogue, names, personality, appearance
  * - Faction (4): creation, lore, description, relationships
  * - Story (7): next-steps, write-content, architect, brainstorm, beat-suggestions, beat-description, project-inspiration
  * - Scene (4): generation, dialogue, description, beat-scene-mapping

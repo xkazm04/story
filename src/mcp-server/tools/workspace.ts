@@ -16,7 +16,7 @@ const textContent = (text: string) => ({ content: [{ type: 'text' as const, text
 export function registerWorkspaceTools(server: McpServer, _config: McpConfig, _client: StoryHttpClient) {
   server.tool(
     'update_workspace',
-    'Control the workspace UI panels. Actions: show (add panels), hide (remove panels), replace (replace all), clear (remove all). Panel types: scene-editor, character-cards, story-map, scene-metadata, dialogue-view, image-canvas.',
+    'Control the workspace UI panels. Actions: show (add/update panels), hide (remove panels), replace (replace all), clear (remove all). Panel types: scene-editor, scene-metadata, dialogue-view, character-cards, character-detail, character-creator, story-map, beats-manager, story-evaluator, story-graph, script-editor, theme-manager, art-style, image-canvas, image-generator, voice-manager, voice-casting, scene-list, writing-desk. Use props to pass data to panels (e.g. cliAppearanceUpdate for character-creator).',
     {
       action: z.enum(['show', 'hide', 'replace', 'clear']).describe('Action to perform on workspace panels'),
       panels: z.array(z.object({

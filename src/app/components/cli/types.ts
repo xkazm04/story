@@ -100,6 +100,8 @@ export interface CompactTerminalProps {
   onExecutionChange?: (executionId: string | null, taskId: string | null) => void;
   /** V2 workspace integration: intercept tool_use events. Return true if handled. */
   onToolUse?: (toolName: string, toolInput: Record<string, unknown>) => boolean;
+  /** V2 workspace integration: fires when user submits a prompt, before execution starts. */
+  onPromptSubmit?: (prompt: string) => void;
 }
 
 /**

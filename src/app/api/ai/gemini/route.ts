@@ -16,7 +16,7 @@ type RegenerationMode = 'transform' | 'overlay';
 
 interface GeminiRequest {
   prompt: string;
-  sourceImageUrl: string;
+  sourceImageUrl?: string;
   aspectRatio?: '16:9' | '9:16' | '1:1' | '4:3' | '3:4';
   mode?: RegenerationMode; // 'transform' = redesign the image, 'overlay' = add elements on top
 }
@@ -33,13 +33,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!sourceImageUrl) {
-      return NextResponse.json(
-        { success: false, error: 'Source image URL is required' },
-        { status: 400 }
-      );
-    }
-
     const apiKey = process.env.GOOGLE_AI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
@@ -48,75 +41,68 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch and convert source image to base64
-    let imageData: { mimeType: string; data: string };
-    try {
-      imageData = await fetchImageAsBase64(sourceImageUrl);
-    } catch (error) {
-      console.error('Failed to fetch source image:', error);
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch source image' },
-        { status: 400 }
-      );
-    }
-
     // Initialize Gemini client
     const client = new GoogleGenAI({ apiKey });
 
-    // Build the modification prompt based on mode
-    let modificationPrompt: string;
+    let response;
 
-    if (mode === 'overlay') {
-      // Overlay mode: Add elements ON TOP of the existing image, preserve the scene
-      modificationPrompt = `Look at this image. ${prompt.trim()}
+    if (sourceImageUrl) {
+      // ─── Image-to-image mode ───
+      let imageData: { mimeType: string; data: string };
+      try {
+        imageData = await fetchImageAsBase64(sourceImageUrl);
+      } catch (error) {
+        console.error('Failed to fetch source image:', error);
+        return NextResponse.json(
+          { success: false, error: 'Failed to fetch source image' },
+          { status: 400 }
+        );
+      }
+
+      // Build the modification prompt based on mode
+      let modificationPrompt: string;
+      if (mode === 'overlay') {
+        modificationPrompt = `Look at this image. ${prompt.trim()}
 
 IMPORTANT: Keep the original image's scene, composition, and content exactly as they are. Only add the requested overlay elements on top. Do not change the underlying image.`;
-    } else {
-      // Transform mode (default): Completely redesign the image based on the prompt
-      modificationPrompt = `Transform this image: ${prompt.trim()}
+      } else {
+        modificationPrompt = `Transform this image: ${prompt.trim()}
 
 Create a completely NEW image inspired by the provided reference. You should reimagine and redesign the scene according to the instructions above. Feel free to change the composition, style, colors, atmosphere, and any other aspects to match the requested transformation. Generate a high-quality, detailed image that fulfills the creative direction.`;
-    }
+      }
 
-    // Map aspect ratio to width/height for image generation config
-    const aspectRatioMap: Record<string, { width: number; height: number }> = {
-      '16:9': { width: 1920, height: 1080 },
-      '9:16': { width: 1080, height: 1920 },
-      '1:1': { width: 1024, height: 1024 },
-      '4:3': { width: 1536, height: 1152 },
-      '3:4': { width: 1152, height: 1536 },
-    };
-    const dimensions = aspectRatioMap[aspectRatio] || aspectRatioMap['16:9'];
+      const imageGenConfig = { imageGenerationConfig: { aspectRatio } } as Record<string, unknown>;
 
-    // Generate using Gemini's image generation model
-    const response = await client.models.generateContent({
-      model: GEMINI_IMAGE_MODEL,
-      contents: [
-        {
+      response = await client.models.generateContent({
+        model: GEMINI_IMAGE_MODEL,
+        contents: [{
           role: 'user',
           parts: [
-            {
-              inlineData: {
-                mimeType: imageData.mimeType,
-                data: imageData.data,
-              },
-            },
-            {
-              text: modificationPrompt,
-            },
+            { inlineData: { mimeType: imageData.mimeType, data: imageData.data } },
+            { text: modificationPrompt },
           ],
+        }],
+        config: {
+          responseModalities: ['image', 'text'],
+          ...imageGenConfig,
         },
-      ],
-      config: {
-        responseModalities: ['image', 'text'],
-        // Image generation specific config
-        ...(dimensions && {
-          imageGenerationConfig: {
-            aspectRatio: aspectRatio,
-          },
-        }),
-      },
-    });
+      });
+    } else {
+      // ─── Text-to-image mode (no source image) ───
+      const imageGenConfig = { imageGenerationConfig: { aspectRatio } } as Record<string, unknown>;
+
+      response = await client.models.generateContent({
+        model: GEMINI_IMAGE_MODEL,
+        contents: [{
+          role: 'user',
+          parts: [{ text: prompt.trim() }],
+        }],
+        config: {
+          responseModalities: ['image', 'text'],
+          ...imageGenConfig,
+        },
+      });
+    }
 
     // Extract the generated image from response
     const candidates = response.candidates;
