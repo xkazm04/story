@@ -57,8 +57,8 @@ export async function GET(request: NextRequest) {
       .from('avatar_timeline')
       .select(`
         *,
-        scene:scenes(id, title, scene_number),
-        act:acts(id, title, act_number)
+        scene:scenes(id, name, order),
+        act:acts(id, name, order)
       `)
       .eq('character_id', characterId)
       .order('timeline_order', { ascending: true })
@@ -162,8 +162,8 @@ export async function POST(request: NextRequest) {
       })
       .select(`
         *,
-        scene:scenes(id, title, scene_number),
-        act:acts(id, title, act_number)
+        scene:scenes(id, name, order),
+        act:acts(id, name, order)
       `)
       .single();
 
