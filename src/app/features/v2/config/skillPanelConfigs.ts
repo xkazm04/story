@@ -279,8 +279,35 @@ export const SKILL_PANEL_CONFIGS: Record<string, SkillPanelConfig> = {
     panels: [
       { type: 'voice-manager', role: 'primary' },
       { type: 'voice-casting', role: 'secondary' },
+      { type: 'voice-performance', role: 'sidebar' },
     ],
-    preferredLayout: 'split-2',
+    preferredLayout: 'split-3',
+    clearExisting: true,
+  },
+  'voice-casting-workflow': {
+    panels: [
+      { type: 'voice-casting', role: 'primary' },
+      { type: 'character-cards', role: 'secondary' },
+      { type: 'voice-performance', role: 'tertiary' },
+    ],
+    preferredLayout: 'triptych',
+    clearExisting: true,
+  },
+  'dialog-narration': {
+    panels: [
+      { type: 'narration', role: 'primary' },
+      { type: 'character-cards', role: 'sidebar' },
+    ],
+    preferredLayout: 'primary-sidebar',
+    clearExisting: true,
+  },
+  'scene-voices': {
+    panels: [
+      { type: 'script-dialog', role: 'primary' },
+      { type: 'voice-casting', role: 'secondary' },
+      { type: 'scene-metadata', role: 'tertiary' },
+    ],
+    preferredLayout: 'split-3',
     clearExisting: true,
   },
   'deep-analysis': {

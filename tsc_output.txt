@@ -1,0 +1,155 @@
+src/app/api/ai/gemini/route.ts(9,29): error TS2307: Cannot find module '@google/genai' or its corresponding type declarations.
+src/app/api/ai/gemini/route.ts(136,36): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/api/ai/polish-image/route.ts(17,29): error TS2307: Cannot find module '@google/genai' or its corresponding type declarations.
+src/app/api/ai/polish-image/route.ts(139,34): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(27,8): error TS2307: Cannot find module '@/test/test-utils' or its corresponding type declarations.
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(59,11): error TS2345: Argument of type '"concept"' is not assignable to parameter of type 'OutputMode'.
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(62,45): error TS2345: Argument of type 'GeneratedPrompt[]' is not assignable to parameter of type 'HistoryEntry'.
+  Type 'GeneratedPrompt[]' is missing the following properties from type 'HistoryEntry': prompts, dimensions, baseImage
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(98,38): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'HistoryEntry'.
+  Type 'any[]' is missing the following properties from type 'HistoryEntry': prompts, dimensions, baseImage
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(109,38): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'HistoryEntry'.
+  Type 'any[]' is missing the following properties from type 'HistoryEntry': prompts, dimensions, baseImage
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(210,24): error TS2551: Property 'setNegativePrompts' does not exist on type 'PromptsState & PromptsActions'. Did you mean 'setGeneratedPrompts'?
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(222,11): error TS2345: Argument of type '"concept"' is not assignable to parameter of type 'OutputMode'.
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(227,7): error TS2454: Variable 'generated' is used before being assigned.
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(228,23): error TS2339: Property 'negativePrompt' does not exist on type 'GeneratedPrompt'.
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(229,23): error TS2339: Property 'negativePrompt' does not exist on type 'GeneratedPrompt'.
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(243,11): error TS2345: Argument of type '"concept"' is not assignable to parameter of type 'OutputMode'.
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(252,24): error TS2551: Property 'setNegativePrompts' does not exist on type 'PromptsState & PromptsActions'. Did you mean 'setGeneratedPrompts'?
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(259,29): error TS2339: Property 'negativePrompts' does not exist on type 'PromptsState & PromptsActions'.
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(260,29): error TS2339: Property 'negativePrompts' does not exist on type 'PromptsState & PromptsActions'.
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(260,50): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(289,11): error TS2345: Argument of type '"concept"' is not assignable to parameter of type 'OutputMode'.
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(294,14): error TS2454: Variable 'generated' is used before being assigned.
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(321,70): error TS2345: Argument of type '"preserve_all"' is not assignable to parameter of type 'DimensionFilterMode'.
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(350,39): error TS2345: Argument of type 'GeneratedPrompt[]' is not assignable to parameter of type 'HistoryEntry'.
+  Type 'GeneratedPrompt[]' is missing the following properties from type 'HistoryEntry': prompts, dimensions, baseImage
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(365,28): error TS2454: Variable 'gen1' is used before being assigned.
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(381,39): error TS2345: Argument of type 'GeneratedPrompt[]' is not assignable to parameter of type 'HistoryEntry'.
+  Type 'GeneratedPrompt[]' is missing the following properties from type 'HistoryEntry': prompts, dimensions, baseImage
+src/app/features/simulator/__tests__/simulator.integration.test.tsx(393,59): error TS2454: Variable 'gen1' is used before being assigned.
+src/app/features/simulator/components/mobile/MobileDimensionSheet.tsx(16,25): error TS2307: Cannot find module '@use-gesture/react' or its corresponding type declarations.
+src/app/features/simulator/components/mobile/MobileDimensionSheet.tsx(112,21): error TS7031: Binding element 'my' implicitly has an 'any' type.
+src/app/features/simulator/components/mobile/MobileDimensionSheet.tsx(112,39): error TS7031: Binding element 'vy' implicitly has an 'any' type.
+src/app/features/simulator/components/mobile/MobileDimensionSheet.tsx(112,58): error TS7031: Binding element 'dy' implicitly has an 'any' type.
+src/app/features/simulator/components/mobile/MobileDimensionSheet.tsx(112,63): error TS7031: Binding element 'active' implicitly has an 'any' type.
+src/app/features/simulator/components/mobile/MobileDimensionSheet.tsx(112,71): error TS7031: Binding element 'last' implicitly has an 'any' type.
+src/app/features/simulator/components/mobile/MobilePromptCarousel.tsx(16,25): error TS2307: Cannot find module '@use-gesture/react' or its corresponding type declarations.
+src/app/features/simulator/components/mobile/MobilePromptCarousel.tsx(75,19): error TS7031: Binding element 'mx' implicitly has an 'any' type.
+src/app/features/simulator/components/mobile/MobilePromptCarousel.tsx(75,35): error TS7031: Binding element 'vx' implicitly has an 'any' type.
+src/app/features/simulator/components/mobile/MobilePromptCarousel.tsx(75,52): error TS7031: Binding element 'dx' implicitly has an 'any' type.
+src/app/features/simulator/components/mobile/MobilePromptCarousel.tsx(75,57): error TS7031: Binding element 'active' implicitly has an 'any' type.
+src/app/features/simulator/components/mobile/MobilePromptCarousel.tsx(75,65): error TS7031: Binding element 'last' implicitly has an 'any' type.
+src/app/features/simulator/subfeature_dimensions/hooks/__tests__/useDimensions.test.ts(15,72): error TS2307: Cannot find module '@/test/test-utils' or its corresponding type declarations.
+src/app/features/simulator/subfeature_dimensions/hooks/__tests__/useDimensions.test.ts(122,68): error TS2345: Argument of type '"preserve_all"' is not assignable to parameter of type 'DimensionFilterMode'.
+src/app/features/simulator/subfeature_prompts/hooks/__tests__/usePrompts.test.ts(15,90): error TS2307: Cannot find module '@/test/test-utils' or its corresponding type declarations.
+src/app/features/simulator/subfeature_prompts/hooks/__tests__/usePrompts.test.ts(39,29): error TS2339: Property 'negativePrompts' does not exist on type 'PromptsState & PromptsActions'.
+src/app/features/simulator/subfeature_prompts/hooks/__tests__/usePrompts.test.ts(271,24): error TS2551: Property 'setNegativePrompts' does not exist on type 'PromptsState & PromptsActions'. Did you mean 'setGeneratedPrompts'?
+src/app/features/simulator/subfeature_prompts/hooks/__tests__/usePrompts.test.ts(274,29): error TS2339: Property 'negativePrompts' does not exist on type 'PromptsState & PromptsActions'.
+src/app/features/simulator/subfeature_prompts/hooks/__tests__/usePrompts.test.ts(298,24): error TS2551: Property 'setNegativePrompts' does not exist on type 'PromptsState & PromptsActions'. Did you mean 'setGeneratedPrompts'?
+src/app/features/simulator/subfeature_prompts/hooks/__tests__/usePrompts.test.ts(305,29): error TS2339: Property 'negativePrompts' does not exist on type 'PromptsState & PromptsActions'.
+src/app/features/simulator/subfeature_prompts/hooks/__tests__/usePrompts.test.ts(319,11): error TS2345: Argument of type '"concept"' is not assignable to parameter of type 'OutputMode'.
+src/app/features/simulator/subfeature_prompts/hooks/__tests__/usePrompts.test.ts(335,11): error TS2345: Argument of type '"concept"' is not assignable to parameter of type 'OutputMode'.
+src/app/features/simulator/subfeature_prompts/hooks/__tests__/usePrompts.test.ts(348,24): error TS2551: Property 'setNegativePrompts' does not exist on type 'PromptsState & PromptsActions'. Did you mean 'setGeneratedPrompts'?
+src/app/features/simulator/subfeature_prompts/hooks/__tests__/usePrompts.test.ts(356,11): error TS2345: Argument of type '"concept"' is not assignable to parameter of type 'OutputMode'.
+src/app/features/simulator/subfeature_prompts/hooks/__tests__/usePrompts.test.ts(360,33): error TS2339: Property 'negativePrompt' does not exist on type 'GeneratedPrompt'.
+src/app/features/simulator/subfeature_prompts/hooks/__tests__/usePrompts.test.ts(372,11): error TS2345: Argument of type '"concept"' is not assignable to parameter of type 'OutputMode'.
+src/app/features/simulator/subfeature_prompts/hooks/__tests__/usePrompts.test.ts(390,38): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'HistoryEntry'.
+  Type 'any[]' is missing the following properties from type 'HistoryEntry': prompts, dimensions, baseImage
+src/app/features/simulator/subfeature_prompts/hooks/__tests__/usePrompts.test.ts(395,38): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'HistoryEntry'.
+  Type 'any[]' is missing the following properties from type 'HistoryEntry': prompts, dimensions, baseImage
+src/app/features/simulator/subfeature_prompts/hooks/__tests__/usePrompts.test.ts(414,38): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'HistoryEntry'.
+  Type 'any[]' is missing the following properties from type 'HistoryEntry': prompts, dimensions, baseImage
+src/app/features/simulator/subfeature_prompts/hooks/__tests__/usePrompts.test.ts(419,38): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'HistoryEntry'.
+  Type 'any[]' is missing the following properties from type 'HistoryEntry': prompts, dimensions, baseImage
+src/app/features/simulator/subfeature_prompts/hooks/__tests__/usePrompts.test.ts(439,38): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'HistoryEntry'.
+  Type 'any[]' is missing the following properties from type 'HistoryEntry': prompts, dimensions, baseImage
+src/app/features/simulator/subfeature_prompts/hooks/__tests__/usePrompts.test.ts(443,38): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'HistoryEntry'.
+  Type 'any[]' is missing the following properties from type 'HistoryEntry': prompts, dimensions, baseImage
+src/app/features/simulator/subfeature_prompts/lib/__tests__/promptBuilder.test.ts(13,3): error TS2305: Module '"../promptBuilder"' has no exported member 'buildNegativePrompt'.
+src/app/features/simulator/subfeature_prompts/lib/__tests__/promptBuilder.test.ts(14,3): error TS2305: Module '"../promptBuilder"' has no exported member 'generateSmartNegatives'.
+src/app/features/simulator/subfeature_prompts/lib/__tests__/promptBuilder.test.ts(15,3): error TS2305: Module '"../promptBuilder"' has no exported member 'getDefaultNegativePrompts'.
+src/app/features/simulator/subfeature_prompts/lib/__tests__/promptBuilder.test.ts(18,79): error TS2307: Cannot find module '@/test/test-utils' or its corresponding type declarations.
+src/app/features/simulator/subfeature_prompts/lib/__tests__/promptBuilder.test.ts(19,10): error TS2305: Module '"../../../types"' has no exported member 'NegativePromptItem'.
+src/app/features/simulator/subfeature_prompts/lib/__tests__/promptBuilder.test.ts(219,9): error TS2554: Expected 6-7 arguments, but got 8.
+src/app/features/simulator/subfeature_prompts/lib/__tests__/promptBuilder.test.ts(226,28): error TS2339: Property 'negativePrompt' does not exist on type '{ prompt: string; elements: PromptElement[]; }'.
+src/app/features/simulator/subfeature_prompts/lib/__tests__/promptBuilder.test.ts(237,9): error TS2345: Argument of type '"concept"' is not assignable to parameter of type 'OutputMode'.
+src/app/features/simulator/subfeature_prompts/lib/__tests__/promptBuilder.test.ts(255,9): error TS2345: Argument of type '"concept"' is not assignable to parameter of type 'OutputMode'.
+src/app/features/simulator/subfeature_prompts/lib/__tests__/promptBuilder.test.ts(274,9): error TS2345: Argument of type '"concept"' is not assignable to parameter of type 'OutputMode'.
+src/app/features/simulator/subfeature_prompts/lib/__tests__/promptBuilder.test.ts(288,9): error TS2345: Argument of type '"concept"' is not assignable to parameter of type 'OutputMode'.
+src/app/features/simulator/subfeature_prompts/lib/__tests__/promptBuilder.test.ts(316,9): error TS2345: Argument of type '"concept"' is not assignable to parameter of type 'OutputMode'.
+src/app/features/simulator/subfeature_prompts/lib/__tests__/promptBuilder.test.ts(335,9): error TS2554: Expected 6-7 arguments, but got 8.
+src/app/features/simulator/subfeature_prompts/lib/__tests__/promptBuilder.test.ts(338,21): error TS2339: Property 'negativePrompt' does not exist on type '{ prompt: string; elements: PromptElement[]; }'.
+src/app/features/v2/types.ts(77,14): error TS2741: Property 'sound' is missing in type '{ scene: string; character: string; story: string; image: string; faction: string; simulator: string; utility: string; general: string; }' but required in type 'Record<SkillDomain | "general", string>'.
+src/app/lib/ai/__tests__/leonardo-video.test.ts(116,15): error TS2352: Conversion of type 'SeedanceV2Request' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'SeedanceV2Request'.
+src/app/lib/ai/__tests__/leonardo-video.test.ts(341,14): error TS18048: 'message' is possibly 'undefined'.
+src/app/lib/ai/providers/gemini.ts(7,29): error TS2307: Cannot find module '@google/genai' or its corresponding type declarations.
+src/app/posters/components/cinematic/ShowcasePlayer.tsx(16,24): error TS2307: Cannot find module '@remotion/player' or its corresponding type declarations.
+src/app/posters/hooks/useVideoExport.ts(11,34): error TS2307: Cannot find module '@remotion/web-renderer' or its corresponding type declarations.
+src/app/posters/hooks/useVideoExport.ts(72,24): error TS7031: Binding element 'renderedFrames' implicitly has an 'any' type.
+src/mcp-server/index.ts(22,27): error TS2307: Cannot find module '@modelcontextprotocol/sdk/server/mcp.js' or its corresponding type declarations.
+src/mcp-server/index.ts(23,38): error TS2307: Cannot find module '@modelcontextprotocol/sdk/server/stdio.js' or its corresponding type declarations.
+src/mcp-server/tools/characters.ts(6,32): error TS2307: Cannot find module '@modelcontextprotocol/sdk/server/mcp.js' or its corresponding type declarations.
+src/mcp-server/tools/characters.ts(20,14): error TS7031: Binding element 'projectId' implicitly has an 'any' type.
+src/mcp-server/tools/characters.ts(37,14): error TS7031: Binding element 'characterId' implicitly has an 'any' type.
+src/mcp-server/tools/characters.ts(56,14): error TS7031: Binding element 'projectId' implicitly has an 'any' type.
+src/mcp-server/tools/characters.ts(56,25): error TS7031: Binding element 'name' implicitly has an 'any' type.
+src/mcp-server/tools/characters.ts(56,31): error TS7031: Binding element 'type' implicitly has an 'any' type.
+src/mcp-server/tools/characters.ts(56,37): error TS7031: Binding element 'voice' implicitly has an 'any' type.
+src/mcp-server/tools/characters.ts(56,44): error TS7031: Binding element 'factionId' implicitly has an 'any' type.
+src/mcp-server/tools/characters.ts(56,55): error TS7031: Binding element 'factionRole' implicitly has an 'any' type.
+src/mcp-server/tools/characters.ts(80,14): error TS7031: Binding element 'characterId' implicitly has an 'any' type.
+src/mcp-server/tools/characters.ts(80,27): error TS7031: Binding element 'updates' implicitly has an 'any' type.
+src/mcp-server/tools/characters.ts(96,14): error TS7031: Binding element 'characterId' implicitly has an 'any' type.
+src/mcp-server/tools/factions.ts(6,32): error TS2307: Cannot find module '@modelcontextprotocol/sdk/server/mcp.js' or its corresponding type declarations.
+src/mcp-server/tools/factions.ts(20,14): error TS7031: Binding element 'projectId' implicitly has an 'any' type.
+src/mcp-server/tools/factions.ts(37,14): error TS7031: Binding element 'factionId' implicitly has an 'any' type.
+src/mcp-server/tools/factions.ts(52,14): error TS7031: Binding element 'factionId' implicitly has an 'any' type.
+src/mcp-server/tools/factions.ts(52,25): error TS7031: Binding element 'updates' implicitly has an 'any' type.
+src/mcp-server/tools/images.ts(7,32): error TS2307: Cannot find module '@modelcontextprotocol/sdk/server/mcp.js' or its corresponding type declarations.
+src/mcp-server/tools/images.ts(24,14): error TS7031: Binding element 'prompt' implicitly has an 'any' type.
+src/mcp-server/tools/images.ts(24,22): error TS7031: Binding element 'sourceImageUrl' implicitly has an 'any' type.
+src/mcp-server/tools/images.ts(24,38): error TS7031: Binding element 'aspectRatio' implicitly has an 'any' type.
+src/mcp-server/tools/images.ts(24,51): error TS7031: Binding element 'mode' implicitly has an 'any' type.
+src/mcp-server/tools/images.ts(53,14): error TS7031: Binding element 'prompts' implicitly has an 'any' type.
+src/mcp-server/tools/images.ts(53,23): error TS7031: Binding element 'width' implicitly has an 'any' type.
+src/mcp-server/tools/images.ts(53,30): error TS7031: Binding element 'height' implicitly has an 'any' type.
+src/mcp-server/tools/images.ts(73,14): error TS7031: Binding element 'imageUrl' implicitly has an 'any' type.
+src/mcp-server/tools/images.ts(73,24): error TS7031: Binding element 'promptId' implicitly has an 'any' type.
+src/mcp-server/tools/images.ts(73,34): error TS7031: Binding element 'originalPrompt' implicitly has an 'any' type.
+src/mcp-server/tools/images.ts(92,14): error TS7031: Binding element 'imageUrl' implicitly has an 'any' type.
+src/mcp-server/tools/images.ts(92,24): error TS7031: Binding element 'extractionType' implicitly has an 'any' type.
+src/mcp-server/tools/index.ts(6,32): error TS2307: Cannot find module '@modelcontextprotocol/sdk/server/mcp.js' or its corresponding type declarations.
+src/mcp-server/tools/projects.ts(6,32): error TS2307: Cannot find module '@modelcontextprotocol/sdk/server/mcp.js' or its corresponding type declarations.
+src/mcp-server/tools/projects.ts(20,14): error TS7031: Binding element 'projectId' implicitly has an 'any' type.
+src/mcp-server/tools/scenes.ts(6,32): error TS2307: Cannot find module '@modelcontextprotocol/sdk/server/mcp.js' or its corresponding type declarations.
+src/mcp-server/tools/scenes.ts(21,14): error TS7031: Binding element 'projectId' implicitly has an 'any' type.
+src/mcp-server/tools/scenes.ts(21,25): error TS7031: Binding element 'actId' implicitly has an 'any' type.
+src/mcp-server/tools/scenes.ts(41,14): error TS7031: Binding element 'sceneId' implicitly has an 'any' type.
+src/mcp-server/tools/scenes.ts(56,14): error TS7031: Binding element 'sceneId' implicitly has an 'any' type.
+src/mcp-server/tools/scenes.ts(56,23): error TS7031: Binding element 'updates' implicitly has an 'any' type.
+src/mcp-server/tools/scenes.ts(74,14): error TS7031: Binding element 'characterId' implicitly has an 'any' type.
+src/mcp-server/tools/story-structure.ts(6,32): error TS2307: Cannot find module '@modelcontextprotocol/sdk/server/mcp.js' or its corresponding type declarations.
+src/mcp-server/tools/story-structure.ts(22,14): error TS7031: Binding element 'projectId' implicitly has an 'any' type.
+src/mcp-server/tools/story-structure.ts(42,14): error TS7031: Binding element 'projectId' implicitly has an 'any' type.
+src/mcp-server/tools/story-structure.ts(42,25): error TS7031: Binding element 'actId' implicitly has an 'any' type.
+src/mcp-server/tools/story-structure.ts(62,14): error TS7031: Binding element 'beatId' implicitly has an 'any' type.
+src/mcp-server/tools/story-structure.ts(81,14): error TS7031: Binding element 'actId' implicitly has an 'any' type.
+src/mcp-server/tools/story-structure.ts(81,21): error TS7031: Binding element 'projectId' implicitly has an 'any' type.
+src/mcp-server/tools/story-structure.ts(81,32): error TS7031: Binding element 'name' implicitly has an 'any' type.
+src/mcp-server/tools/story-structure.ts(81,38): error TS7031: Binding element 'type' implicitly has an 'any' type.
+src/mcp-server/tools/story-structure.ts(81,44): error TS7031: Binding element 'description' implicitly has an 'any' type.
+src/mcp-server/tools/story-structure.ts(81,57): error TS7031: Binding element 'order' implicitly has an 'any' type.
+src/mcp-server/tools/story-structure.ts(102,14): error TS7031: Binding element 'beatId' implicitly has an 'any' type.
+src/mcp-server/tools/story-structure.ts(102,22): error TS7031: Binding element 'updates' implicitly has an 'any' type.
+src/mcp-server/tools/workspace.ts(10,32): error TS2307: Cannot find module '@modelcontextprotocol/sdk/server/mcp.js' or its corresponding type declarations.
+src/mcp-server/tools/workspace.ts(28,14): error TS7031: Binding element 'action' implicitly has an 'any' type.
+src/mcp-server/tools/workspace.ts(28,22): error TS7031: Binding element 'panels' implicitly has an 'any' type.
+src/remotion/compositions/ShowcaseVideo.tsx(21,8): error TS2307: Cannot find module 'remotion' or its corresponding type declarations.
+src/remotion/compositions/ShowcaseVideo.tsx(22,48): error TS2307: Cannot find module '@remotion/transitions' or its corresponding type declarations.
+src/remotion/compositions/ShowcaseVideo.tsx(23,22): error TS2307: Cannot find module '@remotion/transitions/fade' or its corresponding type declarations.
+src/remotion/compositions/ShowcaseVideo.tsx(24,23): error TS2307: Cannot find module '@remotion/transitions/slide' or its corresponding type declarations.
+src/remotion/compositions/ShowcaseVideo.tsx(25,27): error TS2307: Cannot find module '@remotion/transitions/clock-wipe' or its corresponding type declarations.
+src/remotion/compositions/TitleCard.tsx(9,84): error TS2307: Cannot find module 'remotion' or its corresponding type declarations.

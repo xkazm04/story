@@ -20,6 +20,7 @@ export type SkillDomain =
   | 'scene'
   | 'image'
   | 'simulator'
+  | 'sound'
   | 'utility';
 
 /**

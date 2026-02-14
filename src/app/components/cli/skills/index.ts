@@ -5,13 +5,14 @@
  * Skills are specialized instruction sets that guide Claude Code CLI
  * for specific storytelling tasks.
  *
- * 29 skills across 7 domains:
+ * 30 skills across 8 domains:
  * - Character (6): backstory, traits, dialogue, names, personality, appearance
  * - Faction (4): creation, lore, description, relationships
  * - Story (7): next-steps, write-content, architect, brainstorm, beat-suggestions, beat-description, project-inspiration
  * - Scene (4): generation, dialogue, description, beat-scene-mapping
  * - Image (5): compose, enhance, variations, cover, avatar
  * - Simulator (3): vision-breakdown, prompt-generation, dimension-refinement
+ * - Sound (7): audio-direction, beat-composer, beat-modifier, audio-composer, audio-prompt-ideas, instrument-transform, dsp-controller
  * - Utility (4): dataset-tagging, voice-description, deep-analysis, storytelling
  */
 
@@ -25,6 +26,7 @@ import { STORY_SKILLS } from './story';
 import { SCENE_SKILLS } from './scene';
 import { IMAGE_SKILLS } from './image';
 import { SIMULATOR_SKILLS } from './simulator';
+import { SOUND_SKILLS } from './sound';
 import { UTILITY_SKILLS } from './utility';
 
 import type { CLISkill, SkillDomain, SkillId } from './types';
@@ -36,6 +38,7 @@ export { STORY_SKILLS } from './story';
 export { SCENE_SKILLS } from './scene';
 export { IMAGE_SKILLS } from './image';
 export { SIMULATOR_SKILLS } from './simulator';
+export { SOUND_SKILLS } from './sound';
 export { UTILITY_SKILLS } from './utility';
 
 /**
@@ -48,6 +51,7 @@ const ALL_SKILLS: CLISkill[] = [
   ...SCENE_SKILLS,
   ...IMAGE_SKILLS,
   ...SIMULATOR_SKILLS,
+  ...SOUND_SKILLS,
   ...UTILITY_SKILLS,
 ];
 
@@ -68,6 +72,7 @@ export const SKILLS_BY_DOMAIN: Record<SkillDomain, CLISkill[]> = {
   scene: SCENE_SKILLS,
   image: IMAGE_SKILLS,
   simulator: SIMULATOR_SKILLS,
+  sound: SOUND_SKILLS,
   utility: UTILITY_SKILLS,
 };
 

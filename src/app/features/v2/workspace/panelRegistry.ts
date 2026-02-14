@@ -21,6 +21,9 @@ import {
   Mic,
   ImagePlus,
   Paintbrush,
+  BookOpen,
+  AudioLines,
+  SlidersHorizontal,
 } from 'lucide-react';
 import type { WorkspacePanelType, PanelRole, PanelSizeClass } from '../types';
 import type { SkillDomain } from '@/app/components/cli/skills/types';
@@ -204,6 +207,36 @@ export const PANEL_REGISTRY: Record<WorkspacePanelType, PanelRegistryEntry> = {
     defaultRole: 'secondary',
     sizeClass: 'standard',
     minWidth: 350,
+    domains: ['utility'],
+  },
+  'script-dialog': {
+    type: 'script-dialog',
+    label: 'Script & Dialog',
+    icon: BookOpen,
+    importFn: () => import('./panels/ScriptDialogPanel'),
+    defaultRole: 'primary',
+    sizeClass: 'wide',
+    minWidth: 450,
+    domains: ['utility', 'scene'],
+  },
+  'narration': {
+    type: 'narration',
+    label: 'Narration',
+    icon: AudioLines,
+    importFn: () => import('./panels/NarrationPanel'),
+    defaultRole: 'primary',
+    sizeClass: 'wide',
+    minWidth: 500,
+    domains: ['utility'],
+  },
+  'voice-performance': {
+    type: 'voice-performance',
+    label: 'Voice Performance',
+    icon: SlidersHorizontal,
+    importFn: () => import('./panels/VoicePerformancePanel'),
+    defaultRole: 'sidebar',
+    sizeClass: 'compact',
+    minWidth: 260,
     domains: ['utility'],
   },
 

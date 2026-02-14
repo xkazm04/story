@@ -40,6 +40,9 @@ export type WorkspacePanelType =
   | 'scene-list'
   | 'writing-desk'
   | 'character-creator'
+  | 'script-dialog'
+  | 'narration'
+  | 'voice-performance'
   | 'empty-welcome';
 
 // ============ Terminal Tab ============
@@ -81,6 +84,7 @@ export const DOMAIN_COLORS: Record<SkillDomain | 'general', string> = {
   image: 'emerald',
   faction: 'rose',
   simulator: 'blue',
+  sound: 'violet',
   utility: 'slate',
   general: 'slate',
 };
