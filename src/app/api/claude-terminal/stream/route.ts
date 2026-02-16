@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
             return {
               type: 'error',
               data: {
-                error: data.message,
+                error: data.error || data.message || 'Unknown error',
                 exitCode: data.exitCode,
               },
               timestamp: cliEvent.timestamp,

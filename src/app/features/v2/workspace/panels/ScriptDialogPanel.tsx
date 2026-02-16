@@ -33,7 +33,7 @@ export default function ScriptDialogPanel({ onClose }: ScriptDialogPanelProps) {
 
   if (!projectId) {
     return (
-      <PanelFrame title="Script & Dialog" icon={BookOpen} onClose={onClose}>
+      <PanelFrame title="Script & Dialog" icon={BookOpen} onClose={onClose} headerAccent="amber">
         <div className="flex items-center justify-center h-full text-xs text-slate-500">
           Select a project first
         </div>
@@ -49,7 +49,7 @@ export default function ScriptDialogPanel({ onClose }: ScriptDialogPanelProps) {
   }));
 
   return (
-    <PanelFrame title="Script & Dialog" icon={BookOpen} onClose={onClose}>
+    <PanelFrame title="Script & Dialog" icon={BookOpen} onClose={onClose} headerAccent="amber">
       <NarrationPipeline
         characters={charInfos}
         voices={voiceInfos}

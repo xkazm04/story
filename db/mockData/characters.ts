@@ -47,6 +47,27 @@ export const mockCharacters: Character[] = [
     faction_id: undefined,
     avatar_url: '',
   },
+  // Star Wars: Ashes of the Outer Rim
+  {
+    id: 'char-6',
+    name: 'Kael Voss',
+    type: 'Key',
+    project_id: 'proj-4',
+    faction_id: 'faction-4',
+    faction_role: 'Scholar',
+    avatar_url: '',
+    voice: 'calm-male',
+  },
+  {
+    id: 'char-7',
+    name: 'Sera Thannis',
+    type: 'Key',
+    project_id: 'proj-4',
+    faction_id: 'faction-4',
+    faction_role: 'Guardian',
+    avatar_url: '',
+    voice: 'determined-female',
+  },
 ];
 
 export const mockTraits: Trait[] = [
@@ -86,6 +107,56 @@ export const mockTraits: Trait[] = [
     type: 'motivations',
     description: "Seeks to uncover the truth about her parents' mysterious disappearance.",
   },
+  // Kael Voss traits
+  {
+    id: 'trait-7',
+    character_id: 'char-6',
+    type: 'background',
+    description: 'A Jedi Sentinel specializing in investigation and intelligence. Kael was discovered on the agri-world of Dantooine at age four and raised in the Jedi Temple on Coruscant. He was trained by the legendary archivist Master Dooku before Dooku left the Order, an event that left Kael quietly questioning institutional rigidity.',
+  },
+  {
+    id: 'trait-8',
+    character_id: 'char-6',
+    type: 'personality',
+    description: 'Methodical, empathetic, and deeply contemplative. Kael listens more than he speaks and trusts the Living Force to reveal what data cannot. He carries a quiet sadness from having witnessed too many conflicts that diplomacy arrived too late to prevent.',
+  },
+  {
+    id: 'trait-9',
+    character_id: 'char-6',
+    type: 'motivations',
+    description: 'Believes the Jedi have grown too detached from the suffering of ordinary people. He takes investigation assignments on Outer Rim worlds specifically to stay connected to the lives the Order is meant to protect.',
+  },
+  {
+    id: 'trait-10',
+    character_id: 'char-6',
+    type: 'strengths',
+    description: 'Exceptional Force sensitivity attuned to psychometry — he can read emotional imprints left on objects and places. Skilled lightsaber duelist (Form III, Soresu) focused on defense. Fluent in twelve languages including Huttese and Mando\'a.',
+  },
+  // Sera Thannis traits
+  {
+    id: 'trait-11',
+    character_id: 'char-7',
+    type: 'background',
+    description: 'A Jedi Guardian and frontline peacekeeper from the industrial world of Corellia. Sera was the youngest Knight in her generation, having passed her Trials at nineteen after single-handedly resolving a hostage crisis on Nar Shaddaa. She was assigned as Kael\'s partner by the Council, who believed her decisiveness would balance his caution.',
+  },
+  {
+    id: 'trait-12',
+    character_id: 'char-7',
+    type: 'personality',
+    description: 'Bold, impatient, and fiercely protective of the innocent. Sera acts on instinct and trusts her combat skills to carry her through. She struggles with the Jedi teaching of non-attachment — she forms bonds quickly and fights hardest for people she cares about.',
+  },
+  {
+    id: 'trait-13',
+    character_id: 'char-7',
+    type: 'motivations',
+    description: 'Haunted by a failed mission where she arrived too late to save a village from a Mandalorian raid. She drives herself relentlessly to be faster, stronger, and more present — determined that no one else will die waiting for help that comes too late.',
+  },
+  {
+    id: 'trait-14',
+    character_id: 'char-7',
+    type: 'strengths',
+    description: 'Elite lightsaber combatant (Form V, Djem So) who combines raw power with acrobatic agility. Strong in telekinetic Force abilities. Natural leader who inspires courage in civilians and soldiers alike. Skilled pilot.',
+  },
 ];
 
 export const mockCharRelationships: CharRelationship[] = [
@@ -112,5 +183,14 @@ export const mockCharRelationships: CharRelationship[] = [
     description: 'Ancient rivalry between their clans makes cooperation difficult.',
     event_date: 'Childhood',
     relationship_type: 'negative',
+  },
+  // Star Wars: Ashes of the Outer Rim
+  {
+    id: 'rel-4',
+    character_a_id: 'char-6',
+    character_b_id: 'char-7',
+    description: 'Council-assigned partners with contrasting methods. Kael\'s patience tempers Sera\'s impulsiveness, while her decisiveness pushes him past analysis paralysis. A deep mutual respect is forming beneath their constant tactical disagreements.',
+    event_date: 'Six months ago',
+    relationship_type: 'positive',
   },
 ];

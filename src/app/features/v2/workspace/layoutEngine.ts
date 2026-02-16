@@ -109,6 +109,24 @@ export const LAYOUT_TEMPLATES: Record<WorkspaceLayout, LayoutTemplate> = {
       slot({ gridRow: '1', gridColumn: '3' }, ['compact'], 'sidebar', true),
     ],
   },
+  studio: {
+    id: 'studio',
+    label: 'Studio',
+    gridTemplateRows: '42px 1fr 160px',
+    gridTemplateColumns: '240px 1fr 260px',
+    slots: [
+      // Top bar — full width
+      slot({ gridRow: '1', gridColumn: '1 / -1' }, ['compact'], 'tertiary', true),
+      // Left sidebar — beats
+      slot({ gridRow: '2', gridColumn: '1' }, ['compact'], 'sidebar', true),
+      // Center — primary editor
+      slot({ gridRow: '2', gridColumn: '2' }, ALL_SIZES, 'primary'),
+      // Right sidebar — characters
+      slot({ gridRow: '2', gridColumn: '3' }, ['compact'], 'sidebar', true),
+      // Bottom bar — gallery
+      slot({ gridRow: '3', gridColumn: '1 / -1' }, ['compact', 'standard'], 'secondary'),
+    ],
+  },
 };
 
 // ─── Role Priority ───────────────────────────────────────
@@ -271,6 +289,7 @@ export const LAYOUT_ORDER: WorkspaceLayout[] = [
   'grid-4',
   'primary-sidebar',
   'triptych',
+  'studio',
 ];
 
 /**

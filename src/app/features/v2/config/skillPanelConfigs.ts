@@ -14,11 +14,13 @@ export const SKILL_PANEL_CONFIGS: Record<string, SkillPanelConfig> = {
 
   'scene-generation': {
     panels: [
-      { type: 'writing-desk', role: 'primary' },
-      { type: 'character-cards', role: 'secondary' },
-      { type: 'scene-list', role: 'sidebar' },
+      { type: 'audio-toolbar', role: 'tertiary' },
+      { type: 'beats-sidebar', role: 'sidebar' },
+      { type: 'scene-editor', role: 'primary' },
+      { type: 'cast-sidebar', role: 'sidebar' },
+      { type: 'scene-gallery', role: 'secondary' },
     ],
-    preferredLayout: 'triptych',
+    preferredLayout: 'studio',
     clearExisting: true,
   },
   'scene-dialogue': {
@@ -31,10 +33,24 @@ export const SKILL_PANEL_CONFIGS: Record<string, SkillPanelConfig> = {
   },
   'scene-description': {
     panels: [
-      { type: 'writing-desk', role: 'primary' },
-      { type: 'scene-metadata', role: 'sidebar' },
+      { type: 'audio-toolbar', role: 'tertiary' },
+      { type: 'beats-sidebar', role: 'sidebar' },
+      { type: 'scene-editor', role: 'primary' },
+      { type: 'cast-sidebar', role: 'sidebar' },
+      { type: 'scene-gallery', role: 'secondary' },
     ],
-    preferredLayout: 'primary-sidebar',
+    preferredLayout: 'studio',
+    clearExisting: true,
+  },
+  'scene-compose': {
+    panels: [
+      { type: 'audio-toolbar', role: 'tertiary' },
+      { type: 'beats-sidebar', role: 'sidebar' },
+      { type: 'scene-editor', role: 'primary' },
+      { type: 'cast-sidebar', role: 'sidebar' },
+      { type: 'scene-gallery', role: 'secondary' },
+    ],
+    preferredLayout: 'studio',
     clearExisting: true,
   },
   'beat-scene-mapping': {

@@ -26,7 +26,7 @@ export default function StoryGraphPanel({ onClose }: StoryGraphPanelProps) {
   const firstSceneId = scenes.length > 0 ? scenes[0].id : null;
 
   return (
-    <PanelFrame title="Story Graph" icon={GitBranch} onClose={onClose}>
+    <PanelFrame title="Story Graph" icon={GitBranch} onClose={onClose} headerAccent="violet">
       <SceneEditorProvider
         projectId={projectId || 'preview'}
         firstSceneId={firstSceneId}

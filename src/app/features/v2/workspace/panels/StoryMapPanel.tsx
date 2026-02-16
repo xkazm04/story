@@ -29,7 +29,7 @@ export default function StoryMapPanel({
   const sortedActs = [...acts].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   return (
-    <PanelFrame title="Story Map" icon={Map} onClose={onClose}>
+    <PanelFrame title="Story Map" icon={Map} onClose={onClose} headerAccent="violet">
       <div className="p-3 space-y-3 overflow-auto h-full">
         {sortedActs.length === 0 ? (
           <div className="flex items-center justify-center h-full text-slate-600 text-xs">

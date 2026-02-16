@@ -28,7 +28,7 @@ export default function ThemeManagerPanel({ onClose }: ThemeManagerPanelProps) {
   }, []);
 
   return (
-    <PanelFrame title="Themes" icon={Sparkles} onClose={onClose}>
+    <PanelFrame title="Themes" icon={Sparkles} onClose={onClose} headerAccent="violet">
       <ThemeManager
         themes={themes}
         onAddTheme={handleAdd}

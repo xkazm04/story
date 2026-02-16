@@ -19,6 +19,7 @@ export default function ImageGeneratorPanel({ onClose, onTriggerSkill }: ImageGe
       title="Image Generator"
       icon={ImagePlus}
       onClose={onClose}
+      headerAccent="rose"
       actions={
         onTriggerSkill ? (
           <button

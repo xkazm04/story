@@ -6,6 +6,8 @@ import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { useWorkspaceDirectives } from '../../hooks/useWorkspaceDirectives';
 import { usePanelConfig } from '../../hooks/usePanelConfig';
 import { useIntentDetection } from '../../hooks/useIntentDetection';
+import { useCLIDataSync } from '../../hooks/useCLIDataSync';
+import { cn } from '@/app/lib/utils';
 import CompactTerminal from '@/app/components/cli/CompactTerminal';
 import TerminalTabBar from './TerminalTabBar';
 import TerminalDockEmpty from './TerminalDockEmpty';
@@ -14,15 +16,30 @@ export default function TerminalDock() {
   const tabs = useTerminalDockStore((s) => s.tabs);
   const activeTabId = useTerminalDockStore((s) => s.activeTabId);
   const isCollapsed = useTerminalDockStore((s) => s.isCollapsed);
-  const { selectedProject, selectedSceneId } = useProjectStore();
-  const { handleToolUse } = useWorkspaceDirectives();
+  const { selectedProject, selectedAct, selectedSceneId } = useProjectStore();
+  const { handleToolUse: handleWorkspaceToolUse } = useWorkspaceDirectives();
   const { applySkillPanels } = usePanelConfig();
   const { detectIntent } = useIntentDetection();
+  const { trackToolUse, flush } = useCLIDataSync();
 
-  const activeTab = tabs.find((t) => t.id === activeTabId);
-  const projectPath = selectedProject?.id
-    ? `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000'}`
-    : '';
+  const projectPath = selectedProject?.id || '';
+
+  // Extend workspace tool handler to also track MCP tool calls for data sync
+  const handleToolUse = useCallback(
+    (toolName: string, toolInput: Record<string, unknown>) => {
+      trackToolUse(toolName);
+      return handleWorkspaceToolUse(toolName, toolInput);
+    },
+    [trackToolUse, handleWorkspaceToolUse]
+  );
+
+  // Flush accumulated query invalidations when CLI execution completes
+  const handleExecutionComplete = useCallback(
+    (success: boolean) => {
+      if (success) flush();
+    },
+    [flush]
+  );
 
   // When user submits a prompt, detect intent and auto-compose workspace panels
   const handlePromptSubmit = useCallback(
@@ -50,16 +67,28 @@ export default function TerminalDock() {
         {/* Terminal content — hidden when collapsed */}
         {!isCollapsed && (
           <div className="flex-1 overflow-hidden">
-            {activeTab ? (
-              <CompactTerminal
-                key={activeTab.sessionId}
-                instanceId={activeTab.sessionId}
-                projectPath={projectPath}
-                title={activeTab.label}
-                className="h-full border-0 rounded-none"
-                onToolUse={handleToolUse}
-                onPromptSubmit={handlePromptSubmit}
-              />
+            {tabs.length > 0 ? (
+              tabs.map((tab) => (
+                <div
+                  key={tab.sessionId}
+                  className={cn(
+                    'h-full',
+                    tab.id === activeTabId ? 'block' : 'hidden'
+                  )}
+                >
+                  <CompactTerminal
+                    instanceId={tab.sessionId}
+                    projectPath={projectPath}
+                    actId={selectedAct?.id}
+                    sceneId={selectedSceneId || undefined}
+                    title={tab.label}
+                    className="h-full border-0 rounded-none"
+                    onToolUse={handleToolUse}
+                    onPromptSubmit={handlePromptSubmit}
+                    onExecutionComplete={handleExecutionComplete}
+                  />
+                </div>
+              ))
             ) : (
               <TerminalDockEmpty />
             )}

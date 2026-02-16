@@ -29,6 +29,15 @@ export const mockFactions: Faction[] = [
     color: '#6b7280',
     logo_url: '',
   },
+  // Star Wars: Ashes of the Outer Rim
+  {
+    id: 'faction-4',
+    name: 'Jedi Order',
+    description: 'Ancient order of Force-sensitive peacekeepers who serve the Galactic Republic. Guardians of peace and justice, trained in the ways of the Light Side of the Force.',
+    project_id: 'proj-4',
+    color: '#2563eb',
+    logo_url: '',
+  },
 ];
 
 export const mockFactionRelationships: FactionRelationship[] = [

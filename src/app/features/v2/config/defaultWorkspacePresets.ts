@@ -66,4 +66,17 @@ export const DEFAULT_WORKSPACE_PRESETS: WorkspacePreset[] = [
     ],
     layout: 'split-3',
   },
+  {
+    id: 'scene-studio',
+    name: 'Scene Studio',
+    description: 'Full scene composition with beats, characters, and gallery',
+    panels: [
+      { type: 'audio-toolbar', role: 'tertiary' },
+      { type: 'beats-sidebar', role: 'sidebar' },
+      { type: 'scene-editor', role: 'primary' },
+      { type: 'cast-sidebar', role: 'sidebar' },
+      { type: 'scene-gallery', role: 'secondary' },
+    ],
+    layout: 'studio',
+  },
 ];

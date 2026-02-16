@@ -21,7 +21,7 @@ export default function CharacterDetailPanel({
   const id = propCharId ?? storeCharId;
 
   return (
-    <PanelFrame title="Character Detail" icon={User} onClose={onClose}>
+    <PanelFrame title="Character Detail" icon={User} onClose={onClose} headerAccent="cyan">
       {id ? (
         <CharacterDetails characterId={id} />
       ) : (

@@ -124,6 +124,7 @@ export default function WritingDeskPanel({ onClose, onTriggerSkill }: WritingDes
       title="Writing Desk"
       icon={PenTool}
       onClose={onClose}
+      headerAccent="amber"
       actions={
         onTriggerSkill ? (
           <button

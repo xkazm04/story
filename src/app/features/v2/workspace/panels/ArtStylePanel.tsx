@@ -17,7 +17,7 @@ export default function ArtStylePanel({ onClose }: ArtStylePanelProps) {
   const { selectedProject } = useProjectStore();
 
   return (
-    <PanelFrame title="Art Style" icon={Palette} onClose={onClose}>
+    <PanelFrame title="Art Style" icon={Palette} onClose={onClose} headerAccent="rose">
       {selectedProject?.id ? (
         <Suspense
           fallback={

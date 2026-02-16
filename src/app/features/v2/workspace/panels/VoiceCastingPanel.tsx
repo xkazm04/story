@@ -26,7 +26,7 @@ export default function VoiceCastingPanel({ onClose }: VoiceCastingPanelProps) {
 
   if (!projectId) {
     return (
-      <PanelFrame title="Voice Casting" icon={Users} onClose={onClose}>
+      <PanelFrame title="Voice Casting" icon={Users} onClose={onClose} headerAccent="emerald">
         <div className="flex items-center justify-center h-full text-xs text-slate-500">
           Select a project first
         </div>
@@ -35,7 +35,7 @@ export default function VoiceCastingPanel({ onClose }: VoiceCastingPanelProps) {
   }
 
   return (
-    <PanelFrame title="Voice Casting" icon={Users} onClose={onClose}>
+    <PanelFrame title="Voice Casting" icon={Users} onClose={onClose} headerAccent="emerald">
       <AuditionPanel
         characters={characters}
         voices={voices}

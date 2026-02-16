@@ -92,6 +92,9 @@ export interface CompactTerminalProps {
   onTaskComplete?: (taskId: string, success: boolean) => void;
   onQueueEmpty?: () => void;
   autoStart?: boolean;
+  // Context from workspace selection
+  actId?: string;
+  sceneId?: string;
   // Skills for specialized instructions
   enabledSkills?: SkillId[];
   // Background processing support
@@ -102,6 +105,8 @@ export interface CompactTerminalProps {
   onToolUse?: (toolName: string, toolInput: Record<string, unknown>) => boolean;
   /** V2 workspace integration: fires when user submits a prompt, before execution starts. */
   onPromptSubmit?: (prompt: string) => void;
+  /** V2 workspace integration: fires when CLI execution finishes (result or error). */
+  onExecutionComplete?: (success: boolean) => void;
 }
 
 /**

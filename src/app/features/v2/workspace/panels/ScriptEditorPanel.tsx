@@ -19,6 +19,7 @@ export default function ScriptEditorPanel({ onClose, onTriggerSkill }: ScriptEdi
       title="Script Editor"
       icon={FileText}
       onClose={onClose}
+      headerAccent="amber"
       actions={
         onTriggerSkill ? (
           <button

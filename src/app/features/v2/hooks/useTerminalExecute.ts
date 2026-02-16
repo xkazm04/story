@@ -33,7 +33,7 @@ export function useTerminalExecute() {
       const tab = ensureActiveTab();
       if (!selectedProject?.id) return;
 
-      const projectPath = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+      const projectPath = selectedProject?.id || '';
       const contextParams = params
         ? Object.fromEntries(
             Object.entries(params).map(([k, v]) => [k, String(v)])
@@ -58,7 +58,7 @@ export function useTerminalExecute() {
       const tab = ensureActiveTab();
       if (!selectedProject?.id) return;
 
-      const projectPath = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+      const projectPath = selectedProject?.id || '';
 
       const task = createPromptTask(
         selectedProject.id,

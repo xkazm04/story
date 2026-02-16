@@ -18,7 +18,8 @@ export type WorkspaceLayout =
   | 'split-3'
   | 'grid-4'
   | 'primary-sidebar'
-  | 'triptych';
+  | 'triptych'
+  | 'studio';
 
 export type WorkspacePanelType =
   | 'scene-editor'
@@ -43,7 +44,11 @@ export type WorkspacePanelType =
   | 'script-dialog'
   | 'narration'
   | 'voice-performance'
-  | 'empty-welcome';
+  | 'empty-welcome'
+  | 'beats-sidebar'
+  | 'cast-sidebar'
+  | 'scene-gallery'
+  | 'audio-toolbar';
 
 // ============ Terminal Tab ============
 

@@ -16,6 +16,7 @@ export default function BeatsManagerPanel({ onClose, onTriggerSkill }: BeatsMana
       title="Beats"
       icon={ListChecks}
       onClose={onClose}
+      headerAccent="violet"
       actions={
         onTriggerSkill ? (
           <button

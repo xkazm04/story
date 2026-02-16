@@ -14,7 +14,8 @@ import {
 } from '@/lib/claude-terminal/cli-service';
 
 interface QueryRequestBody {
-  projectPath: string;
+  projectPath?: string; // Deprecated: server uses process.cwd()
+  projectId?: string;   // Story project ID — passed to MCP server as STORY_PROJECT_ID
   prompt: string;
   resumeSessionId?: string;
 }
@@ -25,14 +26,7 @@ interface QueryRequestBody {
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as QueryRequestBody;
-    const { projectPath, prompt, resumeSessionId } = body;
-
-    if (!projectPath) {
-      return NextResponse.json(
-        { error: 'Project path is required' },
-        { status: 400 }
-      );
-    }
+    const { prompt, resumeSessionId, projectId } = body;
 
     if (!prompt || !prompt.trim()) {
       return NextResponse.json(
@@ -41,7 +35,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const executionId = startExecution(projectPath, prompt, resumeSessionId);
+    // Always use server's working directory — CLI runs on the same machine
+    const projectPath = process.cwd();
+
+    // Extract the server origin from the incoming request (e.g. http://localhost:3001)
+    const serverOrigin = new URL(request.url).origin;
+
+    const executionId = startExecution(projectPath, prompt, resumeSessionId, undefined, projectId, serverOrigin);
 
     return NextResponse.json({
       success: true,

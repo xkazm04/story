@@ -30,6 +30,7 @@ export default function ImageCanvasPanel({
       title="Image Canvas"
       icon={Image}
       onClose={onClose}
+      headerAccent="rose"
       actions={
         onTriggerSkill ? (
           <button

@@ -62,6 +62,21 @@ function LayoutIcon({ variant, size = 16 }: { variant: WorkspaceLayout; size?: n
           <rect x={s * 0.75 + g / 2} y={0} width={s * 0.25 - g / 2} height={s} {...common} />
         </svg>
       );
+    case 'studio':
+      return (
+        <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
+          {/* Top bar */}
+          <rect x={0} y={0} width={s} height={s * 0.15} {...common} />
+          {/* Left sidebar */}
+          <rect x={0} y={s * 0.15 + g} width={s * 0.22} height={s * 0.63 - g} {...common} />
+          {/* Center */}
+          <rect x={s * 0.22 + g} y={s * 0.15 + g} width={s * 0.56 - g * 2} height={s * 0.63 - g} {...common} />
+          {/* Right sidebar */}
+          <rect x={s * 0.78 + g} y={s * 0.15 + g} width={s * 0.22 - g} height={s * 0.63 - g} {...common} />
+          {/* Bottom bar */}
+          <rect x={0} y={s * 0.78 + g} width={s} height={s * 0.22 - g} {...common} />
+        </svg>
+      );
   }
 }
 

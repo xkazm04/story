@@ -538,6 +538,7 @@ export default function CharacterCreatorPanel({
       title="Character Creator"
       icon={Paintbrush}
       onClose={onClose}
+      headerAccent="cyan"
       actions={
         <div className="flex items-center gap-1">
           {onTriggerSkill && (

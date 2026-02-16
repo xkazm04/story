@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
 import { Character } from '@/app/types/Character';
-import { logger } from '@/app/utils/logger';
-import { createErrorResponse, HTTP_STATUS } from '@/app/utils/apiErrorHandling';
+import { createErrorResponse, handleDatabaseError, HTTP_STATUS } from '@/app/utils/apiErrorHandling';
 
 /**
  * Fetches a character by ID from the database
@@ -57,13 +56,12 @@ export async function GET(
     const { data, error } = await fetchCharacter(id);
 
     if (error) {
-      logger.error('Error fetching character', error, { id });
-      return createErrorResponse('Character not found', HTTP_STATUS.NOT_FOUND);
+      return handleDatabaseError('fetch character', error, `GET /api/characters/${id}`);
     }
 
     return NextResponse.json(data as Character);
   } catch (error) {
-    logger.error('Unexpected error in GET /api/characters/[id]', error);
+    console.error('Unexpected error in GET /api/characters/[id]', error);
     return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }
@@ -83,13 +81,12 @@ export async function PUT(
     const { data, error } = await updateCharacter(id, body);
 
     if (error) {
-      logger.error('Error updating character', error, { id });
-      return createErrorResponse('Failed to update character', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      return handleDatabaseError('update character', error, `PUT /api/characters/${id}`);
     }
 
     return NextResponse.json(data as Character);
   } catch (error) {
-    logger.error('Unexpected error in PUT /api/characters/[id]', error);
+    console.error('Unexpected error in PUT /api/characters/[id]', error);
     return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }
@@ -108,13 +105,12 @@ export async function DELETE(
     const { error } = await deleteCharacter(id);
 
     if (error) {
-      logger.error('Error deleting character', error, { id });
-      return createErrorResponse('Failed to delete character', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      return handleDatabaseError('delete character', error, `DELETE /api/characters/${id}`);
     }
 
     return NextResponse.json({ success: true }, { status: HTTP_STATUS.OK });
   } catch (error) {
-    logger.error('Unexpected error in DELETE /api/characters/[id]', error);
+    console.error('Unexpected error in DELETE /api/characters/[id]', error);
     return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }

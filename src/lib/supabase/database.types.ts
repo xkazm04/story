@@ -106,6 +106,10 @@ export interface Database {
           name: string
           description: string | null
           order: number
+          script: string | null
+          location: string | null
+          image_url: string | null
+          image_prompt: string | null
           created_at: string
           updated_at: string
         }
@@ -116,6 +120,10 @@ export interface Database {
           name: string
           description?: string | null
           order?: number
+          script?: string | null
+          location?: string | null
+          image_url?: string | null
+          image_prompt?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -126,6 +134,10 @@ export interface Database {
           name?: string
           description?: string | null
           order?: number
+          script?: string | null
+          location?: string | null
+          image_url?: string | null
+          image_prompt?: string | null
           created_at?: string
           updated_at?: string
         }

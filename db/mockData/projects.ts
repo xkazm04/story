@@ -30,4 +30,12 @@ export const mockProjects: Project[] = [
     created_at: '2024-03-05T14:00:00Z',
     updated_at: '2024-03-05T14:00:00Z',
   },
+  {
+    id: 'proj-4',
+    name: 'Ashes of the Outer Rim',
+    description: 'A Star Wars story set during the twilight of the Old Republic. Two Jedi investigators uncover a trail of dark side corruption reaching from a destroyed farming village to the heart of the Senate.',
+    user_id: MOCK_USER_ID,
+    created_at: '2024-04-01T09:00:00Z',
+    updated_at: '2024-04-01T09:00:00Z',
+  },
 ];

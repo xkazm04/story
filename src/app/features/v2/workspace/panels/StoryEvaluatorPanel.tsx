@@ -11,7 +11,7 @@ interface StoryEvaluatorPanelProps {
 
 export default function StoryEvaluatorPanel({ onClose }: StoryEvaluatorPanelProps) {
   return (
-    <PanelFrame title="Evaluator" icon={BarChart3} onClose={onClose}>
+    <PanelFrame title="Evaluator" icon={BarChart3} onClose={onClose} headerAccent="violet">
       <ActOverview />
     </PanelFrame>
   );

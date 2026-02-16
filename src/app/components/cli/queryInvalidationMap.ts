@@ -98,12 +98,20 @@ export const SKILL_INVALIDATION_MAP: Partial<Record<SkillId, InvalidationEntry>>
   'scene-generation': {
     keys: [
       ['scenes', 'project', '$projectId'],
+      ['characters', 'project', '$projectId'],
     ],
   },
   'scene-description': {
     keys: [
       ['scenes', '$sceneId'],
       ['scenes', 'project', '$projectId'],
+    ],
+  },
+  'scene-compose': {
+    keys: [
+      ['scenes', '$sceneId'],
+      ['scenes', 'project', '$projectId'],
+      ['characters', 'project', '$projectId'],
     ],
   },
 

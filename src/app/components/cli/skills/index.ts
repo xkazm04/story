@@ -5,11 +5,11 @@
  * Skills are specialized instruction sets that guide Claude Code CLI
  * for specific storytelling tasks.
  *
- * 30 skills across 8 domains:
+ * 31 skills across 8 domains:
  * - Character (6): backstory, traits, dialogue, names, personality, appearance
  * - Faction (4): creation, lore, description, relationships
  * - Story (7): next-steps, write-content, architect, brainstorm, beat-suggestions, beat-description, project-inspiration
- * - Scene (4): generation, dialogue, description, beat-scene-mapping
+ * - Scene (5): generation, dialogue, description, beat-scene-mapping, compose
  * - Image (5): compose, enhance, variations, cover, avatar
  * - Simulator (3): vision-breakdown, prompt-generation, dimension-refinement
  * - Sound (7): audio-direction, beat-composer, beat-modifier, audio-composer, audio-prompt-ideas, instrument-transform, dsp-controller
@@ -95,6 +95,66 @@ export function getAllSkills(): CLISkill[] {
  */
 export function getSkillsByDomain(domain: SkillDomain): CLISkill[] {
   return SKILLS_BY_DOMAIN[domain] ?? [];
+}
+
+/**
+ * Build the base system prompt for all CLI executions.
+ * Tells Claude to use MCP tools instead of editing source files.
+ * Must be detailed enough that the CLI can act immediately without investigating.
+ */
+export function buildBaseSystemPrompt(projectId?: string): string {
+  return `# Story App — Creative Assistant
+
+You are a creative writing assistant. You interact with the app's database ONLY through MCP tools.
+
+## CRITICAL: Do NOT investigate infrastructure
+- NEVER use Read, Edit, Write, Bash, or Glob tools
+- NEVER read source code, mock data, API routes, or config files
+- NEVER investigate "how things work" — everything you need is in the MCP tools below
+- If a tool call fails, report the error to the user — do NOT debug the system
+- The project_id is pre-configured in the MCP server — you do NOT need to pass it to most tools (it auto-fills)
+${projectId ? `- Active project: \`${projectId}\`\n` : ''}
+## Quick Reference: MCP Tools
+
+### Characters (DB table: characters)
+- **list_characters** → returns all characters (id, name, type, voice, faction_id)
+- **create_character**(name, type?, voice?, factionId?) → creates character. Only \`name\` is required.
+- **get_character**(characterId) → full details
+- **update_character**(characterId, updates: JSON string) → updatable: name, type, voice, faction_id, avatar_url
+- **list_traits**(characterId) → personality traits (background, personality, motivations, strengths, weaknesses, relationships)
+- **create_trait**(characterId, type, description) → create trait. Types: background, personality, motivations, strengths, weaknesses, relationships
+- **update_trait**(traitId, description) → update trait description
+
+### Story Structure (DB tables: acts, beats)
+- **list_acts** → all acts (id, name, description, order)
+- **create_act**(name, description?, order?) → creates act. Only \`name\` is required.
+- **list_beats**(actId?) → beats in an act or project
+- **create_beat**(actId, name, type, description?, order?) → creates beat. Type: setup/conflict/resolution/climax/transition.
+- **get_beat**(beatId) / **update_beat**(beatId, updates: JSON string)
+
+### Scenes (DB table: scenes)
+- **list_scenes**(actId?) → scenes in act or project
+- **create_scene**(actId, name, description?, order?) → creates scene. Requires actId and name.
+- **get_scene**(sceneId) → full details
+- **update_scene**(sceneId, updates: JSON string) → updatable: name, description, order, script, location, image_url, image_prompt
+
+### Other
+- **list_factions** / **get_faction** / **update_faction** — faction CRUD
+- **get_project** / **list_projects** — project metadata
+- **list_relationships**(characterId) — character relationships
+
+## Workflow for common tasks
+1. **"Create characters"** → call create_character for each, one at a time
+2. **"Build story structure"** → create_act first, then create_scene for each scene, then create_beat for beats
+3. **"Write dialogue"** → create scene, then update_scene with script field
+4. **"What exists?"** → list_characters + list_acts + list_scenes
+5. **"Compose a scene"** → list_characters + list_beats first → generate using @type[PARAM] block format → update_scene with description field
+6. **"Flesh out a character"** → get_character first, then create_trait for each type (background, personality, motivations, strengths, weaknesses, relationships)
+7. **"Create characters with detail"** → create_character, then immediately create_trait for each of the 6 types
+
+---
+
+`;
 }
 
 /**

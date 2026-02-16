@@ -4,7 +4,6 @@ import { useState, useCallback, useRef } from 'react';
 import { FlaskConical } from 'lucide-react';
 import { cn } from '@/app/lib/utils';
 import { extractWaveform } from '../../lib/waveformExtractor';
-import { DSPProcessor } from '../../lib/dspProcessor';
 import { getMockMidiExtraction, getMockSpectralFeatures } from '../../data/mockAudioData';
 import type {
   LabPipeline,
@@ -51,7 +50,14 @@ export default function LabTab({ onGenerated }: LabTabProps) {
 
   // ── Character Modify State ──
   const [spectralFeatures, setSpectralFeatures] = useState<SpectralFeatures | null>(null);
-  const [effectChain, setEffectChain] = useState<DSPEffectChain>(DSPProcessor.defaultChain());
+  const [effectChain, setEffectChain] = useState<DSPEffectChain>({
+    granular: { grainSize: 0.1, overlap: 0.5, pitchShift: 0, playbackRate: 1, randomness: 0, reverse: false },
+    filters: [],
+    distortion: 0,
+    reverbMix: 0,
+    delayTime: 0,
+    delayFeedback: 0,
+  });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [isDspRendering, setIsDspRendering] = useState(false);

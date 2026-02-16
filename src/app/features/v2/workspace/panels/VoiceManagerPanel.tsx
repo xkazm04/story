@@ -14,7 +14,7 @@ export default function VoiceManagerPanel({ onClose }: VoiceManagerPanelProps) {
   const { selectedProject } = useProjectStore();
 
   return (
-    <PanelFrame title="Voices" icon={Mic} onClose={onClose}>
+    <PanelFrame title="Voices" icon={Mic} onClose={onClose} headerAccent="emerald">
       {selectedProject?.id ? (
         <VoiceList projectId={selectedProject.id} />
       ) : (

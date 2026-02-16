@@ -24,6 +24,7 @@ import {
   BookOpen,
   AudioLines,
   SlidersHorizontal,
+  Film,
 } from 'lucide-react';
 import type { WorkspacePanelType, PanelRole, PanelSizeClass } from '../types';
 import type { SkillDomain } from '@/app/components/cli/skills/types';
@@ -270,6 +271,48 @@ export const PANEL_REGISTRY: Record<WorkspacePanelType, PanelRegistryEntry> = {
     sizeClass: 'wide',
     minWidth: 560,
     domains: ['character'],
+  },
+
+  // ─── Studio ──────────────────────────────────────
+  'beats-sidebar': {
+    type: 'beats-sidebar',
+    label: 'Beats',
+    icon: ListChecks,
+    importFn: () => import('./panels/BeatsSidebarPanel'),
+    defaultRole: 'sidebar',
+    sizeClass: 'compact',
+    minWidth: 200,
+    domains: ['story', 'scene'],
+  },
+  'cast-sidebar': {
+    type: 'cast-sidebar',
+    label: 'Cast',
+    icon: Users,
+    importFn: () => import('./panels/CastSidebarPanel'),
+    defaultRole: 'sidebar',
+    sizeClass: 'compact',
+    minWidth: 200,
+    domains: ['character', 'scene'],
+  },
+  'scene-gallery': {
+    type: 'scene-gallery',
+    label: 'Scene Gallery',
+    icon: Film,
+    importFn: () => import('./panels/SceneGalleryPanel'),
+    defaultRole: 'secondary',
+    sizeClass: 'compact',
+    minWidth: 400,
+    domains: ['scene'],
+  },
+  'audio-toolbar': {
+    type: 'audio-toolbar',
+    label: 'Audio',
+    icon: AudioLines,
+    importFn: () => import('./panels/AudioToolbarPanel'),
+    defaultRole: 'tertiary',
+    sizeClass: 'compact',
+    minWidth: 400,
+    domains: ['sound'],
   },
 
   // ─── System ──────────────────────────────────────

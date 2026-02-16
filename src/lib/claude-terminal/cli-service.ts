@@ -8,6 +8,9 @@
 import { spawn, type ChildProcess } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import { analyzeEvent } from './signals/signal-analyzer';
+import { appendSignal, getSignals, savePatterns } from './signals/signal-store';
+import { detectPatterns } from './signals/pattern-detector';
 
 // ============ Stream-json message types from Claude CLI ============
 
@@ -166,7 +169,9 @@ export function startExecution(
   projectPath: string,
   prompt: string,
   resumeSessionId?: string,
-  onEvent?: (event: CLIExecutionEvent) => void
+  onEvent?: (event: CLIExecutionEvent) => void,
+  projectId?: string,
+  serverOrigin?: string,
 ): string {
   const executionId = `exec-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -238,6 +243,16 @@ export function startExecution(
 
   const env = { ...process.env };
 
+  // Set MCP server context so tools know which project to operate on
+  if (projectId) {
+    env.STORY_PROJECT_ID = projectId;
+  }
+
+  // Set MCP base URL from the actual running server origin (auto-detects port)
+  if (serverOrigin) {
+    env.STORY_BASE_URL = serverOrigin;
+  }
+
   try {
     const childProcess = spawn(cliCommand, args, {
       cwd: projectPath,
@@ -256,6 +271,20 @@ export function startExecution(
     let resultEventEmitted = false;
     let initEventReceived = false;
     let assistantMessageCount = 0;
+    const recentEventsWindow: CLIExecutionEvent[] = [];
+    const WINDOW_SIZE = 20;
+
+    const trackAndAnalyze = (event: CLIExecutionEvent) => {
+      recentEventsWindow.push(event);
+      if (recentEventsWindow.length > WINDOW_SIZE) recentEventsWindow.shift();
+
+      try {
+        const signal = analyzeEvent(event, recentEventsWindow, execution.id);
+        if (signal) appendSignal(signal);
+      } catch {
+        // Signal analysis is non-critical — never block execution
+      }
+    };
 
     const processLine = (line: string) => {
       const parsed = parseStreamJsonLine(line);
@@ -264,7 +293,7 @@ export function startExecution(
       if (parsed.type === 'system' && parsed.subtype === 'init') {
         initEventReceived = true;
         execution.sessionId = parsed.session_id;
-        emitEvent({
+        const event: CLIExecutionEvent = {
           type: 'init',
           data: {
             sessionId: parsed.session_id,
@@ -274,39 +303,46 @@ export function startExecution(
             version: parsed.claude_code_version,
           },
           timestamp: Date.now(),
-        });
+        };
+        emitEvent(event);
       } else if (parsed.type === 'assistant') {
         assistantMessageCount++;
         const textContent = extractTextContent(parsed);
         if (textContent) {
-          emitEvent({
+          const event: CLIExecutionEvent = {
             type: 'text',
             data: { content: textContent, model: parsed.message.model },
             timestamp: Date.now(),
-          });
+          };
+          emitEvent(event);
+          trackAndAnalyze(event);
         }
 
         const toolUses = extractToolUses(parsed);
         for (const toolUse of toolUses) {
-          emitEvent({
+          const event: CLIExecutionEvent = {
             type: 'tool_use',
             data: { id: toolUse.id, name: toolUse.name, input: toolUse.input },
             timestamp: Date.now(),
-          });
+          };
+          emitEvent(event);
+          trackAndAnalyze(event);
         }
       } else if (parsed.type === 'user') {
         const results = parsed.message.content.filter(c => c.type === 'tool_result');
         for (const result of results) {
-          emitEvent({
+          const event: CLIExecutionEvent = {
             type: 'tool_result',
             data: { toolUseId: result.tool_use_id, content: result.content },
             timestamp: Date.now(),
-          });
+          };
+          emitEvent(event);
+          trackAndAnalyze(event);
         }
       } else if (parsed.type === 'result') {
         resultEventEmitted = true;
         execution.sessionId = parsed.result?.session_id || execution.sessionId;
-        emitEvent({
+        const event: CLIExecutionEvent = {
           type: 'result',
           data: {
             sessionId: parsed.result?.session_id,
@@ -316,7 +352,18 @@ export function startExecution(
             isError: parsed.is_error,
           },
           timestamp: Date.now(),
-        });
+        };
+        emitEvent(event);
+        trackAndAnalyze(event);
+
+        // Run pattern detection at end of execution
+        try {
+          const signals = getSignals(Date.now() - 7 * 24 * 3600 * 1000);
+          const patterns = detectPatterns(signals);
+          savePatterns(patterns);
+        } catch {
+          // Pattern detection is non-critical
+        }
       }
     };
 
@@ -340,9 +387,22 @@ export function startExecution(
       }
     });
 
-    // Handle stderr
+    // Handle stderr — log everything, only forward actual errors to client
     childProcess.stderr.on('data', (data: Buffer) => {
-      logMessage(`[STDERR] ${data.toString().trim()}`);
+      const text = data.toString().trim();
+      if (!text) return;
+      logMessage(`[STDERR] ${text}`);
+
+      // Only forward lines that look like real errors (not MCP loading info, version strings, etc.)
+      const isError = /\b(error|fatal|fail|exception|ENOENT|EACCES|EPERM)\b/i.test(text)
+        && !/\b(mcp|loading|connected|server|version)\b/i.test(text);
+      if (isError) {
+        emitEvent({
+          type: 'error',
+          data: { error: text, source: 'stderr' },
+          timestamp: Date.now(),
+        });
+      }
     });
 
     // Handle process exit

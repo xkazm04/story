@@ -13,13 +13,13 @@ const errorContent = (text: string) => ({ content: [{ type: 'text' as const, tex
 export function registerFactionTools(server: McpServer, config: McpConfig, client: StoryHttpClient) {
   server.tool(
     'list_factions',
-    'List all factions in a project. Factions represent groups, organizations, or allegiances in the story world.',
+    `List all factions in a project. Returns: id, project_id, name, description, color, logo_url, created_at, updated_at. Factions represent groups/organizations in the story.`,
     {
-      projectId: z.string().optional().describe('Project ID. Uses configured project if not provided.'),
+      projectId: z.string().optional().describe('Project UUID. Auto-filled from server config if omitted.'),
     },
     async ({ projectId }) => {
       const pid = projectId || config.projectId;
-      if (!pid) return errorContent('No projectId available.');
+      if (!pid) return errorContent('No projectId available. Pass projectId explicitly.');
 
       const result = await client.get('/api/factions', { projectId: pid });
       if (!result.success) return errorContent(`Failed to list factions: ${result.error}`);
@@ -30,9 +30,9 @@ export function registerFactionTools(server: McpServer, config: McpConfig, clien
 
   server.tool(
     'get_faction',
-    'Get full faction details including description, lore, branding, and member characters.',
+    `Get full faction details. Returns: id, project_id, name, description, color, logo_url, created_at, updated_at.`,
     {
-      factionId: z.string().describe('Faction ID to fetch.'),
+      factionId: z.string().describe('Faction UUID.'),
     },
     async ({ factionId }) => {
       const result = await client.get(`/api/factions/${factionId}`);
@@ -44,10 +44,10 @@ export function registerFactionTools(server: McpServer, config: McpConfig, clien
 
   server.tool(
     'update_faction',
-    'Update faction fields (name, description, color, branding). Only include fields you want to change.',
+    `Update faction fields. Updatable columns: name, description, color (hex string), logo_url. Pass JSON with only changed fields.`,
     {
-      factionId: z.string().describe('Faction ID to update.'),
-      updates: z.string().describe('JSON string of fields to update. Common fields: name, description, color, logo_url, branding. Example: {"name":"The Order","color":"#ff0000"}'),
+      factionId: z.string().describe('Faction UUID to update.'),
+      updates: z.string().describe('JSON string of fields to update. Example: {"name":"The Order","color":"#ff0000","description":"A secretive organization"}'),
     },
     async ({ factionId, updates }) => {
       let parsed: Record<string, unknown>;

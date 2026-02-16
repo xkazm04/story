@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Users, Search, User } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useProjectStore } from '@/app/store/slices/projectSlice';
 import { characterApi } from '@/app/hooks/integration/useCharacters';
 import { cn } from '@/app/lib/utils';
@@ -51,6 +52,7 @@ export default function CharacterCardsPanel({
       title={`Characters (${characters.length})`}
       icon={Users}
       onClose={onClose}
+      headerAccent="cyan"
     >
       <div className="flex flex-col h-full">
         {/* Search */}
@@ -75,35 +77,42 @@ export default function CharacterCardsPanel({
             </div>
           ) : (
             <div className="grid gap-2">
-              {filtered.map((char) => (
-                <button
-                  key={char.id}
-                  onClick={() => handleCharacterClick(char.id)}
-                  className={cn(
-                    'flex items-center gap-2.5 px-3 py-2 rounded-lg text-left',
-                    'bg-slate-900/40 border border-slate-800/40',
-                    'hover:bg-slate-800/40 hover:border-slate-700/50 transition-colors'
-                  )}
-                >
-                  {char.avatar_url ? (
-                    <img
-                      src={char.avatar_url}
-                      alt={char.name}
-                      className="w-8 h-8 rounded-full object-cover border border-slate-700/50"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700/50 flex items-center justify-center">
-                      <User className="w-4 h-4 text-slate-500" />
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium text-slate-200 truncate">{char.name}</p>
-                    {char.type && (
-                      <p className="text-[10px] text-slate-500 truncate">{char.type}</p>
+              <AnimatePresence mode="popLayout">
+                {filtered.map((char) => (
+                  <motion.button
+                    key={char.id}
+                    layout
+                    initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.97 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                    onClick={() => handleCharacterClick(char.id)}
+                    className={cn(
+                      'flex items-center gap-2.5 px-3 py-2 rounded-lg text-left',
+                      'bg-slate-900/40 border border-slate-800/40',
+                      'hover:bg-slate-800/40 hover:border-slate-700/50 transition-colors'
                     )}
-                  </div>
-                </button>
-              ))}
+                  >
+                    {char.avatar_url ? (
+                      <img
+                        src={char.avatar_url}
+                        alt={char.name}
+                        className="w-8 h-8 rounded-full object-cover border border-slate-700/50"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700/50 flex items-center justify-center">
+                        <User className="w-4 h-4 text-slate-500" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-slate-200 truncate">{char.name}</p>
+                      {char.type && (
+                        <p className="text-[10px] text-slate-500 truncate">{char.type}</p>
+                      )}
+                    </div>
+                  </motion.button>
+                ))}
+              </AnimatePresence>
             </div>
           )}
         </div>

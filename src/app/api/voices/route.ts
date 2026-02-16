@@ -28,6 +28,10 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (error) {
+      // Table not found — migration not applied yet, return empty
+      if (error.code === 'PGRST205' || error.code === '42P01') {
+        return NextResponse.json([]);
+      }
       return handleDatabaseError('fetch voices', error, 'GET /api/voices');
     }
 

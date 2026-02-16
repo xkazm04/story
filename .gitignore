@@ -35,6 +35,9 @@ yarn-error.log*
 # simulator debug logs
 /log
 
+# CLI self-improvement signals
+.story/
+
 # env files (can opt-in for committing if needed)
 .env*
 

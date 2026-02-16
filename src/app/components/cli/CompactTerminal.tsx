@@ -48,13 +48,14 @@ import {
   errorToLog,
   toolUseToFileChange,
 } from './protocol';
+import CLIMarkdown from './CLIMarkdown';
 import type {
   CompactTerminalProps,
   LogEntry,
   FileChange,
   ExecutionResult,
 } from './types';
-import { buildSkillsPrompt } from './skills';
+import { buildSkillsPrompt, buildBaseSystemPrompt } from './skills';
 
 // ============ Icon & Color Maps ============
 
@@ -81,6 +82,8 @@ const LOG_COLORS: Record<LogEntry['type'], string> = {
 export default function CompactTerminal({
   instanceId,
   projectPath,
+  actId,
+  sceneId,
   title,
   className,
   taskQueue,
@@ -94,6 +97,7 @@ export default function CompactTerminal({
   onExecutionChange,
   onToolUse,
   onPromptSubmit,
+  onExecutionComplete,
 }: CompactTerminalProps) {
   // State
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -113,6 +117,7 @@ export default function CompactTerminal({
   const pendingLogsRef = useRef<LogEntry[]>([]);
   const rafIdRef = useRef<number | null>(null);
   const currentTaskRef = useRef<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // ============ RAF-Batched Log Adding ============
 
@@ -155,6 +160,15 @@ export default function CompactTerminal({
     const { scrollTop, scrollHeight, clientHeight } = container;
     const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
     setAutoScroll(isAtBottom);
+  }, []);
+
+  // ============ Textarea Auto-resize ============
+
+  const adjustTextareaHeight = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 100)}px`;
   }, []);
 
   // ============ SSE Connection ============
@@ -204,12 +218,39 @@ export default function CompactTerminal({
           setLastResult(event.data);
           setIsStreaming(false);
           finalizeTask(true);
+          onExecutionComplete?.(true);
+
+          // Check for detected patterns after execution
+          fetch('/api/claude-terminal/improve')
+            .then(r => r.json())
+            .then(data => {
+              if (data.success && data.patterns?.length > 0) {
+                const count = data.patterns.length;
+                const highCount = data.patterns.filter(
+                  (p: { severity: string }) => p.severity === 'high'
+                ).length;
+                const summary = data.patterns
+                  .slice(0, 3)
+                  .map((p: { type: string; toolName?: string }) =>
+                    `${p.type}${p.toolName ? ` (${p.toolName})` : ''}`
+                  )
+                  .join(', ');
+                addLog({
+                  id: `signal-${Date.now()}`,
+                  type: 'system',
+                  content: `[signals] ${count} issue${count > 1 ? 's' : ''} detected${highCount ? ` (${highCount} high)` : ''}: ${summary}. Type /fix to resolve.`,
+                  timestamp: Date.now(),
+                });
+              }
+            })
+            .catch(() => {}); // Non-critical
         },
         error: (event) => {
           setError(event.data.error);
           addLog(errorToLog(event));
           setIsStreaming(false);
           finalizeTask(false);
+          onExecutionComplete?.(false);
         },
       });
 
@@ -243,16 +284,24 @@ export default function CompactTerminal({
   const executeTask = useCallback(
     async (prompt: string) => {
       try {
-        // Build full prompt with skills prefix
+        // Build full prompt with base system instructions + context + skills prefix
+        const basePrompt = buildBaseSystemPrompt(projectPath || undefined);
+        const contextLines: string[] = [];
+        if (actId) contextLines.push(`- Active act ID: \`${actId}\``);
+        if (sceneId) contextLines.push(`- Active scene ID: \`${sceneId}\``);
+        const contextBlock = contextLines.length
+          ? `\n## Current Selection\n${contextLines.join('\n')}\n\nUse these IDs for get_scene, list_beats(actId), etc. When the user says "this scene" or "this act", they mean these.\n\n`
+          : '';
         const skillsPrefix =
           enabledSkills.length > 0 ? buildSkillsPrompt(enabledSkills) : '';
-        const fullPrompt = skillsPrefix + prompt;
+        const fullPrompt = basePrompt + contextBlock + skillsPrefix + prompt;
 
         const response = await fetch('/api/claude-terminal/query', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             projectPath,
+            projectId: projectPath || undefined, // projectPath carries the Story project ID
             prompt: fullPrompt,
             resumeSessionId: sessionId || undefined,
           }),
@@ -313,6 +362,67 @@ export default function CompactTerminal({
     }
   }, [externalExecutionId, externalStoredTaskId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ============ Self-Improvement (/fix) ============
+
+  const executeImprovement = useCallback(async () => {
+    try {
+      // Fetch current patterns
+      const res = await fetch('/api/claude-terminal/improve');
+      const data = await res.json();
+      if (!data.success || !data.patterns?.length) {
+        addLog({
+          id: `system-${Date.now()}`,
+          type: 'system',
+          content: '[signals] No unresolved patterns to fix.',
+          timestamp: Date.now(),
+        });
+        return;
+      }
+
+      // Build improvement prompt
+      const { buildImprovementPrompt } = await import(
+        '@/lib/claude-terminal/signals/improvement-prompt'
+      );
+      const improvementPrompt = buildImprovementPrompt(data.patterns);
+
+      // Send via normal query route — resumeSessionId preserves context
+      const response = await fetch('/api/claude-terminal/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectPath,
+          projectId: projectPath || undefined,
+          prompt: improvementPrompt,
+          resumeSessionId: sessionId || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        setError(err.error || 'Failed to start improvement');
+        return;
+      }
+
+      const { streamUrl, executionId } = await response.json();
+      if (onExecutionChange) onExecutionChange(executionId, null);
+      connectToStream(streamUrl);
+
+      // Mark patterns as resolved (optimistic)
+      fetch('/api/claude-terminal/improve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patternFingerprints: data.patterns.map(
+            (p: { fingerprint: string }) => p.fingerprint
+          ),
+        }),
+      }).catch(() => {});
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Improvement failed');
+      setIsStreaming(false);
+    }
+  }, [projectPath, sessionId, addLog, connectToStream, onExecutionChange]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ============ Manual Input ============
 
   const handleSubmit = useCallback(() => {
@@ -330,9 +440,18 @@ export default function CompactTerminal({
       timestamp: Date.now(),
     });
 
-    executeTask(prompt);
     setInputValue('');
-  }, [inputValue, isStreaming, executeTask, addLog, onPromptSubmit]);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
+
+    // Handle /fix command — resume session to fix detected issues
+    if (prompt === '/fix') {
+      executeImprovement();
+    } else {
+      executeTask(prompt);
+    }
+  }, [inputValue, isStreaming, executeTask, executeImprovement, addLog, onPromptSubmit]);
 
   const handleAbort = useCallback(() => {
     if (eventSourceRef.current) {
@@ -483,12 +602,16 @@ export default function CompactTerminal({
               className="flex items-start gap-1.5 leading-relaxed"
             >
               <Icon className={cn('w-3 h-3 mt-0.5 shrink-0', color)} />
-              <span className={cn('break-all', color)}>
+              <span className={cn('break-words whitespace-pre-wrap', color)}>
                 {log.toolName && (
                   <span className="text-amber-300 mr-1">{log.toolName}</span>
                 )}
-                {log.content.slice(0, 300)}
-                {log.content.length > 300 && (
+                {log.type === 'assistant'
+                  ? <CLIMarkdown content={log.content} />
+                  : log.type === 'user'
+                    ? log.content
+                    : log.content.slice(0, 500)}
+                {log.type !== 'user' && log.type !== 'assistant' && log.content.length > 500 && (
                   <span className="text-slate-600">...</span>
                 )}
               </span>
@@ -520,14 +643,17 @@ export default function CompactTerminal({
       )}
 
       {/* Input */}
-      <div className="flex items-center gap-2 px-3 py-1.5 border-t border-slate-800 bg-slate-900/50">
-        <span className="text-emerald-500 text-xs font-bold select-none">
+      <div className="flex items-end gap-2 px-3 py-1.5 border-t border-slate-800 bg-slate-900/50">
+        <span className="text-emerald-500 text-xs font-bold select-none pb-0.5">
           {'>'}
         </span>
-        <input
-          type="text"
+        <textarea
+          ref={textareaRef}
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            adjustTextareaHeight();
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
@@ -536,13 +662,18 @@ export default function CompactTerminal({
           }}
           placeholder={isStreaming ? 'Working...' : 'Type a prompt...'}
           disabled={isStreaming}
-          className="flex-1 bg-transparent text-slate-200 text-xs outline-none placeholder-slate-600 disabled:opacity-50"
+          rows={1}
+          className={cn(
+            'flex-1 bg-transparent text-slate-200 text-xs outline-none',
+            'placeholder-slate-600 disabled:opacity-50',
+            'resize-none overflow-y-auto leading-relaxed'
+          )}
         />
 
         {isStreaming ? (
           <button
             onClick={handleAbort}
-            className="text-red-400 hover:text-red-300 transition-colors"
+            className="text-red-400 hover:text-red-300 transition-colors pb-0.5"
             title="Stop"
           >
             <Square className="w-3.5 h-3.5" />
@@ -551,7 +682,7 @@ export default function CompactTerminal({
           <button
             onClick={handleSubmit}
             disabled={!inputValue.trim()}
-            className="text-slate-500 hover:text-slate-300 transition-colors disabled:opacity-30"
+            className="text-slate-500 hover:text-slate-300 transition-colors disabled:opacity-30 pb-0.5"
             title="Send"
           >
             <Send className="w-3.5 h-3.5" />

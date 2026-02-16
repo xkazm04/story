@@ -21,7 +21,7 @@ export default function DialogueViewPanel({
   onClose,
 }: DialogueViewPanelProps) {
   return (
-    <PanelFrame title="Dialogue" icon={MessageCircle} onClose={onClose}>
+    <PanelFrame title="Dialogue" icon={MessageCircle} onClose={onClose} headerAccent="amber">
       <div className="p-3 space-y-3 overflow-auto h-full">
         {lines.length === 0 ? (
           <div className="flex items-center justify-center h-full text-slate-600 text-xs">

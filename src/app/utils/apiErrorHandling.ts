@@ -89,7 +89,8 @@ export function createErrorResponse(
 }
 
 /**
- * Handles Supabase database errors
+ * Handles Supabase database errors.
+ * Includes Supabase error details in response so MCP tools get actionable messages.
  */
 export function handleDatabaseError(
   operation: string,
@@ -99,10 +100,16 @@ export function handleDatabaseError(
   const contextStr = context ? `${context} - ${operation}` : operation;
   logger.error(contextStr, error);
 
+  // Extract Supabase error details for the response
+  const supaErr = error as Record<string, unknown> | null;
+  const detail = supaErr?.message || supaErr?.details || 'Database operation failed';
+  const code = supaErr?.code ? ` [${supaErr.code}]` : '';
+
   return createErrorResponse(
     `Failed to ${operation}`,
     500,
-    'Database operation failed'
+    `${detail}${code}`,
+    { code: supaErr?.code, hint: supaErr?.hint }
   );
 }
 

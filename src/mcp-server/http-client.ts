@@ -29,7 +29,7 @@ export class StoryHttpClient {
       if (!response.ok) {
         return {
           success: false,
-          error: (data.error as string) || (data.message as string) || `HTTP ${response.status}`,
+          error: this.buildErrorMessage(data, response.status),
         };
       }
 
@@ -55,7 +55,7 @@ export class StoryHttpClient {
       if (!response.ok) {
         return {
           success: false,
-          error: (data.error as string) || (data.message as string) || `HTTP ${response.status}`,
+          error: this.buildErrorMessage(data, response.status),
         };
       }
 
@@ -81,7 +81,7 @@ export class StoryHttpClient {
       if (!response.ok) {
         return {
           success: false,
-          error: (data.error as string) || (data.message as string) || `HTTP ${response.status}`,
+          error: this.buildErrorMessage(data, response.status),
         };
       }
 
@@ -92,6 +92,29 @@ export class StoryHttpClient {
         error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
+  }
+
+  private buildErrorMessage(data: Record<string, unknown>, status: number): string {
+    const parts: string[] = [];
+    if (data.error) parts.push(String(data.error));
+    if (data.message && data.message !== data.error) parts.push(String(data.message));
+    if (!parts.length) parts.push(`HTTP ${status}`);
+
+    // Include details field (from handleDatabaseError)
+    if (data.details && typeof data.details === 'object') {
+      const details = data.details as Record<string, unknown>;
+      if (details.code) parts.push(`Code: ${details.code}`);
+      if (details.hint) parts.push(`Hint: ${details.hint}`);
+    }
+
+    // Include debug info (legacy format)
+    if (data.debug && typeof data.debug === 'object') {
+      const debug = data.debug as Record<string, unknown>;
+      if (debug.message) parts.push(`Detail: ${debug.message}`);
+      if (debug.code) parts.push(`Code: ${debug.code}`);
+    }
+
+    return parts.join('. ');
   }
 
   async delete<T = unknown>(path: string): Promise<ApiResponse<T>> {
@@ -105,7 +128,7 @@ export class StoryHttpClient {
       if (!response.ok) {
         return {
           success: false,
-          error: (data.error as string) || (data.message as string) || `HTTP ${response.status}`,
+          error: this.buildErrorMessage(data, response.status),
         };
       }
 

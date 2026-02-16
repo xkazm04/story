@@ -35,7 +35,7 @@ export default function NarrationPanel({ onClose }: NarrationPanelProps) {
 
   if (!projectId) {
     return (
-      <PanelFrame title="Narration" icon={AudioLines} onClose={onClose}>
+      <PanelFrame title="Narration" icon={AudioLines} onClose={onClose} headerAccent="emerald">
         <div className="flex items-center justify-center h-full text-xs text-slate-500">
           Select a project first
         </div>

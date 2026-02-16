@@ -8,8 +8,8 @@
       "command": "node",
       "args": ["dist/mcp-server/index.js"],
       "env": {
-        "STORY_BASE_URL": "http://localhost:3000",
-        "STORY_PROJECT_ID": ""
+        "STORY_BASE_URL": "http://localhost:3001",
+        "STORY_PROJECT_ID": "38983c08-9eab-4e07-93c3-04191479b0bb"
       }
     }
   }

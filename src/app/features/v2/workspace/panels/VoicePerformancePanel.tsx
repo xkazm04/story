@@ -28,7 +28,7 @@ export default function VoicePerformancePanel({ onClose }: VoicePerformancePanel
 
   if (!projectId) {
     return (
-      <PanelFrame title="Voice Performance" icon={SlidersHorizontal} onClose={onClose}>
+      <PanelFrame title="Voice Performance" icon={SlidersHorizontal} onClose={onClose} headerAccent="emerald">
         <div className="flex items-center justify-center h-full text-xs text-slate-500">
           Select a project first
         </div>
@@ -37,7 +37,7 @@ export default function VoicePerformancePanel({ onClose }: VoicePerformancePanel
   }
 
   return (
-    <PanelFrame title="Voice Performance" icon={SlidersHorizontal} onClose={onClose}>
+    <PanelFrame title="Voice Performance" icon={SlidersHorizontal} onClose={onClose} headerAccent="emerald">
       <div className="flex flex-col h-full overflow-auto">
         {/* Voice selector */}
         {voices.length > 0 && (

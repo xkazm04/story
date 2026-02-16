@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
 import { Scene } from '@/app/types/Scene';
-import { logger } from '@/app/utils/logger';
-import { HTTP_STATUS, createErrorResponse } from '@/app/utils/apiErrorHandling';
+import { HTTP_STATUS, createErrorResponse, handleDatabaseError } from '@/app/utils/apiErrorHandling';
 
 /**
  * Fetches a scene by ID from the database
@@ -57,13 +56,12 @@ export async function GET(
     const { data, error } = await fetchScene(id);
 
     if (error) {
-      logger.apiError('GET /api/scenes/[id]', error, { sceneId: id });
-      return createErrorResponse('Scene not found', HTTP_STATUS.NOT_FOUND);
+      return handleDatabaseError('fetch scene', error, `GET /api/scenes/${id}`);
     }
 
     return NextResponse.json(data as Scene);
   } catch (error) {
-    logger.apiError('GET /api/scenes/[id]', error);
+    console.error('GET /api/scenes/[id]', error);
     return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }
@@ -83,13 +81,12 @@ export async function PUT(
     const { data, error } = await updateScene(id, body);
 
     if (error) {
-      logger.apiError('PUT /api/scenes/[id]', error, { sceneId: id });
-      return createErrorResponse('Failed to update scene', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      return handleDatabaseError('update scene', error, `PUT /api/scenes/${id}`);
     }
 
     return NextResponse.json(data as Scene);
   } catch (error) {
-    logger.apiError('PUT /api/scenes/[id]', error);
+    console.error('PUT /api/scenes/[id]', error);
     return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }
@@ -108,13 +105,12 @@ export async function DELETE(
     const { error } = await deleteScene(id);
 
     if (error) {
-      logger.apiError('DELETE /api/scenes/[id]', error, { sceneId: id });
-      return createErrorResponse('Failed to delete scene', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      return handleDatabaseError('delete scene', error, `DELETE /api/scenes/${id}`);
     }
 
     return NextResponse.json({ success: true }, { status: HTTP_STATUS.OK });
   } catch (error) {
-    logger.apiError('DELETE /api/scenes/[id]', error);
+    console.error('DELETE /api/scenes/[id]', error);
     return createErrorResponse('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 }

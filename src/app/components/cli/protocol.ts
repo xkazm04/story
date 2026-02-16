@@ -50,6 +50,12 @@ export interface ErrorEvent {
   timestamp: number;
 }
 
+export interface SignalEvent {
+  type: 'signal';
+  data: { signalType: string; severity: string; toolName?: string; message: string };
+  timestamp: number;
+}
+
 /** All possible CLI SSE event types */
 export type CLIEvent =
   | ConnectedEvent
@@ -57,7 +63,8 @@ export type CLIEvent =
   | ToolUseEvent
   | ToolResultEvent
   | ResultEvent
-  | ErrorEvent;
+  | ErrorEvent
+  | SignalEvent;
 
 /** The discriminant values */
 export type CLIEventType = CLIEvent['type'];

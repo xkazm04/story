@@ -5,7 +5,7 @@
  * Source prompts: src/prompts/scene/
  */
 
-import { Clapperboard, MessageCircle, MapPin, ArrowRightLeft } from 'lucide-react';
+import { Clapperboard, MessageCircle, MapPin, ArrowRightLeft, FileText } from 'lucide-react';
 import type { CLISkill } from './types';
 
 const TOOL_PREAMBLE = `## Available MCP Tools
@@ -56,9 +56,17 @@ ${TOOL_PREAMBLE}**Tool Usage Order:**
 5. \`list_traits\` — Read traits for behavioral accuracy
 6. \`get_project\` — Read project genre and tone
 
-**After generating:** Use \`update_scene\` to write the content/script back.
+**After generating:** Use \`update_scene\` to write the content back to the description field.
 
-**Output:** Stream the scene content. Write in the project's genre style.
+**Output Format:** Use @type block markers in the scene description:
+- \`@scene\` — Scene header (INT/EXT. LOCATION - TIME)
+- \`@action\` — Action lines and description
+- \`@dialogue[CHARACTER_NAME]\` — Dialogue with speaker (use EXACT character names from list_characters)
+- \`@direction\` — Stage direction / parenthetical
+- \`@beat[BEAT_NAME]\` — Beat reference marker (use EXACT beat names from list_beats)
+- \`@content\` — Narrative prose
+
+Write in the project's genre style.
 `,
 };
 
@@ -207,9 +215,86 @@ ${TOOL_PREAMBLE}**Tool Usage Order:**
 `,
 };
 
+export const sceneCompose: CLISkill = {
+  id: 'scene-compose',
+  name: 'Scene Compose',
+  shortName: 'Compose',
+  description: 'Compose full scene script with dialogue, beats, and direction using studio format',
+  icon: FileText,
+  color: 'amber',
+  domain: 'scene',
+  outputFormat: 'streaming',
+  panelConfig: {
+    panels: [
+      { type: 'audio-toolbar', role: 'tertiary' },
+      { type: 'beats-sidebar', role: 'sidebar' },
+      { type: 'scene-editor', role: 'primary' },
+      { type: 'cast-sidebar', role: 'sidebar' },
+      { type: 'scene-gallery', role: 'secondary' },
+    ],
+    preferredLayout: 'studio',
+    clearExisting: true,
+  },
+  prompt: `## Scene Composition Specialist
+
+You compose complete scene scripts using Story's custom markdown block format.
+
+**MANDATORY FIRST STEPS — always do these before generating:**
+1. \`list_characters\` — Get all project characters (names, types, voices)
+2. \`list_beats\` — Get all story beats for the act (names, descriptions, completion status)
+3. \`get_scene\` — Read existing scene content if editing
+4. \`get_project\` — Read project genre and tone
+
+**Custom Markdown Format (REQUIRED):**
+Your output MUST use these block markers:
+
+\`\`\`
+@scene
+INT. LOCATION - TIME
+
+@action
+Description of what happens.
+
+@dialogue[CHARACTER_NAME]
+What the character says.
+
+@direction
+Stage/camera direction.
+
+@beat[BEAT_NAME]
+Reference to a story beat.
+
+@content
+Narrative prose or description.
+\`\`\`
+
+**Rules:**
+- ALWAYS use \`@dialogue[NAME]\` with bracket notation — never bare \`@dialogue\`
+- Speaker names MUST match EXACTLY from \`list_characters\` response
+- Beat references MUST match EXACTLY from \`list_beats\` response
+- If a character doesn't exist yet, use \`create_character\` to create them first
+- If a beat doesn't exist yet, use \`create_beat\` to create it first
+- Keep each dialogue block to 1-3 sentences for pacing
+- Use \`@direction\` for parenthetical cues and stage directions
+- Use \`@beat\` markers to anchor structural moments in the narrative
+- Place \`@beat\` markers before the script section they correspond to
+
+**After generating:** Use \`update_scene\` to write the script to the description field.
+
+${TOOL_PREAMBLE}**Tool Usage Order:**
+1. \`list_characters\` — Read all characters
+2. \`list_beats\` — Read all beats for context
+3. \`get_scene\` — Read existing scene
+4. \`get_project\` — Read genre/tone
+5. Generate script in @type format
+6. \`update_scene\` — Save to description field
+`,
+};
+
 export const SCENE_SKILLS: CLISkill[] = [
   sceneGeneration,
   sceneDialogue,
   sceneDescription,
   beatSceneMapping,
+  sceneCompose,
 ];

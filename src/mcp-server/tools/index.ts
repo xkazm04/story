@@ -30,7 +30,7 @@ export function registerTools(server: McpServer, config: McpConfig) {
 
   const tools = [
     'get_project', 'list_projects',
-    'list_characters', 'get_character', 'create_character', 'update_character', 'list_traits',
+    'list_characters', 'get_character', 'create_character', 'update_character', 'list_traits', 'create_trait', 'update_trait',
     'list_factions', 'get_faction', 'update_faction',
     'list_acts', 'list_beats', 'get_beat', 'create_beat', 'update_beat',
     'list_scenes', 'get_scene', 'update_scene', 'list_relationships',
